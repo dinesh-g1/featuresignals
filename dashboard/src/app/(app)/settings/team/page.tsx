@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
 import {
   TrashIcon,
   ChevronDownIcon,
@@ -232,321 +234,360 @@ export default function TeamPage() {
     return perm ? perm[field] : false;
   }
 
-  return (
+  // Pagination from URL params
+  const searchParams = useSearchParams();
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offsetVal = parseInt(searchParams.get("offset") || "0");
+  const total = members.length;
+
+  // Client-side pagination slice
+  const paginatedMembers = useMemo(() => {
+    if (offsetVal >= members.length) return [];
+    const end = offsetVal + limit;
+    return members.slice(
+      offsetVal,
+      end > members.length ? members.length : end,
+    );
+  }, [members, limit, offsetVal]);
+
+  // ── Loading Skeleton (for Suspense fallback) ──
+
+  const teamSkeleton = (
     <div className="space-y-6">
-      <UpgradeNudge context="seats" />
-      <Card className="p-4 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
-            Team Members
-          </h2>
-          <Button size="sm" onClick={() => setShowInvite(!showInvite)}>
-            Invite Member
-          </Button>
-        </div>
+      <div className="h-8 w-36 animate-pulse rounded bg-[var(--signal-border-default)]" />
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-16 animate-pulse rounded-lg bg-[var(--signal-border-default)]"
+          />
+        ))}
+      </div>
+    </div>
+  );
 
-        {showInvite && (
-          <form
-            onSubmit={handleInvite}
-            noValidate
-            className="mb-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 space-y-3"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Email</Label>
-                <Input
-                  value={inviteForm.email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  placeholder="developer@company.com"
-                  required
-                  type="email"
-                  className={cn(
-                    "mt-1 py-1.5",
-                    emailFormatError &&
-                      "border-red-300 focus:ring-red-500 focus:border-red-500",
-                  )}
-                  aria-invalid={!!fieldError || emailFormatError}
-                  aria-describedby={
-                    fieldError
-                      ? "email-error"
-                      : emailFormatError
-                        ? "email-format-error"
-                        : undefined
-                  }
-                />
-                {emailFormatError && (
-                  <p
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
-                    id="email-format-error"
-                  >
-                    Invalid email format
-                  </p>
-                )}
-                {fieldError && !emailFormatError && (
-                  <p
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
-                    id="email-error"
-                  >
-                    {fieldError}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label className="text-xs">Role</Label>
-                <div className="mt-1">
-                  <Select
-                    value={inviteForm.role}
-                    onValueChange={(val) =>
-                      setInviteForm({ ...inviteForm, role: val })
-                    }
-                    options={ROLE_OPTIONS}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" size="sm">
-                Send Invite
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowInvite(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
+  return (
+    <Suspense fallback={teamSkeleton}>
+      <div className="space-y-6">
+        <UpgradeNudge context="seats" />
+        <Card className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
+              Team Members
+            </h2>
+            <Button size="sm" onClick={() => setShowInvite(!showInvite)}>
+              Invite Member
+            </Button>
+          </div>
 
-        <div className="space-y-2">
-          {members.length === 0 ? (
-            <EmptyState
-              icon={UsersIcon}
-              title="No team members"
-              className="rounded-lg border border-dashed border-[var(--signal-border-emphasis)]"
-            />
-          ) : (
-            members.map((member) => (
-              <div key={member.id}>
-                <div
-                  className="flex flex-col gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
-                  onClick={() => toggleExpand(member.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--signal-bg-accent-muted)] text-xs font-bold text-[var(--signal-fg-accent)] shrink-0">
-                      {member.name?.charAt(0).toUpperCase() || "?"}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
-                        {member.name}
-                      </p>
-                      <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
-                        {member.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0 flex-wrap">
-                    <span className="text-xs text-[var(--signal-fg-tertiary)] hidden sm:inline">
-                      {formatRelativeTime(
-                        (member as unknown as Record<string, string>)
-                          .last_active_at ??
-                          (member as unknown as Record<string, string>)
-                            .last_login_at ??
-                          (member as unknown as Record<string, string>)
-                            .created_at,
-                      )}
-                    </span>
-                    {editingRole === member.id ? (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Select
-                          value={member.role}
-                          onValueChange={(val) =>
-                            handleRoleChange(member.id, val)
-                          }
-                          options={ROLE_OPTIONS}
-                          size="sm"
-                        />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingRole(member.id);
-                        }}
-                      >
-                        <Badge
-                          variant={roleBadgeVariant[member.role] || "default"}
-                          className="px-2.5 py-0.5 text-xs cursor-pointer"
-                        >
-                          {member.role}
-                        </Badge>
-                      </button>
+          {showInvite && (
+            <form
+              onSubmit={handleInvite}
+              noValidate
+              className="mb-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 space-y-3"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Email</Label>
+                  <Input
+                    value={inviteForm.email}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    placeholder="developer@company.com"
+                    required
+                    type="email"
+                    className={cn(
+                      "mt-1 py-1.5",
+                      emailFormatError &&
+                        "border-red-300 focus:ring-red-500 focus:border-red-500",
                     )}
-
-                    {member.email !== user?.email &&
-                      (removing === member.id ? (
-                        <div
-                          className="flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            variant="danger-ghost"
-                            size="sm"
-                            onClick={() => handleRemove(member.id)}
-                            className="h-auto px-2 py-1 text-xs"
-                          >
-                            Confirm
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setRemoving(null)}
-                            className="h-auto px-2 py-1 text-xs"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRemoving(member.id);
-                          }}
-                          className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
-                          title="Remove member"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      ))}
-
-                    <ChevronDownIcon
-                      className={cn(
-                        "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform duration-200",
-                        expandedPerms === member.id && "rotate-180",
-                      )}
+                    aria-invalid={!!fieldError || emailFormatError}
+                    aria-describedby={
+                      fieldError
+                        ? "email-error"
+                        : emailFormatError
+                          ? "email-format-error"
+                          : undefined
+                    }
+                  />
+                  {emailFormatError && (
+                    <p
+                      className="text-xs text-red-500 mt-1"
+                      role="alert"
+                      id="email-format-error"
+                    >
+                      Invalid email format
+                    </p>
+                  )}
+                  {fieldError && !emailFormatError && (
+                    <p
+                      className="text-xs text-red-500 mt-1"
+                      role="alert"
+                      id="email-error"
+                    >
+                      {fieldError}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs">Role</Label>
+                  <div className="mt-1">
+                    <Select
+                      value={inviteForm.role}
+                      onValueChange={(val) =>
+                        setInviteForm({ ...inviteForm, role: val })
+                      }
+                      options={ROLE_OPTIONS}
                     />
                   </div>
                 </div>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" size="sm">
+                  Send Invite
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowInvite(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
 
-                {expandedPerms === member.id && envs.length > 0 && (
-                  <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--signal-border-default)] bg-white p-3 animate-fade-in">
-                    <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] mb-2">
-                      Environment Permissions
-                    </p>
-                    <div className="space-y-1">
-                      {envs.map((env) => (
-                        <div
-                          key={env.id}
-                          className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-[var(--signal-bg-secondary)] sm:flex-row sm:items-center sm:justify-between"
+          <div className="space-y-2">
+            {total === 0 ? (
+              <EmptyState
+                icon={UsersIcon}
+                title="No team members"
+                className="rounded-lg border border-dashed border-[var(--signal-border-emphasis)]"
+              />
+            ) : (
+              paginatedMembers.map((member) => (
+                <div key={member.id}>
+                  <div
+                    className="flex flex-col gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass cursor-pointer sm:flex-row sm:items-center sm:justify-between"
+                    onClick={() => toggleExpand(member.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--signal-bg-accent-muted)] text-xs font-bold text-[var(--signal-fg-accent)] shrink-0">
+                        {member.name?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
+                          {member.name}
+                        </p>
+                        <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
+                          {member.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0 flex-wrap">
+                      <span className="text-xs text-[var(--signal-fg-tertiary)] hidden sm:inline">
+                        {formatRelativeTime(
+                          (member as unknown as Record<string, string>)
+                            .last_active_at ??
+                            (member as unknown as Record<string, string>)
+                              .last_login_at ??
+                            (member as unknown as Record<string, string>)
+                              .created_at,
+                        )}
+                      </span>
+                      {editingRole === member.id ? (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Select
+                            value={member.role}
+                            onValueChange={(val) =>
+                              handleRoleChange(member.id, val)
+                            }
+                            options={ROLE_OPTIONS}
+                            size="sm"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingRole(member.id);
+                          }}
                         >
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`h-2.5 w-2.5 rounded-full shrink-0 bg-[${env.color}]`}
-                            />
-                            <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
-                              {env.name}
-                            </span>
+                          <Badge
+                            variant={roleBadgeVariant[member.role] || "default"}
+                            className="px-2.5 py-0.5 text-xs cursor-pointer"
+                          >
+                            {member.role}
+                          </Badge>
+                        </button>
+                      )}
+
+                      {member.email !== user?.email &&
+                        (removing === member.id ? (
+                          <div
+                            className="flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="danger-ghost"
+                              size="sm"
+                              onClick={() => handleRemove(member.id)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRemoving(null)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              Cancel
+                            </Button>
                           </div>
-                          <div className="flex items-center gap-4 ml-4 sm:ml-0">
-                            <label className="flex items-center gap-1.5 text-xs text-[var(--signal-fg-secondary)]">
-                              <input
-                                type="checkbox"
-                                checked={getPermValue(
-                                  member.id,
-                                  env.id,
-                                  "can_toggle",
-                                )}
-                                onChange={() =>
-                                  handlePermToggle(
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRemoving(member.id);
+                            }}
+                            className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
+                            title="Remove member"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        ))}
+
+                      <ChevronDownIcon
+                        className={cn(
+                          "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform duration-200",
+                          expandedPerms === member.id && "rotate-180",
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {expandedPerms === member.id && envs.length > 0 && (
+                    <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--signal-border-default)] bg-white p-3 animate-fade-in">
+                      <p className="text-xs font-semibold text-[var(--signal-fg-secondary)] mb-2">
+                        Environment Permissions
+                      </p>
+                      <div className="space-y-1">
+                        {envs.map((env) => (
+                          <div
+                            key={env.id}
+                            className="flex flex-col gap-1 py-1.5 px-2 rounded-lg hover:bg-[var(--signal-bg-secondary)] sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-2.5 w-2.5 rounded-full shrink-0 bg-[${env.color}]`}
+                              />
+                              <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
+                                {env.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 ml-4 sm:ml-0">
+                              <label className="flex items-center gap-1.5 text-xs text-[var(--signal-fg-secondary)]">
+                                <input
+                                  type="checkbox"
+                                  checked={getPermValue(
                                     member.id,
                                     env.id,
                                     "can_toggle",
-                                  )
-                                }
-                                className="h-3.5 w-3.5 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
-                              />
-                              Toggle
-                            </label>
-                            <label className="flex items-center gap-1.5 text-xs text-[var(--signal-fg-secondary)]">
-                              <input
-                                type="checkbox"
-                                checked={getPermValue(
-                                  member.id,
-                                  env.id,
-                                  "can_edit_rules",
-                                )}
-                                onChange={() =>
-                                  handlePermToggle(
+                                  )}
+                                  onChange={() =>
+                                    handlePermToggle(
+                                      member.id,
+                                      env.id,
+                                      "can_toggle",
+                                    )
+                                  }
+                                  className="h-3.5 w-3.5 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
+                                />
+                                Toggle
+                              </label>
+                              <label className="flex items-center gap-1.5 text-xs text-[var(--signal-fg-secondary)]">
+                                <input
+                                  type="checkbox"
+                                  checked={getPermValue(
                                     member.id,
                                     env.id,
                                     "can_edit_rules",
-                                  )
-                                }
-                                className="h-3.5 w-3.5 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
-                              />
-                              Edit Rules
-                            </label>
+                                  )}
+                                  onChange={() =>
+                                    handlePermToggle(
+                                      member.id,
+                                      env.id,
+                                      "can_edit_rules",
+                                    )
+                                  }
+                                  className="h-3.5 w-3.5 rounded border-[var(--signal-border-emphasis)] text-[var(--signal-fg-accent)] focus:ring-[var(--signal-fg-accent)]"
+                                />
+                                Edit Rules
+                              </label>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
-        {pendingInvites.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-3 flex items-center gap-2">
-              <MailIcon className="h-4 w-4" />
-              Pending Invitations ({pendingInvites.length})
-            </h3>
-            <div className="space-y-2">
-              {pendingInvites.map((invite) => (
-                <div
-                  key={invite.id}
-                  className="flex flex-col gap-2 rounded-lg bg-amber-50/50 p-3 ring-1 ring-amber-100 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 shrink-0">
-                      {invite.email.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-[var(--signal-fg-primary)] truncate">
-                        {invite.email}
-                      </p>
-                      <p className="text-xs text-[var(--signal-fg-secondary)]">
-                        Invited {formatRelativeTime(invite.invited_at)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0">
-                    <Badge variant="default" className="px-2.5 py-0.5 text-xs">
-                      pending
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleResendInvite(invite)}
-                      className="h-auto px-2 py-1 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-100"
-                    >
-                      Resend
-                    </Button>
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
-        )}
-      </Card>
-    </div>
+
+          {total > 0 && <Pagination total={total} />}
+
+          {pendingInvites.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] mb-3 flex items-center gap-2">
+                <MailIcon className="h-4 w-4" />
+                Pending Invitations ({pendingInvites.length})
+              </h3>
+              <div className="space-y-2">
+                {pendingInvites.map((invite) => (
+                  <div
+                    key={invite.id}
+                    className="flex flex-col gap-2 rounded-lg bg-amber-50/50 p-3 ring-1 ring-amber-100 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 shrink-0">
+                        {invite.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-[var(--signal-fg-primary)] truncate">
+                          {invite.email}
+                        </p>
+                        <p className="text-xs text-[var(--signal-fg-secondary)]">
+                          Invited {formatRelativeTime(invite.invited_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-11 sm:ml-0 shrink-0">
+                      <Badge
+                        variant="default"
+                        className="px-2.5 py-0.5 text-xs"
+                      >
+                        pending
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleResendInvite(invite)}
+                        className="h-auto px-2 py-1 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                      >
+                        Resend
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    </Suspense>
   );
 }

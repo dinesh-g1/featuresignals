@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
 import { useJanitor } from "@/hooks/use-janitor";
 import { useJanitorStats } from "@/hooks/use-janitor-stats";
@@ -129,6 +131,11 @@ export default function JanitorPage() {
     [token, currentProjectId],
   );
 
+  // Pagination from URL params
+  const searchParams = useSearchParams();
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offsetVal = parseInt(searchParams.get("offset") || "0");
+
   // Compute filter counts
   const safeCount = flags.filter((f) => f.safe_to_remove).length;
   const openPRCount = flags.filter((f) => f.pr_status === "open").length;
@@ -138,377 +145,420 @@ export default function JanitorPage() {
   ).length;
 
   // Determine which filters to apply locally
-  const filteredFlags = flags.filter((f) => {
-    if (filter === "safe") return f.safe_to_remove;
-    if (filter === "prs") return f.pr_status === "open";
-    if (filter === "suggestions") return !f.dismissed && f.safe_to_remove;
-    return true;
-  });
+  const filteredFlags = useMemo(() => {
+    const filtered = flags.filter((f) => {
+      if (filter === "safe") return f.safe_to_remove;
+      if (filter === "prs") return f.pr_status === "open";
+      if (filter === "suggestions") return !f.dismissed && f.safe_to_remove;
+      return true;
+    });
+    return filtered;
+  }, [flags, filter]);
+
+  const total = filteredFlags.length;
+
+  // Client-side pagination slice
+  const paginatedFlags = useMemo(() => {
+    if (offsetVal >= filteredFlags.length) return [];
+    const end = offsetVal + limit;
+    return filteredFlags.slice(
+      offsetVal,
+      end > filteredFlags.length ? filteredFlags.length : end,
+    );
+  }, [filteredFlags, limit, offsetVal]);
 
   // Loading state
   const isLoading = flagsLoading || statsLoading || reposLoading;
 
-  return (
+  // ── Loading Skeleton (for Suspense fallback) ──
+
+  const janitorSkeleton = (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <PageHeader
-        title={
-          <div className="flex items-center gap-2">
-            <JanitorIcon className="h-6 w-6 text-[var(--signal-fg-accent)]" />
-            <span>AI Janitor</span>
-          </div>
-        }
-        description="Automatically detect and clean up stale feature flags before they become tech debt. The Janitor scans your codebase, identifies flags safe to remove, and generates pull requests — autonomously."
-      >
-        <div className="flex items-center gap-2">
-          <DocsLink href="/docs/advanced/ai-janitor" label="📚 Docs" />
-          <Link
-            href="/settings/integrations"
-            className="inline-flex items-center gap-1 rounded-lg border border-[var(--signal-border-default)] px-3 py-1.5 text-xs font-semibold text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
-          >
-            ⚙️ Settings
-          </Link>
-          <Button
-            variant="default"
-            onClick={handleScan}
-            loading={scanning}
-            disabled={scanning || repos.length === 0}
-          >
-            <RefreshIcon
-              className={cn("h-4 w-4", scanning && "animate-spin")}
-            />
-            Scan Now
-          </Button>
-        </div>
-      </PageHeader>
-
-      {/* Stats Grid */}
-      <StatsCards
-        totalFlags={stats?.total_flags ?? 0}
-        staleFlags={stats?.stale_flags ?? 0}
-        safeToRemove={stats?.safe_to_remove ?? 0}
-        prsGenerated={stats?.merged_prs ?? 0}
-      />
-
-      {/* Scan Progress Overlay */}
-      {activeScanId && scanProgress.phase !== "idle" && (
-        <ScanProgressOverlay
-          state={scanProgress}
-          onClose={() => {
-            setActiveScanId(null);
-            scanProgress.reset();
-          }}
-          onCancel={() => {
-            setActiveScanId(null);
-            scanProgress.reset();
-          }}
-        />
-      )}
-
-      {/* How it Works */}
-      <Card>
-        <CardContent className="p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
-                <SearchIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
-                  1. Scan
-                </h4>
-                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
-                  The Janitor scans your codebase for flags that have been
-                  permanently serving 100% &quot;True&quot; or 0%
-                  &quot;False&quot; across all environments.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
-                <BrainIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
-                  2. AI Analyze
-                </h4>
-                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
-                  DeepSeek AI analyzes multi-file references, validates safe
-                  removal paths, and provides confidence scores for each flag.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
-                <GitPullRequestIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
-                  3. Generate PR
-                </h4>
-                <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
-                  With one click, the Janitor generates a pull request that
-                  removes the flag condition block from your code, preserving
-                  the active branch.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Setup Wizard for first-time users */}
-      {showWizard && repos.length === 0 && (
-        <SetupWizard
-          onRepoConnected={handleRepoConnected}
-          onCancel={() => setShowWizard(false)}
-        />
-      )}
-
-      {/* LLM Status */}
-      <div className="flex items-center justify-between">
-        <LLMStatusBadge
-          provider="DeepSeek"
-          confidence={0.95}
-          status="available"
-        />
-        <DocsLink
-          href="/docs/advanced/ai-janitor-llm-integration"
-          label="How AI analysis works →"
-        />
+      <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
+      <div className="h-24 animate-pulse rounded-xl bg-[var(--signal-border-default)]" />
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-16 animate-pulse rounded-lg bg-[var(--signal-border-default)]"
+          />
+        ))}
       </div>
+    </div>
+  );
 
-      {/* Status banner */}
-      {!showWizard && (
-        <div
-          className={cn(
-            "rounded-xl border p-4 flex items-center justify-between",
-            stats?.stale_flags && stats.stale_flags > 0
-              ? "border-amber-200 bg-amber-50"
-              : "border-[var(--signal-border-success-muted)] bg-emerald-50",
-          )}
+  return (
+    <Suspense fallback={janitorSkeleton}>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <PageHeader
+          title={
+            <div className="flex items-center gap-2">
+              <JanitorIcon className="h-6 w-6 text-[var(--signal-fg-accent)]" />
+              <span>AI Janitor</span>
+            </div>
+          }
+          description="Automatically detect and sweep stale feature flags before they become tech debt. The Janitor surveys your codebase, identifies flags safe to remove, and generates pull requests — autonomously."
         >
           <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "flex h-2.5 w-2.5",
-                stats?.stale_flags && stats.stale_flags > 0
-                  ? "text-amber-500"
-                  : "text-emerald-500",
-              )}
+            <DocsLink href="/docs/advanced/ai-janitor" label="📚 Docs" />
+            <Link
+              href="/settings/integrations"
+              className="inline-flex items-center gap-1 rounded-lg border border-[var(--signal-border-default)] px-3 py-1.5 text-xs font-semibold text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
             >
-              <span
-                className={cn(
-                  "absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full opacity-75",
-                  stats?.stale_flags && stats.stale_flags > 0
-                    ? "bg-amber-400"
-                    : "bg-emerald-400",
-                )}
+              ⚙️ Settings
+            </Link>
+            <Button
+              variant="default"
+              onClick={handleScan}
+              loading={scanning}
+              disabled={scanning || repos.length === 0}
+            >
+              <RefreshIcon
+                className={cn("h-4 w-4", scanning && "animate-spin")}
               />
-              <span
-                className={cn(
-                  "relative inline-flex h-2.5 w-2.5 rounded-full",
-                  stats?.stale_flags && stats.stale_flags > 0
-                    ? "bg-amber-500"
-                    : "bg-emerald-500",
-                )}
-              />
-            </span>
-            <span
-              className={cn(
-                "text-sm font-medium",
-                stats?.stale_flags && stats.stale_flags > 0
-                  ? "text-amber-800"
-                  : "text-[var(--signal-fg-success)]",
-              )}
-            >
-              {stats?.stale_flags && stats.stale_flags > 0
-                ? `${stats.stale_flags} stale flag${stats.stale_flags > 1 ? "s" : ""} detected`
-                : "All clean — no stale flags detected"}
-            </span>
-            {stats?.last_scan && (
-              <span className="text-xs text-[var(--signal-fg-tertiary)] ml-2">
-                Last scan: {new Date(stats.last_scan).toLocaleDateString()}
-              </span>
-            )}
+              Survey Now
+            </Button>
           </div>
-          <DocsLink
-            href="/docs/advanced/ai-janitor-quickstart"
-            label="Quickstart →"
-          />
-        </div>
-      )}
+        </PageHeader>
 
-      {/* Error state */}
-      {flagsError && (
-        <div className="rounded-xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-4 flex items-center gap-3">
-          <AlertIcon className="h-5 w-5 text-red-500 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-red-800">
-              Failed to load stale flags
-            </p>
-            <p className="text-xs text-red-600 mt-0.5">{flagsError}</p>
-          </div>
-          <Button size="sm" variant="default" onClick={refreshFlags}>
-            Retry
-          </Button>
-        </div>
-      )}
-
-      {/* Filter Tabs */}
-      {!showWizard && !flagsError && (
-        <div className="flex items-center gap-2 border-b border-[var(--signal-border-default)] pb-2">
-          {[
-            { value: "all" as const, label: "All Flags", count: flags.length },
-            {
-              value: "suggestions" as const,
-              label: "Suggestions",
-              count: suggestionCount,
-            },
-            {
-              value: "safe" as const,
-              label: "Safe to Remove",
-              count: safeCount,
-            },
-            { value: "prs" as const, label: "Open PRs", count: openPRCount },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors -mb-2.25",
-                filter === tab.value
-                  ? "border-b-2 border-[var(--signal-fg-accent)] text-[var(--signal-fg-accent)]"
-                  : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
-              )}
-            >
-              {tab.label}
-              <span
-                className={cn(
-                  "inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                  filter === tab.value
-                    ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
-                    : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
-                )}
-              >
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Augmentation-Mode Suggestions View */}
-      {!showWizard && !flagsError && filter === "suggestions" && !isLoading && (
-        <JanitorSuggestions
-          flags={flags}
-          onDismiss={handleDismiss}
-          onKeep={(flagKey) => {
-            // "Keep this flag" — dismisses the suggestion without archiving
-            dismissFlag(flagKey, "kept_by_user");
-          }}
-          onArchive={(flagKey) => {
-            // Accept the suggestion — generate PR for removal
-            handleGeneratePR(flagKey);
-          }}
+        {/* Stats Grid */}
+        <StatsCards
+          totalFlags={stats?.total_flags ?? 0}
+          staleFlags={stats?.stale_flags ?? 0}
+          safeToRemove={stats?.safe_to_remove ?? 0}
+          prsGenerated={stats?.merged_prs ?? 0}
         />
-      )}
 
-      {/* Stale Flags List (non-suggestions tabs) */}
-      {!showWizard && !flagsError && filter !== "suggestions" && (
-        <div className="space-y-3">
-          {isLoading ? (
-            // Loading skeleton
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="animate-pulse rounded-xl border border-[var(--signal-border-default)] p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)]" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-48 rounded bg-[var(--signal-bg-secondary)]" />
-                      <div className="h-3 w-32 rounded bg-[var(--signal-bg-secondary)]" />
-                    </div>
-                  </div>
+        {/* Scan Progress Overlay */}
+        {activeScanId && scanProgress.phase !== "idle" && (
+          <ScanProgressOverlay
+            state={scanProgress}
+            onClose={() => {
+              setActiveScanId(null);
+              scanProgress.reset();
+            }}
+            onCancel={() => {
+              setActiveScanId(null);
+              scanProgress.reset();
+            }}
+          />
+        )}
+
+        {/* How it Works */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                  <SearchIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
                 </div>
-              ))}
-            </div>
-          ) : filteredFlags.length === 0 ? (
-            <div className="py-12">
-              <EmptyState
-                icon={CheckCircleFillIcon}
-                emoji="✨"
-                title="No stale flags detected"
-                description={
-                  filter === "safe"
-                    ? "No flags are currently safe to remove."
-                    : filter === "prs"
-                      ? "No open PRs for flag cleanup."
-                      : "All your feature flags are healthy. The Janitor will notify you when flags are ready for cleanup."
-                }
-              >
-                {filter !== "all" && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => setFilter("all")}
-                  >
-                    View All
-                  </Button>
-                )}
-              </EmptyState>
-            </div>
-          ) : (
-            filteredFlags.map((flag) => (
-              <StaleFlagRow
-                key={flag.key}
-                flag={flag}
-                onGeneratePR={handleGeneratePR}
-                onDismiss={handleDismiss}
-              />
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Info card */}
-      <Card>
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3">
-            <JanitorIcon className="h-5 w-5 text-[var(--signal-fg-accent)] shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-bold text-[var(--signal-fg-primary)] mb-1">
-                About the AI Janitor
-              </h4>
-              <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed">
-                The AI Janitor analyzes your codebase at the repository level
-                using Git provider integration. It safely removes flag condition
-                blocks while preserving the active branch. The result is a
-                clean, reviewable PR that eliminates tech debt before it
-                accumulates. Powered by DeepSeek AI for intelligent multi-file
-                code understanding. Supports JavaScript, TypeScript, Go, Python,
-                Java, and Ruby.
-              </p>
-              <div className="flex items-center gap-3 mt-3">
-                <DocsLink
-                  href="/docs/advanced/ai-janitor-configuration"
-                  label="Configuration →"
-                />
-                <DocsLink
-                  href="/docs/advanced/ai-janitor-pr-workflow"
-                  label="PR Workflow →"
-                />
-                <DocsLink
-                  href="/docs/advanced/ai-janitor-troubleshooting"
-                  label="Troubleshooting →"
-                />
+                <div>
+                  <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
+                    1. Survey
+                  </h4>
+                  <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
+                    The Janitor surveys your codebase for flags that have been
+                    permanently serving 100% &quot;True&quot; or 0%
+                    &quot;False&quot; across all environments.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                  <BrainIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
+                    2. AI Analyze
+                  </h4>
+                  <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
+                    DeepSeek AI analyzes multi-file references, validates safe
+                    removal paths, and provides confidence scores for each flag.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
+                  <GitPullRequestIcon className="h-5 w-5 text-[var(--signal-fg-accent)]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[var(--signal-fg-primary)]">
+                    3. Generate PR
+                  </h4>
+                  <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5 leading-relaxed">
+                    With one click, the Janitor generates a pull request that
+                    removes the flag condition block from your code, preserving
+                    the active branch.
+                  </p>
+                </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Setup Wizard for first-time users */}
+        {showWizard && repos.length === 0 && (
+          <SetupWizard
+            onRepoConnected={handleRepoConnected}
+            onCancel={() => setShowWizard(false)}
+          />
+        )}
+
+        {/* LLM Status */}
+        <div className="flex items-center justify-between">
+          <LLMStatusBadge
+            provider="DeepSeek"
+            confidence={0.95}
+            status="available"
+          />
+          <DocsLink
+            href="/docs/advanced/ai-janitor-llm-integration"
+            label="How AI analysis works →"
+          />
+        </div>
+
+        {/* Status banner */}
+        {!showWizard && (
+          <div
+            className={cn(
+              "rounded-xl border p-4 flex items-center justify-between",
+              stats?.stale_flags && stats.stale_flags > 0
+                ? "border-amber-200 bg-amber-50"
+                : "border-[var(--signal-border-success-muted)] bg-emerald-50",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "flex h-2.5 w-2.5",
+                  stats?.stale_flags && stats.stale_flags > 0
+                    ? "text-amber-500"
+                    : "text-emerald-500",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full opacity-75",
+                    stats?.stale_flags && stats.stale_flags > 0
+                      ? "bg-amber-400"
+                      : "bg-emerald-400",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "relative inline-flex h-2.5 w-2.5 rounded-full",
+                    stats?.stale_flags && stats.stale_flags > 0
+                      ? "bg-amber-500"
+                      : "bg-emerald-500",
+                  )}
+                />
+              </span>
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  stats?.stale_flags && stats.stale_flags > 0
+                    ? "text-amber-800"
+                    : "text-[var(--signal-fg-success)]",
+                )}
+              >
+                {stats?.stale_flags && stats.stale_flags > 0
+                  ? `${stats.stale_flags} stale flag${stats.stale_flags > 1 ? "s" : ""} detected`
+                  : "All clean — no stale flags detected"}
+              </span>
+              {stats?.last_scan && (
+                <span className="text-xs text-[var(--signal-fg-tertiary)] ml-2">
+                  Last survey: {new Date(stats.last_scan).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            <DocsLink
+              href="/docs/advanced/ai-janitor-quickstart"
+              label="Quickstart →"
+            />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+
+        {/* Error state */}
+        {flagsError && (
+          <div className="rounded-xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-4 flex items-center gap-3">
+            <AlertIcon className="h-5 w-5 text-red-500 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">
+                Failed to load stale flags
+              </p>
+              <p className="text-xs text-red-600 mt-0.5">{flagsError}</p>
+            </div>
+            <Button size="sm" variant="default" onClick={refreshFlags}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {/* Filter Tabs */}
+        {!showWizard && !flagsError && (
+          <div className="flex items-center gap-2 border-b border-[var(--signal-border-default)] pb-2">
+            {[
+              {
+                value: "all" as const,
+                label: "All Flags",
+                count: flags.length,
+              },
+              {
+                value: "suggestions" as const,
+                label: "Suggestions",
+                count: suggestionCount,
+              },
+              {
+                value: "safe" as const,
+                label: "Safe to Remove",
+                count: safeCount,
+              },
+              { value: "prs" as const, label: "Open PRs", count: openPRCount },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setFilter(tab.value)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors -mb-2.25",
+                  filter === tab.value
+                    ? "border-b-2 border-[var(--signal-fg-accent)] text-[var(--signal-fg-accent)]"
+                    : "text-[var(--signal-fg-secondary)] hover:text-[var(--signal-fg-primary)]",
+                )}
+              >
+                {tab.label}
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+                    filter === tab.value
+                      ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+                      : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
+                  )}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Augmentation-Mode Suggestions View */}
+        {!showWizard &&
+          !flagsError &&
+          filter === "suggestions" &&
+          !isLoading && (
+            <JanitorSuggestions
+              flags={flags}
+              onDismiss={handleDismiss}
+              onKeep={(flagKey) => {
+                // "Keep this flag" — dismisses the suggestion without archiving
+                dismissFlag(flagKey, "kept_by_user");
+              }}
+              onArchive={(flagKey) => {
+                // Accept the suggestion — generate PR for removal
+                handleGeneratePR(flagKey);
+              }}
+            />
+          )}
+
+        {/* Stale Flags List (non-suggestions tabs) */}
+        {!showWizard && !flagsError && filter !== "suggestions" && (
+          <div className="space-y-3">
+            {isLoading ? (
+              // Loading skeleton
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse rounded-xl border border-[var(--signal-border-default)] p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)]" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-48 rounded bg-[var(--signal-bg-secondary)]" />
+                        <div className="h-3 w-32 rounded bg-[var(--signal-bg-secondary)]" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredFlags.length === 0 ? (
+              <div className="py-12">
+                <EmptyState
+                  icon={CheckCircleFillIcon}
+                  emoji="✨"
+                  title="No stale flags detected"
+                  description={
+                    filter === "safe"
+                      ? "No flags are currently safe to remove."
+                      : filter === "prs"
+                        ? "No open PRs for flag sweep."
+                        : "All your feature flags are healthy. The Janitor will notify you when flags are ready for sweep."
+                  }
+                >
+                  {filter !== "all" && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setFilter("all")}
+                    >
+                      View All
+                    </Button>
+                  )}
+                </EmptyState>
+              </div>
+            ) : (
+              paginatedFlags.map((flag) => (
+                <StaleFlagRow
+                  key={flag.key}
+                  flag={flag}
+                  onGeneratePR={handleGeneratePR}
+                  onDismiss={handleDismiss}
+                />
+              ))
+            )}
+          </div>
+        )}
+
+        {total > 0 && <Pagination total={total} />}
+
+        {/* Info card */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-start gap-3">
+              <JanitorIcon className="h-5 w-5 text-[var(--signal-fg-accent)] shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-[var(--signal-fg-primary)] mb-1">
+                  About the AI Janitor
+                </h4>
+                <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed">
+                  The AI Janitor analyzes your codebase at the repository level
+                  using Git provider integration. It safely removes flag
+                  condition blocks while preserving the active branch. The
+                  result is a clean, reviewable PR that eliminates tech debt
+                  before it accumulates. Powered by DeepSeek AI for intelligent
+                  multi-file code understanding. Supports JavaScript,
+                  TypeScript, Go, Python, Java, and Ruby.
+                </p>
+                <div className="flex items-center gap-3 mt-3">
+                  <DocsLink
+                    href="/docs/advanced/ai-janitor-configuration"
+                    label="Configuration →"
+                  />
+                  <DocsLink
+                    href="/docs/advanced/ai-janitor-pr-workflow"
+                    label="PR Workflow →"
+                  />
+                  <DocsLink
+                    href="/docs/advanced/ai-janitor-troubleshooting"
+                    label="Troubleshooting →"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Suspense>
   );
 }

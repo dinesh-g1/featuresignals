@@ -58,11 +58,11 @@ func (h *UserPrivacyHandler) ExportMyData(w http.ResponseWriter, r *http.Request
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "user not found")
+			httputil.Error(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 			return
 		}
 		logger.Error("failed to get user for data export", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -83,7 +83,7 @@ func (h *UserPrivacyHandler) ExportMyData(w http.ResponseWriter, r *http.Request
 
 	orgID := middleware.GetOrgID(r.Context())
 	if orgID != "" {
-		members, _ := h.store.ListOrgMembers(r.Context(), orgID)
+		members, _ := h.store.ListOrgMembers(r.Context(), orgID, 0, 0)
 		for _, m := range members {
 			if m.UserID == userID {
 				orgName := orgID
@@ -121,16 +121,16 @@ func (h *UserPrivacyHandler) DeleteMyAccount(w http.ResponseWriter, r *http.Requ
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "user not found")
+			httputil.Error(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 			return
 		}
 		logger.Error("failed to get user for deletion", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	if orgID != "" {
-		members, _ := h.store.ListOrgMembers(r.Context(), orgID)
+		members, _ := h.store.ListOrgMembers(r.Context(), orgID, 0, 0)
 		ownerCount := 0
 		isOwner := false
 		for _, m := range members {
@@ -150,7 +150,7 @@ func (h *UserPrivacyHandler) DeleteMyAccount(w http.ResponseWriter, r *http.Requ
 
 	if err := h.store.SoftDeleteUser(r.Context(), userID); err != nil {
 		logger.Error("failed to soft-delete user", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

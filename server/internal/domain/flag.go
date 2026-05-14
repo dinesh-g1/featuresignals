@@ -72,6 +72,53 @@ type Flag struct {
 	UpdatedAt            time.Time      `json:"updated_at" db:"updated_at"`
 }
 
+// SetDefaults applies safe defaults for a Flag when creating via agent API.
+// Non-zero fields are left untouched; only missing values are populated.
+func (f *Flag) SetDefaults() {
+	if f.FlagType == "" {
+		f.FlagType = FlagTypeBoolean
+	}
+	if f.DefaultValue == nil {
+		f.DefaultValue = json.RawMessage("false")
+	}
+	if f.Status == "" {
+		f.Status = StatusActive
+	}
+	if f.Tags == nil {
+		f.Tags = []string{}
+	}
+}
+
+// ToAgentDetailResponse converts a Flag into the agent-readable detail response.
+func (f *Flag) ToAgentDetailResponse() AgentFlagDetail {
+	return AgentFlagDetail{
+		Key:          f.Key,
+		Name:         f.Name,
+		Description:  f.Description,
+		Type:         string(f.FlagType),
+		DefaultValue: f.DefaultValue,
+		Status:       string(f.Status),
+		Category:     string(f.Category),
+		Tags:         f.Tags,
+		CreatedAt:    f.CreatedAt,
+		UpdatedAt:    f.UpdatedAt,
+	}
+}
+
+// AgentFlagDetail is the agent-readable flag detail response.
+type AgentFlagDetail struct {
+	Key          string          `json:"key"`
+	Name         string          `json:"name"`
+	Description  string          `json:"description"`
+	Type         string          `json:"type"`
+	DefaultValue json.RawMessage `json:"default_value"`
+	Status       string          `json:"status"`
+	Category     string          `json:"category"`
+	Tags         []string        `json:"tags,omitempty"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+}
+
 // FlagState holds per-environment configuration for a Flag. Each environment
 // (dev, staging, prod) has its own enable/disable toggle, targeting rules,
 // and percentage rollout.

@@ -92,7 +92,7 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 	org, err := h.store.GetOrganization(r.Context(), orgID)
 	if err != nil {
 		logger.Error("failed to get organization", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -101,10 +101,10 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 		Organization: org,
 	}
 
-	projects, err := h.store.ListProjects(r.Context(), orgID)
+	projects, err := h.store.ListProjects(r.Context(), orgID, 10000, 0)
 	if err != nil {
 		logger.Error("failed to list projects for export", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -115,7 +115,7 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 			Name: p.Name,
 		}
 
-		envs, _ := h.store.ListEnvironments(r.Context(), p.ID)
+		envs, _ := h.store.ListEnvironments(r.Context(), p.ID, 10000, 0)
 		pe.Environments = make([]envExportEntry, 0, len(envs))
 		for _, e := range envs {
 			pe.Environments = append(pe.Environments, envExportEntry{
@@ -123,7 +123,7 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		flags, _ := h.store.ListFlags(r.Context(), p.ID)
+		flags, _ := h.store.ListFlags(r.Context(), p.ID, 10000, 0)
 		pe.Flags = make([]flagExportEntry, 0, len(flags))
 		for _, f := range flags {
 			pe.Flags = append(pe.Flags, flagExportEntry{
@@ -132,7 +132,7 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		segs, _ := h.store.ListSegments(r.Context(), p.ID)
+		segs, _ := h.store.ListSegments(r.Context(), p.ID, 10000, 0)
 		pe.Segments = make([]segmentExportEntry, 0, len(segs))
 		for _, s := range segs {
 			pe.Segments = append(pe.Segments, segmentExportEntry{
@@ -143,7 +143,7 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 		export.Projects = append(export.Projects, pe)
 	}
 
-	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
+	members, _ := h.store.ListOrgMembers(r.Context(), orgID, 10000, 0)
 	export.Members = make([]memberExportEntry, 0, len(members))
 	for _, m := range members {
 		export.Members = append(export.Members, memberExportEntry{
@@ -151,7 +151,7 @@ func (h *DataExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	webhooks, _ := h.store.ListWebhooks(r.Context(), orgID)
+	webhooks, _ := h.store.ListWebhooks(r.Context(), orgID, 10000, 0)
 	export.Webhooks = make([]webhookExportEntry, 0, len(webhooks))
 	for _, wh := range webhooks {
 		export.Webhooks = append(export.Webhooks, webhookExportEntry{

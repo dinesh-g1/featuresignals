@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
@@ -179,13 +178,13 @@ func (h *MigrationHandler) ListProviders(w http.ResponseWriter, r *http.Request)
 // Connect validates a connection to a source provider.
 func (h *MigrationHandler) Connect(w http.ResponseWriter, r *http.Request) {
 	var req ConnectRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Provider == "" {
-		httputil.Error(w, http.StatusBadRequest, "provider is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the provider field is missing. Specify the migration source provider.")
 		return
 	}
 
@@ -220,13 +219,13 @@ func (h *MigrationHandler) Analyze(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
 	var req AnalyzeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Provider == "" {
-		httputil.Error(w, http.StatusBadRequest, "provider is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the provider field is missing. Specify the migration source provider.")
 		return
 	}
 
@@ -296,17 +295,17 @@ func (h *MigrationHandler) Execute(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
 	var req ExecuteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Provider == "" {
-		httputil.Error(w, http.StatusBadRequest, "provider is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the provider field is missing. Specify the migration source provider.")
 		return
 	}
 	if req.TargetProjectID == "" {
-		httputil.Error(w, http.StatusBadRequest, "target_project_id is required")
+		httputil.Error(w, http.StatusBadRequest, "Import blocked — the target_project_id field is missing. Specify the destination project.")
 		return
 	}
 

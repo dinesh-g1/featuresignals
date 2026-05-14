@@ -52,11 +52,11 @@ func (s *Store) GetIntegration(ctx context.Context, orgID, id string) (*domain.I
 }
 
 // ListIntegrations returns all integrations for an org.
-func (s *Store) ListIntegrations(ctx context.Context, orgID string) ([]domain.Integration, error) {
+func (s *Store) ListIntegrations(ctx context.Context, orgID string, limit, offset int) ([]domain.Integration, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, org_id, provider, config, enabled_events, enabled, created_at, updated_at
-		FROM integrations WHERE org_id = $1 ORDER BY created_at DESC
-	`, orgID)
+		FROM integrations WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+	`, orgID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list integrations: %w", err)
 	}
@@ -75,6 +75,14 @@ func (s *Store) ListIntegrations(ctx context.Context, orgID string) ([]domain.In
 		integrations = append(integrations, i)
 	}
 	return integrations, rows.Err()
+}
+
+// CountIntegrations returns the total number of integrations for an org.
+func (s *Store) CountIntegrations(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM integrations WHERE org_id = $1`, orgID).Scan(&count)
+	return count, err
 }
 
 // UpdateIntegration updates an integration's configuration.

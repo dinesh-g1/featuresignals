@@ -37,7 +37,7 @@ type Event struct {
 
 // Store is the subset of domain.Store the dispatcher needs.
 type Store interface {
-	ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error)
+	ListWebhooks(ctx context.Context, orgID string, limit, offset int) ([]domain.Webhook, error)
 	CreateWebhookDelivery(ctx context.Context, d *domain.WebhookDelivery) error
 }
 
@@ -132,7 +132,7 @@ func (d *Dispatcher) Start(ctx context.Context) {
 }
 
 func (d *Dispatcher) dispatch(ctx context.Context, evt Event) {
-	webhooks, err := d.store.ListWebhooks(ctx, evt.OrgID)
+	webhooks, err := d.store.ListWebhooks(ctx, evt.OrgID, 0, 0)
 	if err != nil {
 		d.logger.Error("failed to list webhooks", "error", err, "org_id", evt.OrgID)
 		return

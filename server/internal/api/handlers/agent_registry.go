@@ -41,10 +41,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
-	"github.com/google/uuid"
 	"github.com/featuresignals/server/internal/observability"
 )
 
@@ -113,58 +113,23 @@ func (h *AgentRegistryHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateAgentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
-	if req.ID == "" {
-		req.ID = "agt_" + uuid.NewString()
-	}
-	if req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "name is required")
+	agent := buildAgentFromRequest(&req, orgID)
+	if err := agent.Validate(); err != nil {
+		httputil.Error(w, http.StatusBadRequest, err.Error())
 		return
-	}
-	if req.Type == "" {
-		httputil.Error(w, http.StatusBadRequest, "type is required")
-		return
-	}
-
-	brainType := domain.BrainType(req.BrainType)
-	if brainType == "" {
-		brainType = domain.BrainTypeLLM
-	}
-
-	version := req.Version
-	if version == "" {
-		version = "1.0.0"
-	}
-
-	now := time.Now().UTC()
-	agent := &domain.Agent{
-		ID:           req.ID,
-		OrgID:        orgID,
-		Name:         req.Name,
-		Type:         req.Type,
-		Version:      version,
-		BrainType:    brainType,
-		Status:       domain.AgentStatusActive,
-		Scopes:       req.Scopes,
-		RateLimits:   req.RateLimits,
-		CostProfile:  req.CostProfile,
-		RegisteredAt: now,
-	}
-
-	if agent.Scopes == nil {
-		agent.Scopes = []string{}
 	}
 
 	if err := h.store.CreateAgent(r.Context(), agent); err != nil {
 		if errors.Is(err, domain.ErrConflict) {
-			httputil.Error(w, http.StatusConflict, "an agent with this ID already exists")
+			httputil.Error(w, http.StatusConflict, "Creation blocked — an agent with this ID already exists. Use a unique ID or update the existing agent.")
 			return
 		}
 		logger.Error("failed to create agent", "error", err, "agent_id", req.ID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to create agent")
+		httputil.Error(w, http.StatusInternalServerError, "Agent creation failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -175,32 +140,62 @@ func (h *AgentRegistryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	httputil.JSON(w, http.StatusCreated, agent)
 }
 
+// buildAgentFromRequest constructs a domain.Agent from a request, applying defaults.
+func buildAgentFromRequest(req *CreateAgentRequest, orgID string) *domain.Agent {
+	agent := &domain.Agent{
+		ID:          req.ID,
+		OrgID:       orgID,
+		Name:        req.Name,
+		Type:        req.Type,
+		Version:     req.Version,
+		BrainType:   domain.BrainType(req.BrainType),
+		Scopes:      req.Scopes,
+		RateLimits:  req.RateLimits,
+		CostProfile: req.CostProfile,
+	}
+	agent.GenerateID()
+	if agent.BrainType == "" {
+		agent.BrainType = domain.BrainTypeLLM
+	}
+	if agent.Version == "" {
+		agent.Version = "1.0.0"
+	}
+	if agent.Status == "" {
+		agent.Status = domain.AgentStatusActive
+	}
+	if agent.Scopes == nil {
+		agent.Scopes = []string{}
+	}
+	return agent
+}
+
 // List handles GET /v1/agents — list all agents for the org.
 func (h *AgentRegistryHandler) List(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "agent_registry_list")
 	orgID := middleware.GetOrgID(r.Context())
+	p := dto.ParsePagination(r)
 
 	agentType := r.URL.Query().Get("type")
 
 	var agents []domain.Agent
+	var total int
 	var err error
 
 	if agentType != "" {
-		agents, err = h.store.ListAgentsByType(r.Context(), orgID, agentType)
+		agents, err = h.store.ListAgentsByType(r.Context(), orgID, agentType, p.Limit, p.Offset)
+		total, _ = h.store.CountAgentsByType(r.Context(), orgID, agentType)
 	} else {
-		agents, err = h.store.ListAgents(r.Context(), orgID)
+		agents, err = h.store.ListAgents(r.Context(), orgID, p.Limit, p.Offset)
+		total, _ = h.store.CountAgents(r.Context(), orgID)
 	}
 
 	if err != nil {
 		logger.Error("failed to list agents", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list agents")
+		httputil.Error(w, http.StatusInternalServerError, "Agent listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, ListAgentsResponse{
-		Data:  agents,
-		Total: len(agents),
-	})
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(agents, total, p.Limit, p.Offset))
 }
 
 // Get handles GET /v1/agents/{agentID} — get a single agent.
@@ -212,11 +207,11 @@ func (h *AgentRegistryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	agent, err := h.store.GetAgent(r.Context(), orgID, agentID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "agent not found")
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
 			return
 		}
 		logger.Error("failed to get agent", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get agent")
+		httputil.Error(w, http.StatusInternalServerError, "Agent retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -231,53 +226,39 @@ func (h *AgentRegistryHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateAgentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	agent, err := h.store.GetAgent(r.Context(), orgID, agentID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "agent not found")
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
 			return
 		}
 		logger.Error("failed to get agent for update", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update agent")
+		httputil.Error(w, http.StatusInternalServerError, "Agent update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
-	if req.Name != nil {
-		agent.Name = *req.Name
-	}
-	if req.Type != nil {
-		agent.Type = *req.Type
-	}
-	if req.Version != nil {
-		agent.Version = *req.Version
-	}
-	if req.BrainType != nil {
-		agent.BrainType = domain.BrainType(*req.BrainType)
-	}
-	if req.Status != nil {
-		agent.Status = domain.AgentStatus(*req.Status)
-	}
-	if req.Scopes != nil {
-		agent.Scopes = *req.Scopes
-	}
-	if req.RateLimits != nil {
-		agent.RateLimits = *req.RateLimits
-	}
-	if req.CostProfile != nil {
-		agent.CostProfile = *req.CostProfile
-	}
+	agent.MergeUpdate(&domain.AgentUpdate{
+		Name:        req.Name,
+		Type:        req.Type,
+		Version:     req.Version,
+		BrainType:   req.BrainType,
+		Status:      req.Status,
+		Scopes:      req.Scopes,
+		RateLimits:  req.RateLimits,
+		CostProfile: req.CostProfile,
+	})
 
 	if err := h.store.UpdateAgent(r.Context(), agent); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "agent not found")
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
 			return
 		}
 		logger.Error("failed to update agent", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update agent")
+		httputil.Error(w, http.StatusInternalServerError, "Agent update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -293,11 +274,11 @@ func (h *AgentRegistryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.DeleteAgent(r.Context(), orgID, agentID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "agent not found")
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
 			return
 		}
 		logger.Error("failed to delete agent", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to delete agent")
+		httputil.Error(w, http.StatusInternalServerError, "Agent removal failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -314,17 +295,17 @@ func (h *AgentRegistryHandler) UpdateHeartbeat(w http.ResponseWriter, r *http.Re
 	// Verify the agent exists and belongs to this org.
 	if _, err := h.store.GetAgent(r.Context(), orgID, agentID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "agent not found")
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
 			return
 		}
 		logger.Error("failed to verify agent for heartbeat", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update heartbeat")
+		httputil.Error(w, http.StatusInternalServerError, "Heartbeat update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
 	if err := h.store.UpdateAgentHeartbeat(r.Context(), agentID); err != nil {
 		logger.Error("failed to update heartbeat", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update heartbeat")
+		httputil.Error(w, http.StatusInternalServerError, "Heartbeat update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -340,30 +321,28 @@ func (h *AgentRegistryHandler) ListMaturities(w http.ResponseWriter, r *http.Req
 	logger := h.logger.With("handler", "agent_registry_maturities")
 	orgID := middleware.GetOrgID(r.Context())
 	agentID := chi.URLParam(r, "agentID")
+	p := dto.ParsePagination(r)
 
 	// Verify the agent exists and belongs to this org.
 	if _, err := h.store.GetAgent(r.Context(), orgID, agentID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "agent not found")
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
 			return
 		}
 		logger.Error("failed to verify agent for maturity list", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list maturities")
+		httputil.Error(w, http.StatusInternalServerError, "Maturity listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
-	maturities, err := h.store.ListMaturities(r.Context(), agentID)
+	maturities, err := h.store.ListMaturities(r.Context(), agentID, p.Limit, p.Offset)
 	if err != nil {
 		logger.Error("failed to list maturities", "error", err, "agent_id", agentID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list maturities")
+		httputil.Error(w, http.StatusInternalServerError, "Maturity listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]any{
-		"agent_id": agentID,
-		"data":     maturities,
-		"total":    len(maturities),
-	})
+	total, _ := h.store.CountMaturities(r.Context(), agentID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(maturities, total, p.Limit, p.Offset))
 }
 
 // Ensure AgentRegistryHandler implements HasRoutes for testability.
@@ -410,7 +389,7 @@ func (m *mockAgentRegistryStore) GetAgent(_ context.Context, orgID, agentID stri
 	return &clone, nil
 }
 
-func (m *mockAgentRegistryStore) ListAgents(_ context.Context, orgID string) ([]domain.Agent, error) {
+func (m *mockAgentRegistryStore) ListAgents(_ context.Context, orgID string, limit, offset int) ([]domain.Agent, error) {
 	var result []domain.Agent
 	for _, a := range m.agents {
 		if a.OrgID == orgID {
@@ -420,10 +399,10 @@ func (m *mockAgentRegistryStore) ListAgents(_ context.Context, orgID string) ([]
 	if result == nil {
 		result = []domain.Agent{}
 	}
-	return result, nil
+	return paginateSlice(result, limit, offset), nil
 }
 
-func (m *mockAgentRegistryStore) ListAgentsByType(_ context.Context, orgID, agentType string) ([]domain.Agent, error) {
+func (m *mockAgentRegistryStore) ListAgentsByType(_ context.Context, orgID, agentType string, limit, offset int) ([]domain.Agent, error) {
 	var result []domain.Agent
 	for _, a := range m.agents {
 		if a.OrgID == orgID && a.Type == agentType {
@@ -433,7 +412,27 @@ func (m *mockAgentRegistryStore) ListAgentsByType(_ context.Context, orgID, agen
 	if result == nil {
 		result = []domain.Agent{}
 	}
-	return result, nil
+	return paginateSlice(result, limit, offset), nil
+}
+
+func (m *mockAgentRegistryStore) CountAgents(_ context.Context, orgID string) (int, error) {
+	count := 0
+	for _, a := range m.agents {
+		if a.OrgID == orgID {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (m *mockAgentRegistryStore) CountAgentsByType(_ context.Context, orgID, agentType string) (int, error) {
+	count := 0
+	for _, a := range m.agents {
+		if a.OrgID == orgID && a.Type == agentType {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func (m *mockAgentRegistryStore) UpdateAgent(_ context.Context, agent *domain.Agent) error {
@@ -488,7 +487,7 @@ func (m *mockAgentRegistryStore) GetMaturity(_ context.Context, agentID, context
 	return &clone, nil
 }
 
-func (m *mockAgentRegistryStore) ListMaturities(_ context.Context, agentID string) ([]domain.AgentMaturity, error) {
+func (m *mockAgentRegistryStore) ListMaturities(_ context.Context, agentID string, limit, offset int) ([]domain.AgentMaturity, error) {
 	prefix := agentID + ":"
 	var result []domain.AgentMaturity
 	for k, v := range m.maturities {
@@ -499,5 +498,28 @@ func (m *mockAgentRegistryStore) ListMaturities(_ context.Context, agentID strin
 	if result == nil {
 		result = []domain.AgentMaturity{}
 	}
-	return result, nil
+	return paginateSlice(result, limit, offset), nil
+}
+
+func (m *mockAgentRegistryStore) CountMaturities(_ context.Context, agentID string) (int, error) {
+	prefix := agentID + ":"
+	count := 0
+	for k := range m.maturities {
+		if len(k) > len(prefix) && k[:len(prefix)] == prefix {
+			count++
+		}
+	}
+	return count, nil
+}
+
+// paginateSlice is a helper for mock stores that applies limit/offset in memory.
+func paginateSlice[T any](s []T, limit, offset int) []T {
+	if offset >= len(s) {
+		return []T{}
+	}
+	end := offset + limit
+	if end > len(s) {
+		end = len(s)
+	}
+	return s[offset:end]
 }

@@ -34,8 +34,8 @@ func (h *MFAHandler) Enable(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
-		logger.Error("failed to get user", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get user")
+		logger.Error("User retrieval failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "user_id", userID)
+		httputil.Error(w, http.StatusInternalServerError, "User retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -81,7 +81,7 @@ func (h *MFAHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !auth.ValidateTOTP(mfaSecret.Secret, req.Code) {
-		httputil.Error(w, http.StatusUnauthorized, "invalid TOTP code")
+		httputil.Error(w, http.StatusUnauthorized, "MFA verification failed — the TOTP code is invalid. Generate a new code from your authenticator app.")
 		return
 	}
 
@@ -119,12 +119,12 @@ func (h *MFAHandler) Disable(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, "failed to get user")
+		httputil.Error(w, http.StatusInternalServerError, "User retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
 	if !auth.CheckPassword(req.Password, user.PasswordHash) {
-		httputil.Error(w, http.StatusUnauthorized, "invalid password")
+		httputil.Error(w, http.StatusUnauthorized, "MFA setup failed — the password is incorrect. Verify your password and try again.")
 		return
 	}
 

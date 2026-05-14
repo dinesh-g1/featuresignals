@@ -132,7 +132,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	var req RegisterRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -220,7 +220,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var req LoginRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -245,7 +245,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		newCount, _ := h.store.CountRecentFailedAttempts(r.Context(), req.Email, time.Now().Add(-15*time.Minute))
 		log.Warn("login failed: unknown email")
 		httputil.JSON(w, http.StatusUnauthorized, dto.LoginErrorResponse{
-			Error:           "invalid credentials",
+			Error:           "Authentication failed — the provided credentials are incorrect. Verify your email and password and try again.",
 			AttemptsUsed:    newCount,
 			AttemptsAllowed: maxFailedLoginAttempts,
 			Remaining:       max(0, maxFailedLoginAttempts-newCount),
@@ -258,7 +258,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		newCount, _ := h.store.CountRecentFailedAttempts(r.Context(), req.Email, time.Now().Add(-15*time.Minute))
 		log.Warn("login failed: bad password", "user_id", user.ID)
 		httputil.JSON(w, http.StatusUnauthorized, dto.LoginErrorResponse{
-			Error:           "invalid credentials",
+			Error:           "Authentication failed — the provided credentials are incorrect. Verify your email and password and try again.",
 			AttemptsUsed:    newCount,
 			AttemptsAllowed: maxFailedLoginAttempts,
 			Remaining:       max(0, maxFailedLoginAttempts-newCount),
@@ -269,7 +269,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	member, err := h.store.GetOrgMember(r.Context(), "", user.ID)
 	if err != nil {
 		log.Warn("login failed: no org membership", "user_id", user.ID)
-		httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication failed — the provided credentials are incorrect. Verify your email and password and try again.")
 		return
 	}
 	orgID := member.OrgID
@@ -290,7 +290,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			httputil.Error(w, http.StatusForbidden, "mfa_required")
 		} else {
 			_ = h.store.RecordLoginAttempt(r.Context(), req.Email, r.RemoteAddr, r.UserAgent(), false)
-			httputil.Error(w, http.StatusUnauthorized, "invalid MFA code")
+			httputil.Error(w, http.StatusUnauthorized, "MFA verification failed — the provided code is incorrect. Check your authenticator app and try again.")
 		}
 		return
 	}
@@ -370,7 +370,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	var req RefreshRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -416,8 +416,8 @@ func (h *AuthHandler) SendVerificationEmail(w http.ResponseWriter, r *http.Reque
 	userID := middleware.GetUserID(r.Context())
 
 	if _, err := h.store.GetUserByID(r.Context(), userID); err != nil {
-		log.Error("failed to get user", "error", err, "user_id", userID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get user")
+		log.Error("User retrieval failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "user_id", userID)
+		httputil.Error(w, http.StatusInternalServerError, "User retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -444,14 +444,14 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	log := httputil.LoggerFromContext(r.Context())
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		httputil.Error(w, http.StatusBadRequest, "token is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the token field is missing. Provide an access token for the repository provider.")
 		return
 	}
 
 	user, err := h.store.GetUserByEmailVerifyToken(r.Context(), token)
 	if err != nil {
 		log.Warn("invalid email verification token")
-		httputil.Error(w, http.StatusBadRequest, "invalid or expired token")
+		httputil.Error(w, http.StatusBadRequest, "Session expired — your access token is invalid or has expired. Refresh your session or sign in again.")
 		return
 	}
 
@@ -481,18 +481,18 @@ func (h *AuthHandler) TokenExchange(w http.ResponseWriter, r *http.Request) {
 
 	var req tokenExchangeRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Token == "" {
-		httputil.Error(w, http.StatusBadRequest, "token is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the token field is missing. Provide an access token for the repository provider.")
 		return
 	}
 
 	userID, orgID, err := h.store.ConsumeOneTimeToken(r.Context(), req.Token)
 	if err != nil {
 		log.Warn("invalid one-time token exchange attempt", "error", err)
-		httputil.Error(w, http.StatusUnauthorized, "invalid or expired token")
+		httputil.Error(w, http.StatusUnauthorized, "Session expired — your access token is invalid or has expired. Refresh your session or sign in again.")
 		return
 	}
 
@@ -541,7 +541,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	var req ForgotPasswordRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -624,7 +624,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	var req ResetPasswordRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 

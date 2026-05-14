@@ -27,7 +27,7 @@ Signal UI is FeatureSignals' independent design system — zero dependency on Gi
 |-------|-------|-------|
 | `--signal-fg-primary` | `#1f2328` | Primary text, headings, body copy |
 | `--signal-fg-secondary` | `#59636e` | Secondary text, descriptions |
-| `--signal-fg-tertiary` | `#818b98` | Placeholder text, disabled labels |
+| `--signal-fg-tertiary` | `#69717a` | Placeholder text, disabled labels |
 | `--signal-fg-accent` | `#0969da` | Links, active states, primary actions |
 | `--signal-fg-success` | `#1a7f37` | Success messages, enabled states |
 | `--signal-fg-warning` | `#9a6700` | Warning messages, attention indicators |
@@ -58,7 +58,7 @@ Signal UI is FeatureSignals' independent design system — zero dependency on Gi
 |-------|-------|-------|
 | `--signal-border-default` | `#d1d9e0` | Default borders |
 | `--signal-border-subtle` | `#d1d9e0b3` | Subtle borders |
-| `--signal-border-emphasis` | `#818b98` | Emphasized borders |
+| `--signal-border-emphasis` | `#6e7681` | Emphasized borders |
 | `--signal-border-accent-emphasis` | `#0969da` | Accent borders (focus rings) |
 | `--signal-border-accent-muted` | `#54aeff66` | Subtle accent borders |
 | `--signal-border-success-emphasis` | `#1a7f37` | Success borders |

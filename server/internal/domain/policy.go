@@ -128,6 +128,82 @@ const (
 	PolicyEffectAudit PolicyEffect = "audit"
 )
 
+// SetDefaults applies safe defaults for a Policy when creating.
+func (p *Policy) SetDefaults() {
+	if p.Effect == "" {
+		p.Effect = PolicyEffectDeny
+	}
+	if p.Rules == nil {
+		p.Rules = []PolicyRule{}
+	}
+	if p.Scope.AgentTypes == nil {
+		p.Scope.AgentTypes = []string{}
+	}
+	if p.Scope.Environments == nil {
+		p.Scope.Environments = []string{}
+	}
+	p.Enabled = true
+	p.CreatedAt = time.Now()
+	p.UpdatedAt = time.Now()
+}
+
+// Validate checks that the policy has all required fields and returns
+// the first validation error found.
+func (p *Policy) Validate() error {
+	if p.Name == "" {
+		return NewValidationError("name", "is required")
+	}
+	if len(p.Name) > 255 {
+		return NewValidationError("name", "must be at most 255 characters")
+	}
+	if p.Effect != "" && p.Effect != PolicyEffectDeny && p.Effect != PolicyEffectRequireHuman && p.Effect != PolicyEffectWarn && p.Effect != PolicyEffectAudit {
+		return NewValidationError("effect", "must be deny, require_human, warn, or audit")
+	}
+	return nil
+}
+
+// PolicyUpdate holds partial update fields for a policy. Only non-nil
+// fields are applied; nil means "leave unchanged".
+type PolicyUpdate struct {
+	Name        *string       `json:"name,omitempty"`
+	Description *string       `json:"description,omitempty"`
+	Priority    *int          `json:"priority,omitempty"`
+	Scope       *PolicyScope  `json:"scope,omitempty"`
+	Rules       *[]PolicyRule `json:"rules,omitempty"`
+	Effect      *PolicyEffect `json:"effect,omitempty"`
+	Enabled     *bool         `json:"enabled,omitempty"`
+}
+
+// MergeUpdate applies a partial update from a PolicyUpdate onto the
+// existing policy. Only non-nil pointer fields are applied.
+func (p *Policy) MergeUpdate(upd *PolicyUpdate) {
+	if upd.Name != nil {
+		p.Name = *upd.Name
+	}
+	if upd.Description != nil {
+		p.Description = *upd.Description
+	}
+	if upd.Priority != nil {
+		p.Priority = *upd.Priority
+	}
+	if upd.Scope != nil {
+		p.Scope = *upd.Scope
+	}
+	if upd.Rules != nil {
+		p.Rules = *upd.Rules
+	}
+	if p.Rules == nil {
+		p.Rules = []PolicyRule{}
+	}
+	if upd.Effect != nil {
+		p.Effect = *upd.Effect
+	}
+	if upd.Enabled != nil {
+		p.Enabled = *upd.Enabled
+	}
+	p.UpdatedAt = time.Now()
+}
+
 // ─── Policy Evaluation Context ─────────────────────────────────────────────
 
 // PolicyEvalContext is the runtime context passed to CEL expression
@@ -197,7 +273,10 @@ type PolicyReader interface {
 	GetPolicy(ctx context.Context, orgID, policyID string) (*Policy, error)
 
 	// ListPolicies returns all policies for an organization, ordered by priority.
-	ListPolicies(ctx context.Context, orgID string) ([]Policy, error)
+	ListPolicies(ctx context.Context, orgID string, limit, offset int) ([]Policy, error)
+
+	// CountPolicies returns the total number of policies for an organization.
+	CountPolicies(ctx context.Context, orgID string) (int, error)
 
 	// ListApplicablePolicies returns policies that match the given scope.
 	// Used by the governance pipeline to select relevant policies for an action.

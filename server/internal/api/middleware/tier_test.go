@@ -28,13 +28,13 @@ func (s *tierMockStore) GetOrganization(_ context.Context, id string) (*domain.O
 	}
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) ListProjects(_ context.Context, orgID string) ([]domain.Project, error) {
+func (s *tierMockStore) ListProjects(_ context.Context, orgID string, _, _ int) ([]domain.Project, error) {
 	return s.projects, nil
 }
-func (s *tierMockStore) ListEnvironments(_ context.Context, projectID string) ([]domain.Environment, error) {
+func (s *tierMockStore) ListEnvironments(_ context.Context, projectID string, _, _ int) ([]domain.Environment, error) {
 	return s.envs[projectID], nil
 }
-func (s *tierMockStore) ListOrgMembers(_ context.Context, orgID string) ([]domain.OrgMember, error) {
+func (s *tierMockStore) ListOrgMembers(_ context.Context, orgID string, _, _ int) ([]domain.OrgMember, error) {
 	return s.members, nil
 }
 
@@ -49,6 +49,9 @@ func (s *tierMockStore) GetUserByEmail(context.Context, string) (*domain.User, e
 }
 func (s *tierMockStore) GetUserByID(context.Context, string) (*domain.User, error) {
 	return nil, fmt.Errorf("not found")
+}
+func (s *tierMockStore) GetUsersByIDs(ctx context.Context, ids []string) ([]domain.User, error) {
+	return nil, nil
 }
 func (s *tierMockStore) GetUserByEmailVerifyToken(context.Context, string) (*domain.User, error) {
 	return nil, fmt.Errorf("not found")
@@ -87,11 +90,11 @@ func (s *tierMockStore) CreateFlag(context.Context, *domain.Flag) error         
 func (s *tierMockStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) ListFlags(context.Context, string) ([]domain.Flag, error) { return nil, nil }
-func (s *tierMockStore) ListFlagsWithFilter(context.Context, string, string, string) ([]domain.Flag, error) {
+func (s *tierMockStore) ListFlags(context.Context, string, int, int) ([]domain.Flag, error) { return nil, nil }
+func (s *tierMockStore) ListFlagsWithFilter(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, nil
 }
-func (s *tierMockStore) ListFlagsSorted(context.Context, string, string, string) ([]domain.Flag, error) {
+func (s *tierMockStore) ListFlagsSorted(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, nil
 }
 func (s *tierMockStore) UpdateFlag(context.Context, *domain.Flag) error           { return nil }
@@ -100,20 +103,20 @@ func (s *tierMockStore) UpsertFlagState(context.Context, *domain.FlagState) erro
 func (s *tierMockStore) GetFlagState(context.Context, string, string) (*domain.FlagState, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) ListFlagStatesByEnv(context.Context, string) ([]domain.FlagState, error) {
+func (s *tierMockStore) ListFlagStatesByEnv(context.Context, string, int, int) ([]domain.FlagState, error) {
 	return nil, nil
 }
 func (s *tierMockStore) ListPendingSchedules(context.Context, time.Time) ([]domain.FlagState, error) {
 	return nil, nil
 }
 func (s *tierMockStore) CreateSegment(context.Context, *domain.Segment) error { return nil }
-func (s *tierMockStore) ListSegments(context.Context, string) ([]domain.Segment, error) {
+func (s *tierMockStore) ListSegments(context.Context, string, int, int) ([]domain.Segment, error) {
 	return nil, nil
 }
-func (s *tierMockStore) ListSegmentsWithFilter(context.Context, string, string, string) ([]domain.Segment, error) {
+func (s *tierMockStore) ListSegmentsWithFilter(context.Context, string, string, string, int, int) ([]domain.Segment, error) {
 	return nil, nil
 }
-func (s *tierMockStore) ListSegmentsSorted(context.Context, string, string, string) ([]domain.Segment, error) {
+func (s *tierMockStore) ListSegmentsSorted(context.Context, string, string, string, int, int) ([]domain.Segment, error) {
 	return nil, nil
 }
 func (s *tierMockStore) GetSegment(context.Context, string, string) (*domain.Segment, error) {
@@ -128,7 +131,7 @@ func (s *tierMockStore) GetAPIKeyByID(context.Context, string) (*domain.APIKey, 
 func (s *tierMockStore) GetAPIKeyByHash(context.Context, string) (*domain.APIKey, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) ListAPIKeys(context.Context, string) ([]domain.APIKey, error) {
+func (s *tierMockStore) ListAPIKeys(context.Context, string, int, int) ([]domain.APIKey, error) {
 	return nil, nil
 }
 func (s *tierMockStore) RevokeAPIKey(context.Context, string) error         { return nil }
@@ -143,7 +146,7 @@ func (s *tierMockStore) CreateWebhook(context.Context, *domain.Webhook) error {
 func (s *tierMockStore) GetWebhook(context.Context, string) (*domain.Webhook, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) ListWebhooks(context.Context, string) ([]domain.Webhook, error) {
+func (s *tierMockStore) ListWebhooks(context.Context, string, int, int) ([]domain.Webhook, error) {
 	return nil, nil
 }
 func (s *tierMockStore) UpdateWebhook(context.Context, *domain.Webhook) error { return nil }
@@ -185,10 +188,25 @@ func (s *tierMockStore) CountFlags(context.Context, string) (int, error)       {
 func (s *tierMockStore) CountSegments(context.Context, string) (int, error)    { return 0, nil }
 func (s *tierMockStore) CountEnvironments(context.Context, string) (int, error) { return 0, nil }
 func (s *tierMockStore) CountMembers(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountOrgMembers(ctx context.Context, orgID string) (int, error) {
+	return 0, nil
+}
 func (s *tierMockStore) CountWebhooks(context.Context, string) (int, error)    { return 0, nil }
 func (s *tierMockStore) CountAPIKeys(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountAPIKeysByEnv(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountCustomRoles(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountFlagVersions(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountPinnedItems(context.Context, string, string, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountIntegrations(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountEnvironmentsByProject(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountFlagStatesByEnv(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountFlagsWithFilter(context.Context, string, string, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountFlagsByProject(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountSegmentsWithFilter(context.Context, string, string, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountSegmentsByProject(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountWebhookDeliveries(context.Context, string) (int, error) { return 0, nil }
 func (s *tierMockStore) CountProjects(context.Context, string) (int, error)    { return 0, nil }
-func (s *tierMockStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+func (s *tierMockStore) ListPinnedItems(context.Context, string, string, string, int, int) ([]domain.PinnedItem, error) {
 	return nil, nil
 }
 func (s *tierMockStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
@@ -314,7 +332,7 @@ func (s *tierMockStore) CreateCustomRole(context.Context, *domain.CustomRole) er
 func (s *tierMockStore) GetCustomRole(context.Context, string) (*domain.CustomRole, error) {
 	return nil, domain.ErrNotFound
 }
-func (s *tierMockStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, error) {
+func (s *tierMockStore) ListCustomRoles(context.Context, string, int, int) ([]domain.CustomRole, error) {
 	return nil, nil
 }
 func (s *tierMockStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return nil }
@@ -380,10 +398,10 @@ func (s *tierMockStore) CreateAgent(_ context.Context, _ *domain.Agent) error {
 func (s *tierMockStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error) {
 	return nil, errors.New("not implemented")
 }
-func (s *tierMockStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error) {
+func (s *tierMockStore) ListAgents(_ context.Context, _ string, _, _ int) ([]domain.Agent, error) {
 	return nil, errors.New("not implemented")
 }
-func (s *tierMockStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) {
+func (s *tierMockStore) ListAgentsByType(_ context.Context, _, _ string, _, _ int) ([]domain.Agent, error) {
 	return nil, errors.New("not implemented")
 }
 func (s *tierMockStore) UpdateAgent(_ context.Context, _ *domain.Agent) error {
@@ -401,8 +419,17 @@ func (s *tierMockStore) UpsertMaturity(_ context.Context, _ string, _ *domain.Ag
 func (s *tierMockStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) {
 	return nil, errors.New("not implemented")
 }
-func (s *tierMockStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) {
+func (s *tierMockStore) ListMaturities(_ context.Context, _ string, _, _ int) ([]domain.AgentMaturity, error) {
 	return nil, errors.New("not implemented")
+}
+func (s *tierMockStore) CountMaturities(_ context.Context, _ string) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) CountAgents(_ context.Context, _ string) (int, error) {
+	return 0, nil
+}
+func (s *tierMockStore) CountAgentsByType(_ context.Context, _, _ string) (int, error) {
+	return 0, nil
 }
 
 func withOrgID(ctx context.Context, orgID string) context.Context {
@@ -652,7 +679,7 @@ func (s *tierMockStore) CreateIntegration(context.Context, domain.CreateIntegrat
 func (s *tierMockStore) GetIntegration(context.Context, string, string) (*domain.Integration, error) {
 	return nil, nil
 }
-func (s *tierMockStore) ListIntegrations(context.Context, string) ([]domain.Integration, error) {
+func (s *tierMockStore) ListIntegrations(context.Context, string, int, int) ([]domain.Integration, error) {
 	return nil, nil
 }
 func (s *tierMockStore) UpdateIntegration(context.Context, string, string, domain.UpdateIntegrationRequest) (*domain.Integration, error) {
@@ -734,15 +761,12 @@ func (s *tierMockStore) InsertEvalEventBatch(_ context.Context, _ *domain.EvalEv
 func (s *tierMockStore) CountEvaluations(_ context.Context, _, _ string, _ time.Time) (int64, error) {
 	return 0, errors.New("not implemented")
 }
-
 func (s *tierMockStore) CountEvaluationsByVariant(_ context.Context, _, _ string, _ time.Time) (map[string]int64, error) {
 	return nil, errors.New("not implemented")
 }
-
 func (s *tierMockStore) GetEvaluationLatency(_ context.Context, _, _ string, _ time.Time) (int64, int64, int64, error) {
 	return 0, 0, 0, errors.New("not implemented")
 }
-
 func (s *tierMockStore) GetEvaluationVolume(_ context.Context, _ string, _ time.Time, _ string) ([]domain.TimeSeriesPoint, error) {
 	return nil, errors.New("not implemented")
 }
@@ -752,19 +776,15 @@ func (s *tierMockStore) GetEvaluationVolume(_ context.Context, _ string, _ time.
 func (s *tierMockStore) InsertTrackEvent(_ context.Context, _ *domain.ABMTrackEvent) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) InsertTrackEvents(_ context.Context, _ []domain.ABMTrackEvent) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) CountEventsByBehavior(_ context.Context, _, _ string, _ time.Time) (int, error) {
 	return 0, errors.New("not implemented")
 }
-
 func (s *tierMockStore) CountEventsByAgent(_ context.Context, _, _ string, _ time.Time) (int, error) {
 	return 0, errors.New("not implemented")
 }
-
 func (s *tierMockStore) GetVariantDistribution(_ context.Context, _, _ string, _ time.Time) (map[string]int, error) {
 	return nil, errors.New("not implemented")
 }
@@ -774,27 +794,24 @@ func (s *tierMockStore) GetVariantDistribution(_ context.Context, _, _ string, _
 func (s *tierMockStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
 	return nil, errors.New("not implemented")
 }
-
-func (s *tierMockStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+func (s *tierMockStore) ListPolicies(_ context.Context, _ string, _, _ int) ([]domain.Policy, error) {
 	return nil, errors.New("not implemented")
 }
-
+func (s *tierMockStore) CountPolicies(_ context.Context, _ string) (int, error) {
+	return 0, errors.New("not implemented")
+}
 func (s *tierMockStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
 	return nil, errors.New("not implemented")
 }
-
 func (s *tierMockStore) CreatePolicy(_ context.Context, _ *domain.Policy) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) UpdatePolicy(_ context.Context, _ *domain.Policy) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) DeletePolicy(_ context.Context, _, _ string) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) SetPolicyEnabled(_ context.Context, _, _ string, _ bool) error {
 	return errors.New("not implemented")
 }
@@ -804,23 +821,24 @@ func (s *tierMockStore) SetPolicyEnabled(_ context.Context, _, _ string, _ bool)
 func (s *tierMockStore) CreateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) GetBehavior(_ context.Context, _, _ string) (*domain.ABMBehavior, error) {
 	return nil, errors.New("not implemented")
 }
-
-func (s *tierMockStore) ListBehaviors(_ context.Context, _ string) ([]domain.ABMBehavior, error) {
+func (s *tierMockStore) ListBehaviors(_ context.Context, _ string, _, _ int) ([]domain.ABMBehavior, error) {
 	return nil, errors.New("not implemented")
 }
-
-func (s *tierMockStore) ListBehaviorsByAgentType(_ context.Context, _, _ string) ([]domain.ABMBehavior, error) {
+func (s *tierMockStore) ListBehaviorsByAgentType(_ context.Context, _, _ string, _, _ int) ([]domain.ABMBehavior, error) {
 	return nil, errors.New("not implemented")
 }
-
+func (s *tierMockStore) CountBehaviors(_ context.Context, _ string) (int, error) {
+	return 0, errors.New("not implemented")
+}
+func (s *tierMockStore) CountBehaviorsByAgentType(_ context.Context, _, _ string) (int, error) {
+	return 0, errors.New("not implemented")
+}
 func (s *tierMockStore) UpdateBehavior(_ context.Context, _ *domain.ABMBehavior) error {
 	return errors.New("not implemented")
 }
-
 func (s *tierMockStore) DeleteBehavior(_ context.Context, _, _ string) error {
 	return errors.New("not implemented")
 }

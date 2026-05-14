@@ -57,19 +57,37 @@ func NewTeamHandler(
 func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
 	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
+	p := dto.ParsePagination(r)
 
-	members, err := h.store.ListOrgMembers(r.Context(), orgID)
+	members, err := h.store.ListOrgMembers(r.Context(), orgID, p.Limit, p.Offset)
 	if err != nil {
-		logger.Error("failed to list members", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list members")
+		logger.Error("Member listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Member listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
+	}
+
+	// Batch-fetch all users in one query to avoid N+1.
+	userIDs := make([]string, 0, len(members))
+	for _, m := range members {
+		userIDs = append(userIDs, m.UserID)
+	}
+	usersByID := make(map[string]domain.User, len(userIDs))
+	if len(userIDs) > 0 {
+		users, err := h.store.GetUsersByIDs(r.Context(), userIDs)
+		if err != nil {
+			logger.Warn("failed to batch fetch users for members", "error", err, "org_id", orgID)
+		} else {
+			for _, u := range users {
+				usersByID[u.ID] = u
+			}
+		}
 	}
 
 	resp := make([]dto.MemberResponse, 0, len(members))
 	for _, m := range members {
-		user, err := h.store.GetUserByID(r.Context(), m.UserID)
-		if err != nil {
-			logger.Warn("failed to get user for member", "error", err, "user_id", m.UserID, "member_id", m.ID)
+		user, ok := usersByID[m.UserID]
+		if !ok {
+			logger.Warn("user not found for member", "user_id", m.UserID, "member_id", m.ID)
 			continue
 		}
 		resp = append(resp, dto.MemberResponse{
@@ -81,9 +99,9 @@ func (h *TeamHandler) List(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(resp, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	logger.Info("members listed", "limit", p.Limit, "offset", p.Offset, "total", len(resp))
+	total, _ := h.store.CountOrgMembers(r.Context(), orgID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(resp, total, p.Limit, p.Offset))
 }
 
 type InviteRequest struct {
@@ -99,7 +117,7 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 
 	var req InviteRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Email == "" {
@@ -129,7 +147,7 @@ func (h *TeamHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := h.store.CreateUser(r.Context(), user); err != nil {
 			logger.Warn("failed to create invited user", "error", err, "email", req.Email)
-			httputil.Error(w, http.StatusConflict, "failed to create user")
+			httputil.Error(w, http.StatusConflict, "User creation failed — an unexpected error occurred on the server. Try again or contact support.")
 			return
 		}
 	}
@@ -210,7 +228,7 @@ func (h *TeamHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateRoleRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Role != domain.RoleOwner && req.Role != domain.RoleAdmin &&
@@ -298,7 +316,7 @@ func (h *TeamHandler) UpdatePermissions(w http.ResponseWriter, r *http.Request) 
 
 	var req UpdatePermissionsRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 

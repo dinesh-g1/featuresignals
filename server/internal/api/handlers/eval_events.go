@@ -50,53 +50,81 @@ func parseInterval(r *http.Request) string {
 	return interval
 }
 
-// Query handles GET /v1/eval-events?flag_key=X&since=Y
-// Returns evaluation analytics for a specific flag.
-func (h *EvalEventsHandler) Query(w http.ResponseWriter, r *http.Request) {
+// analyticsResult holds the results of subsidiary analytics queries for the
+// Query handler. Error flags allow the caller to distinguish between
+// "no data" and "error fetching data" in the response.
+type analyticsResult struct {
+	byVariant     map[string]int64
+	p50, p95, p99 int64
+	byVariantErr  bool
+	latencyErr    bool
+}
+
+// queryAnalytics runs the by-variant count and latency queries. Errors are
+// logged and captured as flags rather than returned — this lets the Query
+// handler return a partial response with explicit error indicators instead
+// of silently dropping data or returning misleading zero values.
+func (h *EvalEventsHandler) queryAnalytics(r *http.Request, orgID, flagKey string, since time.Time) analyticsResult {
 	logger := httputil.LoggerFromContext(r.Context())
-
-	orgID := middleware.GetOrgID(r.Context())
-	if orgID == "" {
-		httputil.Error(w, http.StatusUnauthorized, "authentication required")
-		return
-	}
-	flagKey := r.URL.Query().Get("flag_key")
-	if flagKey == "" {
-		httputil.Error(w, http.StatusBadRequest, "flag_key query parameter is required")
-		return
-	}
-
-	since := parseSince(r)
-
-	count, err := h.store.CountEvaluations(r.Context(), orgID, flagKey, since)
-	if err != nil {
-		logger.Error("failed to count evaluations", "error", err, "flag_key", flagKey)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
-		return
-	}
+	result := analyticsResult{}
 
 	byVariant, err := h.store.CountEvaluationsByVariant(r.Context(), orgID, flagKey, since)
 	if err != nil {
 		logger.Error("failed to count evaluations by variant", "error", err, "flag_key", flagKey)
+		result.byVariantErr = true
+	} else {
+		result.byVariant = byVariant
 	}
 
 	p50, p95, p99, err := h.store.GetEvaluationLatency(r.Context(), orgID, flagKey, since)
 	if err != nil {
 		logger.Error("failed to get evaluation latency", "error", err, "flag_key", flagKey)
-		p50, p95, p99 = 0, 0, 0
+		result.latencyErr = true
+	} else {
+		result.p50, result.p95, result.p99 = p50, p95, p99
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"flag_key":         flagKey,
+	return result
+}
+
+// Query handles GET /v1/eval-events?flag_key=X&since=Y
+// Returns evaluation analytics for a specific flag.
+func (h *EvalEventsHandler) Query(w http.ResponseWriter, r *http.Request) {
+	logger := httputil.LoggerFromContext(r.Context())
+	orgID := middleware.GetOrgID(r.Context())
+	if orgID == "" {
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — sign-in is required for this endpoint. Provide valid credentials and try again.")
+		return
+	}
+	flagKey := r.URL.Query().Get("flag_key")
+	if flagKey == "" {
+		httputil.Error(w, http.StatusBadRequest, "Query blocked — the flag_key query parameter is missing. Add ?flag_key= to your request URL.")
+		return
+	}
+	since := parseSince(r)
+	count, err := h.store.CountEvaluations(r.Context(), orgID, flagKey, since)
+	if err != nil {
+		logger.Error("Analytics query failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
+		return
+	}
+	ar := h.queryAnalytics(r, orgID, flagKey, since)
+	resp := map[string]interface{}{
+		"flag_key":          flagKey,
 		"total_evaluations": count,
-		"by_variant":       byVariant,
-		"latency_us": map[string]int64{
-			"p50": p50,
-			"p95": p95,
-			"p99": p99,
-		},
-		"since": since.Format(time.RFC3339),
-	})
+		"since":             since.Format(time.RFC3339),
+	}
+	if ar.byVariantErr {
+		resp["by_variant_error"] = "temporary_unavailable"
+	} else {
+		resp["by_variant"] = ar.byVariant
+	}
+	if ar.latencyErr {
+		resp["latency_us"] = nil
+	} else {
+		resp["latency_us"] = map[string]int64{"p50": ar.p50, "p95": ar.p95, "p99": ar.p99}
+	}
+	httputil.JSON(w, http.StatusOK, resp)
 }
 
 // Volume handles GET /v1/eval-events/volume?since=Y&interval=1h
@@ -106,7 +134,7 @@ func (h *EvalEventsHandler) Volume(w http.ResponseWriter, r *http.Request) {
 
 	orgID := middleware.GetOrgID(r.Context())
 	if orgID == "" {
-		httputil.Error(w, http.StatusUnauthorized, "authentication required")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — sign-in is required for this endpoint. Provide valid credentials and try again.")
 		return
 	}
 	since := parseSince(r)
@@ -115,7 +143,7 @@ func (h *EvalEventsHandler) Volume(w http.ResponseWriter, r *http.Request) {
 	points, err := h.store.GetEvaluationVolume(r.Context(), orgID, since, interval)
 	if err != nil {
 		logger.Error("failed to get evaluation volume", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

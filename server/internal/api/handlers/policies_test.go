@@ -31,7 +31,7 @@ func (m *mockPolicyStore) GetPolicy(_ context.Context, _, policyID string) (*dom
 	return p, nil
 }
 
-func (m *mockPolicyStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+func (m *mockPolicyStore) ListPolicies(_ context.Context, _ string, _, _ int) ([]domain.Policy, error) {
 	var out []domain.Policy
 	for _, p := range m.policies {
 		out = append(out, *p)
@@ -42,8 +42,12 @@ func (m *mockPolicyStore) ListPolicies(_ context.Context, _ string) ([]domain.Po
 	return out, nil
 }
 
+func (m *mockPolicyStore) CountPolicies(_ context.Context, _ string) (int, error) {
+	return len(m.policies), nil
+}
+
 func (m *mockPolicyStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
-	return m.ListPolicies(context.Background(), "")
+	return m.ListPolicies(context.Background(), "", 0, 0)
 }
 
 func (m *mockPolicyStore) CreatePolicy(_ context.Context, p *domain.Policy) error {

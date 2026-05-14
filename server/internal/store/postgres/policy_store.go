@@ -58,15 +58,16 @@ func (s *Store) GetPolicy(ctx context.Context, orgID, policyID string) (*domain.
 }
 
 // ListPolicies returns all policies for an organization, ordered by priority.
-func (s *Store) ListPolicies(ctx context.Context, orgID string) ([]domain.Policy, error) {
+func (s *Store) ListPolicies(ctx context.Context, orgID string, limit, offset int) ([]domain.Policy, error) {
 	const query = `
 		SELECT id, org_id, name, description, enabled, priority, scope, rules, effect,
 		       created_at, updated_at
 		FROM governance_policies
 		WHERE org_id = $1
-		ORDER BY priority ASC, name ASC`
+		ORDER BY priority ASC, name ASC
+		LIMIT $2 OFFSET $3`
 
-	rows, err := s.pool.Query(ctx, query, orgID)
+	rows, err := s.pool.Query(ctx, query, orgID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list policies: %w", err)
 	}
@@ -84,6 +85,16 @@ func (s *Store) ListPolicies(ctx context.Context, orgID string) ([]domain.Policy
 		policies = []domain.Policy{}
 	}
 	return policies, rows.Err()
+}
+
+// CountPolicies returns the total number of policies for an organization.
+func (s *Store) CountPolicies(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM governance_policies WHERE org_id = $1`,
+		orgID,
+	).Scan(&count)
+	return count, err
 }
 
 // ListApplicablePolicies returns policies whose scope matches the given

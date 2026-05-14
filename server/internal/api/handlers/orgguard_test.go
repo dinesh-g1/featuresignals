@@ -137,7 +137,7 @@ func TestVerifyWebhookOwnership_MatchingOrg(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	r := httptest.NewRequest("GET", "/", nil)
@@ -159,7 +159,7 @@ func TestVerifyWebhookOwnership_DifferentOrg(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	r := httptest.NewRequest("GET", "/", nil)

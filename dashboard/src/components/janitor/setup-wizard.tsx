@@ -16,7 +16,14 @@ interface ConnectRepoResult {
   repositories?: { name: string; full_name: string }[];
 }
 import {
-  GitForkIcon, GitBranchIcon, GitPullRequestIcon, ArrowRightIcon, LoaderIcon, AlertIcon, CheckCircleFillIcon, ChevronLeftIcon
+  GitForkIcon,
+  GitBranchIcon,
+  GitPullRequestIcon,
+  ArrowRightIcon,
+  LoaderIcon,
+  AlertIcon,
+  CheckCircleFillIcon,
+  ChevronLeftIcon,
 } from "@/components/icons/nav-icons";
 
 interface RepositoryOption {
@@ -170,8 +177,8 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                 Connect Your Git Provider
               </h3>
               <p className="text-sm text-[var(--signal-fg-secondary)] mb-6 leading-relaxed">
-                The AI Janitor needs access to your repositories to scan for
-                stale feature flags and generate cleanup pull requests.
+                The AI Janitor needs access to your repositories to survey for
+                stale feature flags and generate sweep pull requests.
               </p>
 
               <div className="space-y-3">
@@ -350,7 +357,9 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
           {step === "connecting" && (
             <div className="py-8">
               <LoaderIcon className="h-10 w-10 animate-spin text-[var(--signal-fg-accent)] mx-auto mb-4" />
-              <p className="text-sm text-[var(--signal-fg-secondary)]">Connecting repository...</p>
+              <p className="text-sm text-[var(--signal-fg-secondary)]">
+                Connecting repository...
+              </p>
             </div>
           )}
 
@@ -364,7 +373,7 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                 Repository Connected!
               </h3>
               <p className="text-sm text-[var(--signal-fg-secondary)]">
-                You can now scan for stale flags.
+                You can now survey for stale flags.
               </p>
             </div>
           )}

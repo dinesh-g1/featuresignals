@@ -152,7 +152,7 @@ func TestTeamHandler_Remove(t *testing.T) {
 		t.Fatalf("expected 204, got %d: %s", rr.Code, rr.Body.String())
 	}
 
-	members, _ := store.ListOrgMembers(context.Background(), "id-1")
+	members, _ := store.ListOrgMembers(context.Background(), "id-1", 0, 0)
 	if len(members) != 1 {
 		t.Errorf("expected 1 member remaining, got %d", len(members))
 	}

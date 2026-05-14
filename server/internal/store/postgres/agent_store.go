@@ -85,14 +85,15 @@ func (s *Store) GetAgent(ctx context.Context, orgID, agentID string) (*domain.Ag
 }
 
 // ListAgents returns all agents for an organization.
-func (s *Store) ListAgents(ctx context.Context, orgID string) ([]domain.Agent, error) {
+func (s *Store) ListAgents(ctx context.Context, orgID string, limit, offset int) ([]domain.Agent, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, name, agent_type, version, brain_type, status,
 		        scopes, rate_limits, cost_profile,
 		        registered_at, last_heartbeat, created_at, updated_at
 		 FROM agents WHERE org_id = $1
-		 ORDER BY created_at DESC`,
-		orgID,
+		 ORDER BY created_at DESC
+		 LIMIT $2 OFFSET $3`,
+		orgID, limit, offset,
 	)
 	if err != nil {
 		return nil, err
@@ -103,14 +104,15 @@ func (s *Store) ListAgents(ctx context.Context, orgID string) ([]domain.Agent, e
 }
 
 // ListAgentsByType returns agents for an organization filtered by agent type.
-func (s *Store) ListAgentsByType(ctx context.Context, orgID, agentType string) ([]domain.Agent, error) {
+func (s *Store) ListAgentsByType(ctx context.Context, orgID, agentType string, limit, offset int) ([]domain.Agent, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, name, agent_type, version, brain_type, status,
 		        scopes, rate_limits, cost_profile,
 		        registered_at, last_heartbeat, created_at, updated_at
 		 FROM agents WHERE org_id = $1 AND agent_type = $2
-		 ORDER BY created_at DESC`,
-		orgID, agentType,
+		 ORDER BY created_at DESC
+		 LIMIT $3 OFFSET $4`,
+		orgID, agentType, limit, offset,
 	)
 	if err != nil {
 		return nil, err
@@ -118,6 +120,22 @@ func (s *Store) ListAgentsByType(ctx context.Context, orgID, agentType string) (
 	defer rows.Close()
 
 	return scanAgents(rows)
+}
+
+// CountAgents returns the total number of agents in an organization.
+func (s *Store) CountAgents(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM agents WHERE org_id = $1`, orgID).Scan(&count)
+	return count, err
+}
+
+// CountAgentsByType returns the total number of agents of a specific type.
+func (s *Store) CountAgentsByType(ctx context.Context, orgID, agentType string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM agents WHERE org_id = $1 AND agent_type = $2`, orgID, agentType).Scan(&count)
+	return count, err
 }
 
 // UpdateAgent updates an existing agent's mutable fields.
@@ -297,7 +315,7 @@ func (s *Store) GetMaturity(ctx context.Context, agentID, contextKey string) (*d
 }
 
 // ListMaturities returns all per-context maturity entries for an agent.
-func (s *Store) ListMaturities(ctx context.Context, agentID string) ([]domain.AgentMaturity, error) {
+func (s *Store) ListMaturities(ctx context.Context, agentID string, limit, offset int) ([]domain.AgentMaturity, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, context_key, maturity_level, total_decisions,
 		        successful_decisions, accuracy, incidents_caused,
@@ -305,14 +323,30 @@ func (s *Store) ListMaturities(ctx context.Context, agentID string) ([]domain.Ag
 		        days_since_last_incident, last_evaluated_at
 		 FROM agent_maturity
 		 WHERE agent_id = $1
-		 ORDER BY context_key`,
-		agentID,
+		 ORDER BY context_key
+		 LIMIT $2 OFFSET $3`,
+		agentID, limit, offset,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
+	return scanMaturities(rows)
+}
+
+// CountMaturities returns the total number of maturity entries for an agent.
+func (s *Store) CountMaturities(ctx context.Context, agentID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM agent_maturity WHERE agent_id = $1`,
+		agentID,
+	).Scan(&count)
+	return count, err
+}
+
+// scanMaturities reads maturity rows from a pgx.Rows iterator.
+func scanMaturities(rows pgx.Rows) ([]domain.AgentMaturity, error) {
 	var maturities []domain.AgentMaturity
 	for rows.Next() {
 		var m domain.AgentMaturity

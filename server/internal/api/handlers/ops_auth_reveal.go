@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -12,15 +13,20 @@ import (
 	"github.com/featuresignals/server/internal/httputil"
 )
 
+// opsAuthRevealStore is the narrow interface OpsAuthRevealHandler needs.
+type opsAuthRevealStore interface {
+	GetOpsUser(ctx context.Context, id string) (*domain.OpsUser, error)
+}
+
 // OpsAuthRevealHandler handles secret reveal authorization.
 type OpsAuthRevealHandler struct {
-	store  domain.Store
+	store  opsAuthRevealStore
 	jwtKey []byte
 	logger *slog.Logger
 }
 
 // NewOpsAuthRevealHandler creates a new reveal auth handler.
-func NewOpsAuthRevealHandler(store domain.Store, jwtKey []byte, logger *slog.Logger) *OpsAuthRevealHandler {
+func NewOpsAuthRevealHandler(store opsAuthRevealStore, jwtKey []byte, logger *slog.Logger) *OpsAuthRevealHandler {
 	return &OpsAuthRevealHandler{
 		store:  store,
 		jwtKey: jwtKey,
@@ -44,7 +50,7 @@ func (h *OpsAuthRevealHandler) Reveal(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Password == "" {
@@ -66,13 +72,12 @@ func (h *OpsAuthRevealHandler) Reveal(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if userID == "" {
-		httputil.Error(w, http.StatusUnauthorized, "not authenticated")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 
 	// Validate password against stored hash
-	if authStore, ok := h.store.(domain.OpsStore); ok {
-		_, err := authStore.GetOpsUser(r.Context(), userID)
+		_, err := h.store.GetOpsUser(r.Context(), userID)
 		if err != nil {
 			if errors.Is(err, domain.ErrNotFound) {
 				httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
@@ -82,7 +87,6 @@ func (h *OpsAuthRevealHandler) Reveal(w http.ResponseWriter, r *http.Request) {
 			httputil.Error(w, http.StatusInternalServerError, "internal error")
 			return
 		}
-	}
 
 	// Issue short-lived JWT with secrets:read scope
 	now := time.Now().UTC()
@@ -104,7 +108,7 @@ func (h *OpsAuthRevealHandler) Reveal(w http.ResponseWriter, r *http.Request) {
 	tokenStr, err := token.SignedString(h.jwtKey)
 	if err != nil {
 		log.Error("failed to sign reveal token", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

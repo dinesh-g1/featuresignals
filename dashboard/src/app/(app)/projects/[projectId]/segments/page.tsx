@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import {
-  useSegments,
+  useSegmentsPaginated,
   useCreateSegment,
   useDeleteSegment,
 } from "@/hooks/use-data";
@@ -15,6 +16,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, Button, Input, FormField, FormLayout } from "@/components/ui";
 import { Select } from "@/components/ui/select";
 import { InlineCreateForm } from "@/components/ui/inline-create-form";
+import { Pagination } from "@/components/ui/pagination";
 import { TrashIcon, ChevronDownIcon } from "@/components/icons/nav-icons";
 import { FieldHelp } from "@/components/field-help";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
@@ -49,6 +51,9 @@ const MATCH_TYPE_OPTIONS = [
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
+  const searchParams = useSearchParams();
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offsetVal = parseInt(searchParams.get("offset") || "0");
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
     key: "",
@@ -64,11 +69,13 @@ export default function SegmentsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const {
-    data: segments = [],
+    data: segmentsPaginated,
     loading: segmentsLoading,
     error: segmentsError,
     refetch,
-  } = useSegments(projectId);
+  } = useSegmentsPaginated(projectId, limit, offsetVal);
+  const segments = segmentsPaginated?.data ?? [];
+  const segmentsTotal = segmentsPaginated?.total ?? 0;
   const createSegment = useCreateSegment(projectId);
   const deleteSegment = useDeleteSegment(projectId);
 
@@ -142,25 +149,29 @@ export default function SegmentsPage() {
     refresh: refreshPrereqs,
   } = usePrerequisites();
 
+  // ── Loading Skeleton (for Suspense fallback) ──
+
+  const segmentsSkeleton = (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="h-9 w-36 rounded-lg" />
+      </div>
+      <SkeletonCard />
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+
   // ── Loading state ──
   if (prereqLoading || segmentsLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-32" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <Skeleton className="h-9 w-36 rounded-lg" />
-        </div>
-        <SkeletonCard />
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
+    return segmentsSkeleton;
   }
 
   // ── Error state ──
@@ -182,28 +193,32 @@ export default function SegmentsPage() {
 
   return (
     <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
-      <SegmentsContent
-        segments={segments}
-        showCreate={showCreate}
-        setShowCreate={setShowCreate}
-        form={form}
-        setForm={setForm}
-        fieldErrors={fieldErrors}
-        setFieldErrors={setFieldErrors}
-        deleting={deleting}
-        setDeleting={setDeleting}
-        expanded={expanded}
-        setExpanded={setExpanded}
-        handleCreate={handleCreate}
-        handleDelete={handleDelete}
-        handleSaveRules={handleSaveRules}
-      />
+      <Suspense fallback={segmentsSkeleton}>
+        <SegmentsContent
+          segments={segments}
+          segmentsTotal={segmentsTotal}
+          showCreate={showCreate}
+          setShowCreate={setShowCreate}
+          form={form}
+          setForm={setForm}
+          fieldErrors={fieldErrors}
+          setFieldErrors={setFieldErrors}
+          deleting={deleting}
+          setDeleting={setDeleting}
+          expanded={expanded}
+          setExpanded={setExpanded}
+          handleCreate={handleCreate}
+          handleDelete={handleDelete}
+          handleSaveRules={handleSaveRules}
+        />
+      </Suspense>
     </PrerequisiteGate>
   );
 }
 
 function SegmentsContent({
   segments,
+  segmentsTotal,
   showCreate,
   setShowCreate,
   form,
@@ -219,6 +234,7 @@ function SegmentsContent({
   handleSaveRules,
 }: {
   segments: Segment[];
+  segmentsTotal: number;
   showCreate: boolean;
   setShowCreate: (v: boolean) => void;
   form: SegmentFormState;
@@ -237,6 +253,9 @@ function SegmentsContent({
     matchType: string,
   ) => void;
 }) {
+  // total comes from server (server-side pagination)
+  const total = segmentsTotal;
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
@@ -332,7 +351,7 @@ function SegmentsContent({
 
       <Card>
         <div className="divide-y divide-slate-100">
-          {segments.length === 0 ? (
+          {total === 0 ? (
             <Blankslate
               icon={SegmentIcon}
               title="You haven't created any segments yet"
@@ -431,6 +450,7 @@ function SegmentsContent({
           )}
         </div>
       </Card>
+      {total > 0 && <Pagination total={total} />}
     </div>
   );
 }

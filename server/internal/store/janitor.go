@@ -12,7 +12,8 @@ type JanitorStore interface {
 	UpsertJanitorConfig(ctx context.Context, config *JanitorConfig) error
 
 	// Repositories
-	ListRepositories(ctx context.Context, orgID string) ([]JanitorRepository, error)
+	ListRepositories(ctx context.Context, orgID string, limit, offset int) ([]JanitorRepository, error)
+	CountRepositories(ctx context.Context, orgID string) (int, error)
 	GetRepository(ctx context.Context, id string) (*JanitorRepository, error)
 	ConnectRepository(ctx context.Context, repo *JanitorRepository) error
 	DisconnectRepository(ctx context.Context, orgID, id string) error
@@ -22,14 +23,16 @@ type JanitorStore interface {
 	CreateScan(ctx context.Context, scan *JanitorScan) error
 	UpdateScan(ctx context.Context, id string, updates map[string]interface{}) error
 	GetScan(ctx context.Context, id string) (*JanitorScan, error)
-	ListScans(ctx context.Context, orgID string, limit int) ([]JanitorScan, error)
+	ListScans(ctx context.Context, orgID string, limit, offset int) ([]JanitorScan, error)
+	CountScans(ctx context.Context, orgID string) (int, error)
 
 	// Scan Events
 	AppendScanEvent(ctx context.Context, event *ScanEventRecord) error
 	GetScanEventsSince(ctx context.Context, scanID string, afterID int64) ([]ScanEventRecord, error)
 
 	// Stale Flags
-	ListStaleFlags(ctx context.Context, orgID string, dismissed *bool, limit int) ([]StaleFlag, error)
+	ListStaleFlags(ctx context.Context, orgID string, dismissed *bool, limit, offset int) ([]StaleFlag, error)
+	CountStaleFlags(ctx context.Context, orgID string, dismissed *bool) (int, error)
 	GetStaleFlag(ctx context.Context, id string) (*StaleFlag, error)
 	UpsertStaleFlag(ctx context.Context, flag *StaleFlag) error
 	DismissStaleFlag(ctx context.Context, orgID, flagKey, reason string) error
@@ -37,7 +40,8 @@ type JanitorStore interface {
 	// PRs
 	CreateJanitorPR(ctx context.Context, pr *JanitorPR) error
 	UpdateJanitorPR(ctx context.Context, id string, updates map[string]interface{}) error
-	ListJanitorPRs(ctx context.Context, orgID string, status string) ([]JanitorPR, error)
+	ListJanitorPRs(ctx context.Context, orgID string, status string, limit, offset int) ([]JanitorPR, error)
+	CountJanitorPRs(ctx context.Context, orgID string, status string) (int, error)
 }
 
 // ─── Data Types ──────────────────────────────────────────────────────────

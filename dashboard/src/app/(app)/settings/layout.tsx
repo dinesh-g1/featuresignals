@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { useFeatures } from "@/hooks/use-features";
 import { cn } from "@/lib/utils";
 import { LockIcon } from "@/components/icons/nav-icons";
@@ -34,7 +35,7 @@ export default function SettingsLayout({
   );
 
   if (isStandalone) {
-    return <>{children}</>;
+    return <Suspense fallback={<div className="p-6" />}>{children}</Suspense>;
   }
 
   return (
@@ -79,7 +80,7 @@ export default function SettingsLayout({
         </div>
       </nav>
 
-      {children}
+      <Suspense fallback={<div className="p-6" />}>{children}</Suspense>
     </div>
   );
 }

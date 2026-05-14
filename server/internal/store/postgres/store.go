@@ -177,6 +177,39 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (*domain.User, error
 	return user, nil
 }
 
+// GetUsersByIDs batch-fetches users by their IDs in a single query.
+func (s *Store) GetUsersByIDs(ctx context.Context, ids []string) ([]domain.User, error) {
+	if len(ids) == 0 {
+		return []domain.User{}, nil
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, email, password_hash, name,
+		        COALESCE(email_verified, false),
+		        COALESCE(email_verify_token, ''), email_verify_expires_at,
+		        created_at, updated_at
+		 FROM users WHERE id = ANY($1)`, ids,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("batch get users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var u domain.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Name,
+			&u.EmailVerified, &u.EmailVerifyToken, &u.EmailVerifyExpires,
+			&u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan user: %w", err)
+		}
+		users = append(users, u)
+	}
+	if users == nil {
+		users = []domain.User{}
+	}
+	return users, rows.Err()
+}
+
 func (s *Store) GetUserByEmailVerifyToken(ctx context.Context, token string) (*domain.User, error) {
 	user := &domain.User{}
 	err := s.pool.QueryRow(ctx,
@@ -308,15 +341,15 @@ func (s *Store) GetOrgMember(ctx context.Context, orgID, userID string) (*domain
 	return m, nil
 }
 
-func (s *Store) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgMember, error) {
+func (s *Store) ListOrgMembers(ctx context.Context, orgID string, limit, offset int) ([]domain.OrgMember, error) {
 	var query string
 	var args []interface{}
 	if orgID == "" {
-		query = `SELECT id, org_id, user_id, role, created_at FROM org_members`
-		args = nil
+		query = `SELECT id, org_id, user_id, role, created_at FROM org_members ORDER BY created_at LIMIT $1 OFFSET $2`
+		args = []interface{}{limit, offset}
 	} else {
-		query = `SELECT id, org_id, user_id, role, created_at FROM org_members WHERE org_id = $1`
-		args = []interface{}{orgID}
+		query = `SELECT id, org_id, user_id, role, created_at FROM org_members WHERE org_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`
+		args = []interface{}{orgID, limit, offset}
 	}
 	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -332,6 +365,18 @@ func (s *Store) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgM
 		members = append(members, m)
 	}
 	return members, nil
+}
+
+// CountOrgMembers returns the total number of org members for an organization.
+func (s *Store) CountOrgMembers(ctx context.Context, orgID string) (int, error) {
+	var count int
+	var err error
+	if orgID == "" {
+		err = s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM org_members`).Scan(&count)
+	} else {
+		err = s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM org_members WHERE org_id = $1`, orgID).Scan(&count)
+	}
+	return count, err
 }
 
 func (s *Store) GetOrgMemberByID(ctx context.Context, memberID string) (*domain.OrgMember, error) {
@@ -411,9 +456,9 @@ func (s *Store) GetProject(ctx context.Context, id string) (*domain.Project, err
 	return p, nil
 }
 
-func (s *Store) ListProjects(ctx context.Context, orgID string) ([]domain.Project, error) {
+func (s *Store) ListProjects(ctx context.Context, orgID string, limit, offset int) ([]domain.Project, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, org_id, name, slug, created_at, updated_at FROM projects WHERE org_id = $1 ORDER BY created_at`, orgID)
+		`SELECT id, org_id, name, slug, created_at, updated_at FROM projects WHERE org_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -453,9 +498,9 @@ func (s *Store) CreateEnvironment(ctx context.Context, e *domain.Environment) er
 	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
 }
 
-func (s *Store) ListEnvironments(ctx context.Context, projectID string) ([]domain.Environment, error) {
+func (s *Store) ListEnvironments(ctx context.Context, projectID string, limit, offset int) ([]domain.Environment, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, org_id, name, slug, color, created_at, updated_at FROM environments WHERE project_id = $1 ORDER BY created_at`, projectID)
+		`SELECT id, project_id, org_id, name, slug, color, created_at, updated_at FROM environments WHERE project_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, projectID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -469,6 +514,14 @@ func (s *Store) ListEnvironments(ctx context.Context, projectID string) ([]domai
 		envs = append(envs, e)
 	}
 	return envs, nil
+}
+
+// CountEnvironmentsByProject returns the total number of environments in a project.
+func (s *Store) CountEnvironmentsByProject(ctx context.Context, projectID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM environments WHERE project_id = $1`, projectID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) GetEnvironment(ctx context.Context, id string) (*domain.Environment, error) {
@@ -539,10 +592,18 @@ func (s *Store) GetFlag(ctx context.Context, projectID, key string) (*domain.Fla
 	return f, nil
 }
 
-func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
-		 FROM flags WHERE project_id = $1 ORDER BY created_at`, projectID)
+func (s *Store) ListFlags(ctx context.Context, projectID string, limit, offset int) ([]domain.Flag, error) {
+	var rows pgx.Rows
+	var err error
+	if limit <= 0 {
+		rows, err = s.pool.Query(ctx,
+			`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+			 FROM flags WHERE project_id = $1 ORDER BY created_at`, projectID)
+	} else {
+		rows, err = s.pool.Query(ctx,
+			`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
+			 FROM flags WHERE project_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, projectID, limit, offset)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -558,12 +619,32 @@ func (s *Store) ListFlags(ctx context.Context, projectID string) ([]domain.Flag,
 	return flags, nil
 }
 
+// CountFlagsByProject returns the total number of flags in a project.
+func (s *Store) CountFlagsByProject(ctx context.Context, projectID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM flags WHERE project_id = $1`, projectID).Scan(&count)
+	return count, err
+}
+
+// CountFlagsWithFilter returns the total number of flags matching the filter.
+func (s *Store) CountFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) (int, error) {
+	if labelSelector == "" {
+		return s.CountFlagsByProject(ctx, projectID)
+	}
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM flags WHERE org_id = $1 AND project_id = $2 AND labels @> $3::jsonb`,
+		orgID, projectID, labelSelector).Scan(&count)
+	return count, err
+}
+
 // ListFlagsWithFilter returns flags filtered by project ID and optional label selector.
 // The label selector is a JSON object; flags whose labels column contains all specified
 // key:value pairs (via @> operator) are returned.
-func (s *Store) ListFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]domain.Flag, error) {
+func (s *Store) ListFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string, limit, offset int) ([]domain.Flag, error) {
 	if labelSelector == "" {
-		return s.ListFlags(ctx, projectID)
+		return s.ListFlags(ctx, projectID, limit, offset)
 	}
 	// Validate labelSelector is valid JSON
 	var raw json.RawMessage
@@ -573,7 +654,7 @@ func (s *Store) ListFlagsWithFilter(ctx context.Context, orgID, projectID, label
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, labels, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
 		 FROM flags WHERE org_id = $1 AND project_id = $2 AND labels @> $3::jsonb
-		 ORDER BY created_at`, orgID, projectID, labelSelector)
+		 ORDER BY created_at LIMIT $4 OFFSET $5`, orgID, projectID, labelSelector, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list flags with filter: %w", err)
 	}
@@ -591,7 +672,7 @@ func (s *Store) ListFlagsWithFilter(ctx context.Context, orgID, projectID, label
 
 // ListFlagsSorted returns flags for a project, sorted by the given field and direction.
 // The sortField is validated against an allowlist to prevent SQL injection.
-func (s *Store) ListFlagsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]domain.Flag, error) {
+func (s *Store) ListFlagsSorted(ctx context.Context, projectID, sortField, sortDir string, limit, offset int) ([]domain.Flag, error) {
 	allowed := map[string]bool{"key": true, "name": true, "created_at": true, "updated_at": true, "status": true}
 	if !allowed[sortField] {
 		sortField = "created_at"
@@ -602,8 +683,8 @@ func (s *Store) ListFlagsSorted(ctx context.Context, projectID, sortField, sortD
 	}
 	query := fmt.Sprintf(
 		`SELECT id, project_id, org_id, key, name, description, flag_type, category, status, default_value, tags, expires_at, prerequisites, mutual_exclusion_group, created_at, updated_at
-		 FROM flags WHERE project_id = $1 ORDER BY %s %s`, sortField, dir)
-	rows, err := s.pool.Query(ctx, query, projectID)
+		 FROM flags WHERE project_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3`, sortField, dir)
+	rows, err := s.pool.Query(ctx, query, projectID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list flags sorted: %w", err)
 	}
@@ -660,6 +741,16 @@ func (s *Store) ListFlagVersions(ctx context.Context, flagID string, limit, offs
 		versions = append(versions, v)
 	}
 	return versions, rows.Err()
+}
+
+// CountFlagVersions returns the total number of versions for a flag.
+func (s *Store) CountFlagVersions(ctx context.Context, flagID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM flag_versions WHERE flag_id = $1`,
+		flagID,
+	).Scan(&count)
+	return count, err
 }
 
 func (s *Store) GetFlagVersion(ctx context.Context, flagID string, version int) (*domain.FlagVersion, error) {
@@ -768,11 +859,11 @@ func (s *Store) GetFlagState(ctx context.Context, flagID, envID string) (*domain
 	return fs, nil
 }
 
-func (s *Store) ListFlagStatesByEnv(ctx context.Context, envID string) ([]domain.FlagState, error) {
+func (s *Store) ListFlagStatesByEnv(ctx context.Context, envID string, limit, offset int) ([]domain.FlagState, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, flag_id, env_id, org_id, enabled, default_value, rules, percentage_rollout,
 		        variants, scheduled_enable_at, scheduled_disable_at, created_at, updated_at
-		 FROM flag_states WHERE env_id = $1`, envID)
+		 FROM flag_states WHERE env_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, envID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list flag states by env: %w", err)
 	}
@@ -797,6 +888,14 @@ func (s *Store) ListFlagStatesByEnv(ctx context.Context, envID string) ([]domain
 		states = append(states, fs)
 	}
 	return states, rows.Err()
+}
+
+// CountFlagStatesByEnv returns the total number of flag states for an environment.
+func (s *Store) CountFlagStatesByEnv(ctx context.Context, envID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM flag_states WHERE env_id = $1`, envID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) ListPendingSchedules(ctx context.Context, before time.Time) ([]domain.FlagState, error) {
@@ -844,10 +943,18 @@ func (s *Store) CreateSegment(ctx context.Context, seg *domain.Segment) error {
 	return wrapConflict(err, "segment key")
 }
 
-func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Segment, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
-		 FROM segments WHERE project_id = $1 ORDER BY created_at`, projectID)
+func (s *Store) ListSegments(ctx context.Context, projectID string, limit, offset int) ([]domain.Segment, error) {
+	var rows pgx.Rows
+	var err error
+	if limit <= 0 {
+		rows, err = s.pool.Query(ctx,
+			`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
+			 FROM segments WHERE project_id = $1 ORDER BY created_at`, projectID)
+	} else {
+		rows, err = s.pool.Query(ctx,
+			`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
+			 FROM segments WHERE project_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, projectID, limit, offset)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -867,10 +974,30 @@ func (s *Store) ListSegments(ctx context.Context, projectID string) ([]domain.Se
 	return segments, nil
 }
 
-// ListSegmentsWithFilter returns segments filtered by project ID and optional label selector.
-func (s *Store) ListSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]domain.Segment, error) {
+// CountSegmentsByProject returns the total number of segments in a project.
+func (s *Store) CountSegmentsByProject(ctx context.Context, projectID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM segments WHERE project_id = $1`, projectID).Scan(&count)
+	return count, err
+}
+
+// CountSegmentsWithFilter returns the total number of segments matching the filter.
+func (s *Store) CountSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) (int, error) {
 	if labelSelector == "" {
-		return s.ListSegments(ctx, projectID)
+		return s.CountSegmentsByProject(ctx, projectID)
+	}
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM segments WHERE org_id = $1 AND project_id = $2 AND labels @> $3::jsonb`,
+		orgID, projectID, labelSelector).Scan(&count)
+	return count, err
+}
+
+// ListSegmentsWithFilter returns segments filtered by project ID and optional label selector.
+func (s *Store) ListSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string, limit, offset int) ([]domain.Segment, error) {
+	if labelSelector == "" {
+		return s.ListSegments(ctx, projectID, limit, offset)
 	}
 	var raw json.RawMessage
 	if err := json.Unmarshal([]byte(labelSelector), &raw); err != nil {
@@ -879,7 +1006,7 @@ func (s *Store) ListSegmentsWithFilter(ctx context.Context, orgID, projectID, la
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, project_id, org_id, key, name, description, match_type, rules, labels, created_at, updated_at
 		 FROM segments WHERE org_id = $1 AND project_id = $2 AND labels @> $3::jsonb
-		 ORDER BY created_at`, orgID, projectID, labelSelector)
+		 ORDER BY created_at LIMIT $4 OFFSET $5`, orgID, projectID, labelSelector, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list segments with filter: %w", err)
 	}
@@ -900,7 +1027,7 @@ func (s *Store) ListSegmentsWithFilter(ctx context.Context, orgID, projectID, la
 }
 
 // ListSegmentsSorted returns segments for a project, sorted by the given field and direction.
-func (s *Store) ListSegmentsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]domain.Segment, error) {
+func (s *Store) ListSegmentsSorted(ctx context.Context, projectID, sortField, sortDir string, limit, offset int) ([]domain.Segment, error) {
 	allowed := map[string]bool{"key": true, "name": true, "created_at": true, "updated_at": true}
 	if !allowed[sortField] {
 		sortField = "created_at"
@@ -911,8 +1038,8 @@ func (s *Store) ListSegmentsSorted(ctx context.Context, projectID, sortField, so
 	}
 	query := fmt.Sprintf(
 		`SELECT id, project_id, org_id, key, name, description, match_type, rules, created_at, updated_at
-		 FROM segments WHERE project_id = $1 ORDER BY %s %s`, sortField, dir)
-	rows, err := s.pool.Query(ctx, query, projectID)
+		 FROM segments WHERE project_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3`, sortField, dir)
+	rows, err := s.pool.Query(ctx, query, projectID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list segments sorted: %w", err)
 	}
@@ -1002,10 +1129,10 @@ func (s *Store) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domain.AP
 	return k, nil
 }
 
-func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey, error) {
+func (s *Store) ListAPIKeys(ctx context.Context, envID string, limit, offset int) ([]domain.APIKey, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, env_id, org_id, key_hash, key_prefix, name, type, created_at, last_used_at, revoked_at, expires_at
-		 FROM api_keys WHERE env_id = $1 ORDER BY created_at`, envID)
+		 FROM api_keys WHERE env_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, envID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -1019,6 +1146,14 @@ func (s *Store) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey,
 		keys = append(keys, k)
 	}
 	return keys, nil
+}
+
+// CountAPIKeysByEnv returns the total number of API keys for an environment.
+func (s *Store) CountAPIKeysByEnv(ctx context.Context, envID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM api_keys WHERE env_id = $1`, envID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) RevokeAPIKey(ctx context.Context, id string) error {
@@ -1101,10 +1236,10 @@ func (s *Store) GetWebhook(ctx context.Context, id string) (*domain.Webhook, err
 	return w, nil
 }
 
-func (s *Store) ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error) {
+func (s *Store) ListWebhooks(ctx context.Context, orgID string, limit, offset int) ([]domain.Webhook, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, name, url, secret, events, enabled, created_at, updated_at
-		 FROM webhooks WHERE org_id = $1 ORDER BY created_at`, orgID)
+		 FROM webhooks WHERE org_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -1158,6 +1293,14 @@ func (s *Store) ListWebhookDeliveries(ctx context.Context, webhookID string, lim
 		deliveries = append(deliveries, d)
 	}
 	return deliveries, nil
+}
+
+// CountWebhookDeliveries returns the total number of deliveries for a webhook.
+func (s *Store) CountWebhookDeliveries(ctx context.Context, webhookID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM webhook_deliveries WHERE webhook_id = $1`, webhookID).Scan(&count)
+	return count, err
 }
 
 // --- Audit Log ---
@@ -1306,7 +1449,7 @@ func (s *Store) GetLastAuditHash(ctx context.Context, orgID string) (string, err
 // --- Ruleset Loading (for evaluation cache) ---
 
 func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
-	flags, err := s.ListFlags(ctx, projectID)
+	flags, err := s.ListFlags(ctx, projectID, 10000, 0)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("load flags: %w", err)
 	}
@@ -1339,7 +1482,7 @@ func (s *Store) LoadRuleset(ctx context.Context, projectID, envID string) ([]dom
 		states = append(states, fs)
 	}
 
-	segments, err := s.ListSegments(ctx, projectID)
+	segments, err := s.ListSegments(ctx, projectID, 10000, 0)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("load segments: %w", err)
 	}
@@ -2058,10 +2201,10 @@ func (s *Store) GetCustomRole(ctx context.Context, id string) (*domain.CustomRol
 	return role, nil
 }
 
-func (s *Store) ListCustomRoles(ctx context.Context, orgID string) ([]domain.CustomRole, error) {
+func (s *Store) ListCustomRoles(ctx context.Context, orgID string, limit, offset int) ([]domain.CustomRole, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, name, description, base_role, permissions, created_at, updated_at
-		 FROM custom_roles WHERE org_id = $1 ORDER BY created_at`, orgID)
+		 FROM custom_roles WHERE org_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -2079,6 +2222,14 @@ func (s *Store) ListCustomRoles(ctx context.Context, orgID string) ([]domain.Cus
 		roles = append(roles, role)
 	}
 	return roles, nil
+}
+
+// CountCustomRoles returns the total number of custom roles for an organization.
+func (s *Store) CountCustomRoles(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM custom_roles WHERE org_id = $1`, orgID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) UpdateCustomRole(ctx context.Context, role *domain.CustomRole) error {

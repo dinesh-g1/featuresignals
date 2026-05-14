@@ -173,6 +173,21 @@ func (m *mockStore) GetUserByID(ctx context.Context, id string) (*domain.User, e
 	return user, nil
 }
 
+func (m *mockStore) GetUsersByIDs(_ context.Context, ids []string) ([]domain.User, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []domain.User
+	for _, id := range ids {
+		if u, ok := m.users[id]; ok {
+			result = append(result, *u)
+		}
+	}
+	if result == nil {
+		return []domain.User{}, nil
+	}
+	return result, nil
+}
+
 func (m *mockStore) AddOrgMember(ctx context.Context, member *domain.OrgMember) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -297,17 +312,34 @@ func (m *mockStore) GetOrgMember(ctx context.Context, orgID, userID string) (*do
 	return nil, domain.ErrNotFound
 }
 
-func (m *mockStore) ListOrgMembers(ctx context.Context, orgID string) ([]domain.OrgMember, error) {
+func (m *mockStore) ListOrgMembers(ctx context.Context, orgID string, limit, offset int) ([]domain.OrgMember, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	var result []domain.OrgMember
 	if orgID == "" {
-		var all []domain.OrgMember
 		for _, members := range m.orgMembers {
-			all = append(all, members...)
+			result = append(result, members...)
 		}
-		return all, nil
+	} else {
+		result = m.orgMembers[orgID]
 	}
-	return m.orgMembers[orgID], nil
+	if result == nil {
+		return []domain.OrgMember{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.OrgMember{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
+}
+
+func (m *mockStore) CountOrgMembers(_ context.Context, orgID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.orgMembers[orgID]), nil
 }
 
 func (m *mockStore) CreateProject(ctx context.Context, p *domain.Project) error {
@@ -329,7 +361,7 @@ func (m *mockStore) GetProject(ctx context.Context, id string) (*domain.Project,
 	return p, nil
 }
 
-func (m *mockStore) ListProjects(ctx context.Context, orgID string) ([]domain.Project, error) {
+func (m *mockStore) ListProjects(ctx context.Context, orgID string, limit, offset int) ([]domain.Project, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.Project
@@ -338,7 +370,17 @@ func (m *mockStore) ListProjects(ctx context.Context, orgID string) ([]domain.Pr
 			result = append(result, *p)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.Project{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.Project{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
 func (m *mockStore) DeleteProject(ctx context.Context, id string) error {
@@ -369,7 +411,7 @@ func (m *mockStore) CreateEnvironment(ctx context.Context, e *domain.Environment
 	return nil
 }
 
-func (m *mockStore) ListEnvironments(ctx context.Context, projectID string) ([]domain.Environment, error) {
+func (m *mockStore) ListEnvironments(ctx context.Context, projectID string, limit, offset int) ([]domain.Environment, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.Environment
@@ -378,7 +420,17 @@ func (m *mockStore) ListEnvironments(ctx context.Context, projectID string) ([]d
 			result = append(result, *e)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.Environment{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.Environment{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
 func (m *mockStore) GetEnvironment(ctx context.Context, id string) (*domain.Environment, error) {
@@ -444,8 +496,100 @@ func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)   { r
 func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error)  { return 0, nil }
 func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)   { return 0, nil }
 func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)  { return 0, nil }
+func (m *mockStore) CountFlagsWithFilter(_ context.Context, _orgID, _projectID, _labelSelector string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountFlagsByProject(_ context.Context, projectID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.flagsByProject[projectID]), nil
+}
+func (m *mockStore) CountFlagStatesByEnv(_ context.Context, envID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	count := 0
+	for _, fs := range m.flagStates {
+		if fs.EnvID == envID {
+			count++
+		}
+	}
+	return count, nil
+}
+func (m *mockStore) CountSegmentsWithFilter(_ context.Context, _orgID, _projectID, _labelSelector string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountSegmentsByProject(_ context.Context, projectID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	count := 0
+	for key := range m.segments {
+		if len(key) > len(projectID) && key[:len(projectID)] == projectID {
+			count++
+		}
+	}
+	return count, nil
+}
+func (m *mockStore) CountAPIKeysByEnv(_ context.Context, envID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.apiKeysByEnv[envID]), nil
+}
+func (m *mockStore) CountEnvironmentsByProject(_ context.Context, projectID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.envsByProject[projectID]), nil
+}
+func (m *mockStore) CountWebhookDeliveries(_ context.Context, webhookID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.whDeliveries[webhookID]), nil
+}
+func (m *mockStore) CountCustomRoles(_ context.Context, orgID string) (int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.customRolesByOrg[orgID]), nil
+}
+func (m *mockStore) CountFlagVersions(_ context.Context, flagID string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountPinnedItems(_ context.Context, orgID, userID, projectID string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountAgents(_ context.Context, orgID string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountAgentsByType(_ context.Context, orgID, agentType string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountMaturities(_ context.Context, agentID string) (int, error) {
+	return 0, nil
+}
 
-func (m *mockStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+// IntegrationStore stubs
+func (m *mockStore) CreateIntegration(_ context.Context, _ domain.CreateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (m *mockStore) GetIntegration(_ context.Context, _, _ string) (*domain.Integration, error) {
+	return nil, nil
+}
+func (m *mockStore) ListIntegrations(_ context.Context, _ string, _, _ int) ([]domain.Integration, error) {
+	return nil, nil
+}
+func (m *mockStore) CountIntegrations(_ context.Context, _ string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) UpdateIntegration(_ context.Context, _, _ string, _ domain.UpdateIntegrationRequest) (*domain.Integration, error) {
+	return nil, nil
+}
+func (m *mockStore) DeleteIntegration(_ context.Context, _, _ string) error { return nil }
+func (m *mockStore) TestIntegration(_ context.Context, _ string) (*domain.IntegrationDelivery, error) {
+	return nil, nil
+}
+func (m *mockStore) ListDeliveries(_ context.Context, _ string, _ int) ([]domain.IntegrationDelivery, error) {
+	return nil, nil
+}
+
+func (m *mockStore) ListPinnedItems(_ context.Context, _orgID, _userID, _projectID string, _limit, _offset int) ([]domain.PinnedItem, error) {
 	return nil, nil
 }
 func (m *mockStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
@@ -458,7 +602,7 @@ func (m *mockStore) Search(context.Context, string, string, string) ([]domain.Se
 	return nil, nil
 }
 
-func (m *mockStore) ListFlags(ctx context.Context, projectID string) ([]domain.Flag, error) {
+func (m *mockStore) ListFlags(ctx context.Context, projectID string, limit, offset int) ([]domain.Flag, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.Flag
@@ -467,15 +611,25 @@ func (m *mockStore) ListFlags(ctx context.Context, projectID string) ([]domain.F
 			result = append(result, *f)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.Flag{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.Flag{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
-func (m *mockStore) ListFlagsWithFilter(_ context.Context, _, projectID, _ string) ([]domain.Flag, error) {
-	return m.ListFlags(context.Background(), projectID)
+func (m *mockStore) ListFlagsWithFilter(_ context.Context, _, projectID, _ string, limit, offset int) ([]domain.Flag, error) {
+	return m.ListFlags(context.Background(), projectID, limit, offset)
 }
 
-func (m *mockStore) ListFlagsSorted(_ context.Context, projectID, _, _ string) ([]domain.Flag, error) {
-	return m.ListFlags(context.Background(), projectID)
+func (m *mockStore) ListFlagsSorted(_ context.Context, projectID, _, _ string, limit, offset int) ([]domain.Flag, error) {
+	return m.ListFlags(context.Background(), projectID, limit, offset)
 }
 
 func (m *mockStore) UpdateFlag(ctx context.Context, f *domain.Flag) error {
@@ -523,7 +677,7 @@ func (m *mockStore) GetFlagState(ctx context.Context, flagID, envID string) (*do
 	return fs, nil
 }
 
-func (m *mockStore) ListFlagStatesByEnv(_ context.Context, envID string) ([]domain.FlagState, error) {
+func (m *mockStore) ListFlagStatesByEnv(_ context.Context, envID string, limit, offset int) ([]domain.FlagState, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var states []domain.FlagState
@@ -532,7 +686,17 @@ func (m *mockStore) ListFlagStatesByEnv(_ context.Context, envID string) ([]doma
 			states = append(states, *fs)
 		}
 	}
-	return states, nil
+	if states == nil {
+		return []domain.FlagState{}, nil
+	}
+	if offset >= len(states) {
+		return []domain.FlagState{}, nil
+	}
+	end := offset + limit
+	if end > len(states) || limit <= 0 {
+		end = len(states)
+	}
+	return states[offset:end], nil
 }
 
 func (m *mockStore) CreateSegment(ctx context.Context, seg *domain.Segment) error {
@@ -547,7 +711,7 @@ func (m *mockStore) CreateSegment(ctx context.Context, seg *domain.Segment) erro
 	return nil
 }
 
-func (m *mockStore) ListSegments(ctx context.Context, projectID string) ([]domain.Segment, error) {
+func (m *mockStore) ListSegments(ctx context.Context, projectID string, limit, offset int) ([]domain.Segment, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.Segment
@@ -556,15 +720,25 @@ func (m *mockStore) ListSegments(ctx context.Context, projectID string) ([]domai
 			result = append(result, *seg)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.Segment{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.Segment{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
-func (m *mockStore) ListSegmentsWithFilter(_ context.Context, _, projectID, _ string) ([]domain.Segment, error) {
-	return m.ListSegments(context.Background(), projectID)
+func (m *mockStore) ListSegmentsWithFilter(_ context.Context, _, projectID, _ string, limit, offset int) ([]domain.Segment, error) {
+	return m.ListSegments(context.Background(), projectID, limit, offset)
 }
 
-func (m *mockStore) ListSegmentsSorted(_ context.Context, projectID, _, _ string) ([]domain.Segment, error) {
-	return m.ListSegments(context.Background(), projectID)
+func (m *mockStore) ListSegmentsSorted(_ context.Context, projectID, _, _ string, limit, offset int) ([]domain.Segment, error) {
+	return m.ListSegments(context.Background(), projectID, limit, offset)
 }
 
 func (m *mockStore) GetSegment(ctx context.Context, projectID, key string) (*domain.Segment, error) {
@@ -637,7 +811,7 @@ func (m *mockStore) GetAPIKeyByHash(ctx context.Context, keyHash string) (*domai
 	return k, nil
 }
 
-func (m *mockStore) ListAPIKeys(ctx context.Context, envID string) ([]domain.APIKey, error) {
+func (m *mockStore) ListAPIKeys(ctx context.Context, envID string, limit, offset int) ([]domain.APIKey, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.APIKey
@@ -646,7 +820,17 @@ func (m *mockStore) ListAPIKeys(ctx context.Context, envID string) ([]domain.API
 			result = append(result, *k)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.APIKey{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.APIKey{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
 func (m *mockStore) RevokeAPIKey(ctx context.Context, id string) error {
@@ -736,14 +920,14 @@ func (m *mockStore) CountAuditEntries(_ context.Context, orgID string) (int, err
 }
 
 func (m *mockStore) LoadRuleset(ctx context.Context, projectID, envID string) ([]domain.Flag, []domain.FlagState, []domain.Segment, error) {
-	flags, _ := m.ListFlags(ctx, projectID)
+	flags, _ := m.ListFlags(ctx, projectID, 0, 0)
 	var states []domain.FlagState
 	for _, f := range flags {
 		if s, err := m.GetFlagState(ctx, f.ID, envID); err == nil {
 			states = append(states, *s)
 		}
 	}
-	segments, _ := m.ListSegments(ctx, projectID)
+	segments, _ := m.ListSegments(ctx, projectID, 0, 0)
 	return flags, states, segments, nil
 }
 
@@ -795,7 +979,7 @@ func (m *mockStore) GetWebhook(ctx context.Context, id string) (*domain.Webhook,
 	return w, nil
 }
 
-func (m *mockStore) ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error) {
+func (m *mockStore) ListWebhooks(ctx context.Context, orgID string, limit, offset int) ([]domain.Webhook, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.Webhook
@@ -804,7 +988,17 @@ func (m *mockStore) ListWebhooks(ctx context.Context, orgID string) ([]domain.We
 			result = append(result, *w)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.Webhook{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.Webhook{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
 func (m *mockStore) UpdateWebhook(ctx context.Context, w *domain.Webhook) error {
@@ -1384,7 +1578,7 @@ func (m *mockStore) GetCustomRole(_ context.Context, id string) (*domain.CustomR
 	return &cp, nil
 }
 
-func (m *mockStore) ListCustomRoles(_ context.Context, orgID string) ([]domain.CustomRole, error) {
+func (m *mockStore) ListCustomRoles(_ context.Context, orgID string, limit, offset int) ([]domain.CustomRole, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	var result []domain.CustomRole
@@ -1393,7 +1587,17 @@ func (m *mockStore) ListCustomRoles(_ context.Context, orgID string) ([]domain.C
 			result = append(result, *r)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.CustomRole{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.CustomRole{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
 func (m *mockStore) UpdateCustomRole(_ context.Context, role *domain.CustomRole) error {
@@ -1569,28 +1773,6 @@ func (m *mockStore) RollbackFlagToVersion(_ context.Context, _ string, _ int, _,
 	return nil
 }
 
-func (s *mockStore) CreateIntegration(context.Context, domain.CreateIntegrationRequest) (*domain.Integration, error) {
-	return nil, nil
-}
-func (s *mockStore) GetIntegration(context.Context, string, string) (*domain.Integration, error) {
-	return nil, nil
-}
-func (s *mockStore) ListIntegrations(context.Context, string) ([]domain.Integration, error) {
-	return nil, nil
-}
-func (s *mockStore) UpdateIntegration(context.Context, string, string, domain.UpdateIntegrationRequest) (*domain.Integration, error) {
-	return nil, nil
-}
-func (s *mockStore) DeleteIntegration(context.Context, string, string) error {
-	return nil
-}
-func (s *mockStore) TestIntegration(context.Context, string) (*domain.IntegrationDelivery, error) {
-	return nil, nil
-}
-func (s *mockStore) ListDeliveries(context.Context, string, int) ([]domain.IntegrationDelivery, error) {
-	return nil, nil
-}
-
 func (s *mockStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
 func (s *mockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
 func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
@@ -1649,10 +1831,11 @@ func (s *mockStore) CreateAgent(_ context.Context, _ *domain.Agent) error {
 func (s *mockStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error) {
 	return nil, errors.New("agent store not implemented in tests")
 }
-func (s *mockStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error) {
+func (s *mockStore) ListAgents(_ context.Context, _ string, _, _ int) ([]domain.Agent, error) {
 	return nil, errors.New("agent store not implemented in tests")
 }
-func (s *mockStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) {
+
+func (s *mockStore) ListAgentsByType(_ context.Context, _, _ string, _, _ int) ([]domain.Agent, error) {
 	return nil, errors.New("agent store not implemented in tests")
 }
 func (s *mockStore) UpdateAgent(_ context.Context, _ *domain.Agent) error {
@@ -1672,7 +1855,7 @@ func (s *mockStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentM
 func (s *mockStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) {
 	return nil, errors.New("agent maturity store not implemented in tests")
 }
-func (s *mockStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) {
+func (s *mockStore) ListMaturities(_ context.Context, _ string, _, _ int) ([]domain.AgentMaturity, error) {
 	return nil, errors.New("agent maturity store not implemented in tests")
 }
 
@@ -1733,9 +1916,10 @@ func (m *mockStore) GetVariantDistribution(ctx context.Context, orgID, behaviorK
 func (m *mockStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
 	return nil, domain.WrapNotFound("policy")
 }
-func (m *mockStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+func (m *mockStore) ListPolicies(_ context.Context, _ string, _, _ int) ([]domain.Policy, error) {
 	return nil, nil
 }
+func (m *mockStore) CountPolicies(_ context.Context, _ string) (int, error) { return 0, nil }
 func (m *mockStore) ListApplicablePolicies(_ context.Context, _ string, _ domain.PolicyScope) ([]domain.Policy, error) {
 	return nil, nil
 }
@@ -1762,12 +1946,20 @@ func (m *mockStore) GetBehavior(ctx context.Context, orgID, behaviorKey string) 
 	return nil, domain.WrapNotFound("behavior")
 }
 
-func (m *mockStore) ListBehaviors(ctx context.Context, orgID string) ([]domain.ABMBehavior, error) {
+func (m *mockStore) ListBehaviors(ctx context.Context, orgID string, limit, offset int) ([]domain.ABMBehavior, error) {
 	return nil, nil
 }
 
-func (m *mockStore) ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string) ([]domain.ABMBehavior, error) {
+func (m *mockStore) ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string, limit, offset int) ([]domain.ABMBehavior, error) {
 	return nil, nil
+}
+
+func (m *mockStore) CountBehaviors(ctx context.Context, orgID string) (int, error) {
+	return 0, nil
+}
+
+func (m *mockStore) CountBehaviorsByAgentType(ctx context.Context, orgID, agentType string) (int, error) {
+	return 0, nil
 }
 
 func (m *mockStore) UpdateBehavior(ctx context.Context, behavior *domain.ABMBehavior) error {

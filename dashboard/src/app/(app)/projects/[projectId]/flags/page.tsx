@@ -26,7 +26,7 @@ import { FlagSlideOver } from "@/components/flag-slide-over";
 import { FlagCardGrid } from "@/components/flag-card-grid";
 import { EnhancedEmptyState } from "@/components/ui/enhanced-empty-state";
 import {
-  useFlags,
+  useFlagsPaginated,
   useEnvironments,
   useFlagStates,
   useFlagStateMap,
@@ -35,6 +35,7 @@ import {
 } from "@/hooks/use-data";
 import { useFlagToggle } from "@/hooks/use-flag-toggle";
 import { ProductionSafetyGate } from "@/components/production-safety-gate";
+import { Pagination } from "@/components/ui/pagination";
 
 interface MutationResult<TArgs, TData> {
   mutate: (args: TArgs) => Promise<TData | undefined>;
@@ -116,12 +117,19 @@ function FlagsInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Read pagination params from URL for server-side pagination
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offsetVal = parseInt(searchParams.get("offset") || "0");
+
   const {
-    data: flags,
+    data: flagsPaginated,
     loading: _flagsLoading,
     error: _flagsError,
     refetch: refetchFlags,
-  } = useFlags(projectId);
+  } = useFlagsPaginated(projectId, limit, offsetVal);
+  const flags = flagsPaginated?.data ?? [];
+  const flagsTotal = flagsPaginated?.total ?? 0;
+
   const { data: envs } = useEnvironments(projectId);
   const { data: batchStates } = useFlagStates(projectId, currentEnvId);
   const stateMap = useFlagStateMap(batchStates, flags);
@@ -393,35 +401,42 @@ function FlagsInner() {
 
   return (
     <>
-      <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
-        <FlagsWithData
-          search={search}
-          searchInput={searchInput}
-          setSearchInput={setSearchInput}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          categoryFilter={categoryFilter}
-          setCategoryFilter={setCategoryFilter}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          tagFilter={tagFilter}
-          setTagFilter={setTagFilter}
-          showCreate={showCreate}
-          setShowCreate={setShowCreate}
-          newFlag={newFlag}
-          setNewFlag={setNewFlag}
-          fieldErrors={fieldErrors}
-          setFieldErrors={setFieldErrors}
-          deleting={deleting}
-          setDeleting={setDeleting}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortDir={sortDir}
-          setSortDir={setSortDir}
-          selectedFlagKey={selectedFlagKey}
-          setSelectedFlagKey={setSelectedFlagKey}
-        />
-      </PrerequisiteGate>
+      <FlagsWithData
+        search={search}
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        tagFilter={tagFilter}
+        setTagFilter={setTagFilter}
+        showCreate={showCreate}
+        setShowCreate={setShowCreate}
+        newFlag={newFlag}
+        setNewFlag={setNewFlag}
+        fieldErrors={fieldErrors}
+        setFieldErrors={setFieldErrors}
+        deleting={deleting}
+        setDeleting={setDeleting}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortDir={sortDir}
+        setSortDir={setSortDir}
+        selectedFlagKey={selectedFlagKey}
+        setSelectedFlagKey={setSelectedFlagKey}
+        flags={flags}
+        flagsLoading={_flagsLoading}
+        flagsError={_flagsError}
+        refetchFlags={refetchFlags}
+        envs={envs}
+        stateMap={stateMap}
+        prereqState={prereqState}
+        onRefreshPrereqs={refreshPrereqs}
+        flagsTotal={flagsTotal}
+      />
 
       <FlagSlideOver
         isOpen={!!selectedFlagKey}
@@ -483,8 +498,8 @@ function FlagsInner() {
 }
 
 // ---------------------------------------------------------------------------
-// FlagsWithData — ONLY called when prerequisites ARE met (inside the gate).
-// All data-fetching hooks live here so they NEVER fire with null projectId.
+// FlagsWithData — Always rendered so hooks are stable.
+// Handles prerequisite state internally. Receives data from FlagsInner.
 // ---------------------------------------------------------------------------
 function FlagsWithData({
   search,
@@ -512,6 +527,15 @@ function FlagsWithData({
   setSortDir,
   selectedFlagKey: _selectedFlagKey,
   setSelectedFlagKey,
+  flags,
+  flagsLoading,
+  flagsError,
+  refetchFlags,
+  envs,
+  stateMap,
+  prereqState,
+  onRefreshPrereqs,
+  flagsTotal,
 }: {
   search: string;
   searchInput: string;
@@ -545,22 +569,24 @@ function FlagsWithData({
   setSortDir: (v: "asc" | "desc") => void;
   selectedFlagKey: string | null;
   setSelectedFlagKey: (v: string | null) => void;
+  flags: FlagType[] | undefined;
+  flagsLoading: boolean;
+  flagsError: string | null;
+  refetchFlags: () => void;
+  envs: EnvironmentType[] | undefined;
+  stateMap: Map<string, FlagState>;
+  prereqState: {
+    hasProjects: boolean;
+    hasEnvironments: boolean;
+    canCreateFlags: boolean;
+  };
+  onRefreshPrereqs: () => void;
+  flagsTotal: number;
 }) {
+  // ALL hooks must come before any conditional return
   const token = useAppStore((s) => s.token);
   const projectId = useAppStore((s) => s.currentProjectId);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
-
-  // These hooks ONLY run when FlagsWithData is rendered, which is inside
-  // PrerequisiteGate — so projectId/currentEnvId are guaranteed non-null.
-  const {
-    data: flags,
-    loading: flagsLoading,
-    error: flagsError,
-    refetch: refetchFlags,
-  } = useFlags(projectId);
-  const { data: envs } = useEnvironments(projectId);
-  const { data: batchStates } = useFlagStates(projectId, currentEnvId);
-  const stateMap = useFlagStateMap(batchStates, flags);
 
   const currentEnvName = (envs ?? []).find((e) => e.id === currentEnvId)?.name;
   const suggestedKey = useMemo(() => {
@@ -753,6 +779,25 @@ function FlagsWithData({
     sortDir,
   ]);
 
+  // Adapt toggle for FlagCardGrid: delegates to the safety-gated list toggle
+  const handleOnToggle = useCallback(
+    async (flagKey: string, _enabled: boolean) => {
+      await handleQuickToggle(flagKey);
+    },
+    [handleQuickToggle],
+  );
+
+  const togglingSet = useMemo(() => new Set<string>(), []);
+
+  // Safe to conditionally return — all hooks are above
+  if (!prereqState.canCreateFlags) {
+    return (
+      <PrerequisiteGate state={prereqState} onRefresh={onRefreshPrereqs}>
+        {null}
+      </PrerequisiteGate>
+    );
+  }
+
   if (flagsError) {
     return (
       <ErrorDisplay
@@ -766,17 +811,6 @@ function FlagsWithData({
   if (flagsLoading) {
     return <FlagsPageSkeleton />;
   }
-
-  // Adapt toggle for FlagCardGrid: delegates to the safety-gated list toggle
-  const handleOnToggle = useCallback(
-    async (flagKey: string, _enabled: boolean) => {
-      // The _enabled param is ignored — the hook reads current state and flips it
-      await handleQuickToggle(flagKey);
-    },
-    [handleQuickToggle],
-  );
-
-  const togglingSet = useMemo(() => new Set<string>(), []);
 
   return (
     <FlagsContent
@@ -941,6 +975,9 @@ function FlagsContent({
 }) {
   const _currentEnvId = useAppStore((s) => s.currentEnvId);
 
+  // Server handles pagination — use filtered list directly (no client-side slice)
+  const total = (flags ?? []).length;
+
   // Bulk selection state
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [bulkSelectionMode, setBulkSelectionMode] = useState(false);
@@ -953,8 +990,7 @@ function FlagsContent({
       active: all.filter((f) => f.status === "active").length,
       disabled: all.filter(
         (f) =>
-          f.status === "active" &&
-          !(stateMap.get(f.key)?.enabled ?? false),
+          f.status === "active" && !(stateMap.get(f.key)?.enabled ?? false),
       ).length,
       scheduled: all.filter(
         (f) =>
@@ -1198,8 +1234,7 @@ function FlagsContent({
             chip.key === "all"
               ? statusFilter === "all"
               : chip.key === "disabled"
-                ? statusFilter === "active" &&
-                  !(stateMap.size > 0)
+                ? statusFilter === "active" && !(stateMap.size > 0)
                 : statusFilter === chip.key;
           return (
             <button
@@ -1216,8 +1251,7 @@ function FlagsContent({
               }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all",
-                isActive ||
-                  (chip.key === "all" && statusFilter === "all")
+                isActive || (chip.key === "all" && statusFilter === "all")
                   ? "bg-[var(--signal-fg-accent)] text-white shadow-sm"
                   : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)] hover:bg-slate-200 hover:text-[var(--signal-fg-primary)]",
               )}
@@ -1226,8 +1260,7 @@ function FlagsContent({
               <span
                 className={cn(
                   "inline-flex items-center justify-center rounded-full px-1.5 py-0 min-w-[18px] text-[10px] font-semibold",
-                  isActive ||
-                    (chip.key === "all" && statusFilter === "all")
+                  isActive || (chip.key === "all" && statusFilter === "all")
                     ? "bg-white/20 text-white"
                     : "bg-slate-300/60 text-[var(--signal-fg-secondary)]",
                 )}
@@ -1317,7 +1350,7 @@ function FlagsContent({
           projectId={projectId}
           onCreateFlag={() => setShowCreate(true)}
         />
-      ) : filtered.length === 0 ? (
+      ) : total === 0 ? (
         <EnhancedEmptyState
           variant="no-search-results"
           title="No matching flags"
@@ -1325,18 +1358,21 @@ function FlagsContent({
           onClearSearch={() => setSearchInput("")}
         />
       ) : (
-        <FlagCardGrid
-          flags={filtered}
-          flagStates={stateMap}
-          projectId={projectId}
-          onToggle={onToggle}
-          onCreateFlag={() => setShowCreate(true)}
-          toggling={togglingSet}
-          onFlagClick={onFlagClick}
-          selectable={bulkSelectionMode}
-          selectedKeys={selectedKeys}
-          onSelectionChange={setSelectedKeys}
-        />
+        <>
+          <FlagCardGrid
+            flags={filtered}
+            flagStates={stateMap}
+            projectId={projectId}
+            onToggle={onToggle}
+            onCreateFlag={() => setShowCreate(true)}
+            toggling={togglingSet}
+            onFlagClick={onFlagClick}
+            selectable={bulkSelectionMode}
+            selectedKeys={selectedKeys}
+            onSelectionChange={setSelectedKeys}
+          />
+          <Pagination total={total} />
+        </>
       )}
     </div>
   );

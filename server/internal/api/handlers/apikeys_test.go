@@ -198,7 +198,7 @@ func TestAPIKeyHandler_Revoke(t *testing.T) {
 	store.CreateAPIKey(context.Background(), &domain.APIKey{
 		EnvID: envID, KeyHash: "hash-rev", KeyPrefix: "fs_srv_rev1", Name: "Revoke Me", Type: domain.APIKeyServer,
 	})
-	keys, _ := store.ListAPIKeys(context.Background(), envID)
+	keys, _ := store.ListAPIKeys(context.Background(), envID, 0, 0)
 	keyID := keys[0].ID
 
 	r := httptest.NewRequest("DELETE", "/v1/api-keys/"+keyID, nil)
@@ -221,7 +221,7 @@ func TestAPIKeyHandler_Revoke_OrgIsolation(t *testing.T) {
 	store.CreateAPIKey(context.Background(), &domain.APIKey{
 		EnvID: envID, KeyHash: "hash-iso", KeyPrefix: "fs_srv_iso1", Name: "Org1 Key", Type: domain.APIKeyServer,
 	})
-	keys, _ := store.ListAPIKeys(context.Background(), envID)
+	keys, _ := store.ListAPIKeys(context.Background(), envID, 0, 0)
 	keyID := keys[0].ID
 
 	r := httptest.NewRequest("DELETE", "/v1/api-keys/"+keyID, nil)

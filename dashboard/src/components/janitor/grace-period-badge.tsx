@@ -1,7 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ClockIcon, AlertIcon, CheckCircleFillIcon } from "@/components/icons/nav-icons";
+import {
+  ClockIcon,
+  AlertIcon,
+  CheckCircleFillIcon,
+} from "@/components/icons/nav-icons";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -29,7 +33,7 @@ function getBadgeConfig(days: number) {
       dotClass: "bg-red-500",
       label: "Grace period expired",
       tooltip:
-        "This flag has passed its grace period and is now flagged for automatic cleanup. Action is required.",
+        "This flag has passed its grace period and is now flagged for automatic sweep. Action is required.",
     };
   }
 
@@ -40,7 +44,7 @@ function getBadgeConfig(days: number) {
       bgClass: "bg-red-50 border-red-200 text-red-700",
       dotClass: "bg-red-500",
       label: `${days}d remaining`,
-      tooltip: `Only ${days} day${days > 1 ? "s" : ""} left in the grace period. After this, the flag will be flagged for automatic cleanup.`,
+      tooltip: `Only ${days} day${days > 1 ? "s" : ""} left in the grace period. After this, the flag will be flagged for automatic sweep.`,
     };
   }
 
@@ -67,7 +71,10 @@ function getBadgeConfig(days: number) {
 
 // ─── Component ───────────────────────────────────────────────────────
 
-export function GracePeriodBadge({ daysRemaining, className }: GracePeriodBadgeProps) {
+export function GracePeriodBadge({
+  daysRemaining,
+  className,
+}: GracePeriodBadgeProps) {
   const config = getBadgeConfig(daysRemaining);
   const Icon = config.icon;
 

@@ -40,36 +40,9 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Long cache for static assets with content hash
-      {
-        source: "/_next/static/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      // Font caching
-      {
-        source: "/_next/static/media/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      // Image caching
-      {
-        source: "/_next/image(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
+      // Note: Cache-Control for _next/static, _next/static/media, and _next/image
+      // is now handled by Next.js internally. Custom headers on these routes produce
+      // warnings in Next.js 16+.
     ];
   },
 

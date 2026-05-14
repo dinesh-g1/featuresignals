@@ -16,6 +16,8 @@ import type {
   EnvComparisonResponse,
   TargetInput,
   Environment,
+  EvalEventAnalytics,
+  EvalEventVolume,
   EvalMetrics,
   FeaturesResponse,
   Flag,
@@ -234,7 +236,11 @@ export function apiGet<T>(
   options?: Omit<RequestOptions, "method" | "body">,
 ): Promise<T> {
   const token = useAppStore.getState().token;
-  return request<T>(path, { ...options, method: "GET", token: token ?? undefined });
+  return request<T>(path, {
+    ...options,
+    method: "GET",
+    token: token ?? undefined,
+  });
 }
 
 export function apiPost<T>(
@@ -243,7 +249,12 @@ export function apiPost<T>(
   options?: Omit<RequestOptions, "method" | "body">,
 ): Promise<T> {
   const token = useAppStore.getState().token;
-  return request<T>(path, { ...options, method: "POST", body, token: token ?? undefined });
+  return request<T>(path, {
+    ...options,
+    method: "POST",
+    body,
+    token: token ?? undefined,
+  });
 }
 
 export function apiPatch<T>(
@@ -252,7 +263,12 @@ export function apiPatch<T>(
   options?: Omit<RequestOptions, "method" | "body">,
 ): Promise<T> {
   const token = useAppStore.getState().token;
-  return request<T>(path, { ...options, method: "PATCH", body, token: token ?? undefined });
+  return request<T>(path, {
+    ...options,
+    method: "PATCH",
+    body,
+    token: token ?? undefined,
+  });
 }
 
 export function apiDelete<T>(
@@ -260,7 +276,11 @@ export function apiDelete<T>(
   options?: Omit<RequestOptions, "method" | "body">,
 ): Promise<T> {
   const token = useAppStore.getState().token;
-  return request<T>(path, { ...options, method: "DELETE", token: token ?? undefined });
+  return request<T>(path, {
+    ...options,
+    method: "DELETE",
+    token: token ?? undefined,
+  });
 }
 
 async function requestWithRetry<T>(
@@ -393,6 +413,26 @@ async function requestList<T>(
   return [];
 }
 
+async function requestListPaginated<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<PaginatedResponse<T>> {
+  const response = await request<PaginatedResponse<T> | T[]>(path, options);
+  if (Array.isArray(response)) {
+    return {
+      data: response,
+      total: response.length,
+      limit: response.length,
+      offset: 0,
+      has_more: false,
+    };
+  }
+  if (response && typeof response === "object" && "data" in response) {
+    return response as PaginatedResponse<T>;
+  }
+  return { data: [], total: 0, limit: 0, offset: 0, has_more: false };
+}
+
 export interface PricingPlan {
   name: string;
   tagline: string;
@@ -495,6 +535,11 @@ export const api = {
   // Projects
   listProjects: (token: string) =>
     requestList<Project>("/v1/projects", { token }),
+  listProjectsPaginated: (token: string, limit?: number, offset?: number) =>
+    requestListPaginated<Project>(
+      `/v1/projects?limit=${limit ?? 50}&offset=${offset ?? 0}`,
+      { token },
+    ),
   createProject: (token: string, data: { name: string; slug?: string }) =>
     request<Project>("/v1/projects", { method: "POST", body: data, token }),
   updateProject: (
@@ -515,6 +560,16 @@ export const api = {
     requestList<Environment>(`/v1/projects/${projectId}/environments`, {
       token,
     }),
+  listEnvironmentsPaginated: (
+    token: string,
+    projectId: string,
+    limit?: number,
+    offset?: number,
+  ) =>
+    requestListPaginated<Environment>(
+      `/v1/projects/${projectId}/environments?limit=${limit ?? 50}&offset=${offset ?? 0}`,
+      { token },
+    ),
   createEnvironment: (
     token: string,
     projectId: string,
@@ -540,6 +595,16 @@ export const api = {
   // Flags
   listFlags: (token: string, projectId: string) =>
     requestList<Flag>(`/v1/projects/${projectId}/flags`, { token }),
+  listFlagsPaginated: (
+    token: string,
+    projectId: string,
+    limit?: number,
+    offset?: number,
+  ) =>
+    requestListPaginated<Flag>(
+      `/v1/projects/${projectId}/flags?limit=${limit ?? 50}&offset=${offset ?? 0}`,
+      { token },
+    ),
   getFlag: (token: string, projectId: string, flagKey: string) =>
     request<Flag>(`/v1/projects/${projectId}/flags/${flagKey}`, { token }),
   createFlag: (token: string, projectId: string, data: Partial<Flag>) =>
@@ -648,6 +713,16 @@ export const api = {
   // Segments
   listSegments: (token: string, projectId: string) =>
     requestList<Segment>(`/v1/projects/${projectId}/segments`, { token }),
+  listSegmentsPaginated: (
+    token: string,
+    projectId: string,
+    limit?: number,
+    offset?: number,
+  ) =>
+    requestListPaginated<Segment>(
+      `/v1/projects/${projectId}/segments?limit=${limit ?? 50}&offset=${offset ?? 0}`,
+      { token },
+    ),
   getSegment: (token: string, projectId: string, segKey: string) =>
     request<Segment>(`/v1/projects/${projectId}/segments/${segKey}`, { token }),
   createSegment: (token: string, projectId: string, data: Partial<Segment>) =>
@@ -856,6 +931,18 @@ export const api = {
     request<EvalMetrics>("/v1/metrics/evaluations", { token }),
   resetEvalMetrics: (token: string) =>
     request("/v1/metrics/evaluations/reset", { method: "POST", token }),
+
+  // Evaluation Events Analytics
+  getEvalEvents: (token: string, flagKey: string, since: string) =>
+    request<EvalEventAnalytics>(
+      `/v1/eval-events?flag_key=${encodeURIComponent(flagKey)}&since=${encodeURIComponent(since)}`,
+      { token },
+    ),
+  getEvalEventsVolume: (token: string, since: string, interval: string) =>
+    request<EvalEventVolume>(
+      `/v1/eval-events/volume?since=${encodeURIComponent(since)}&interval=${encodeURIComponent(interval)}`,
+      { token },
+    ),
 
   // Webhooks
   listWebhooks: (token: string) =>

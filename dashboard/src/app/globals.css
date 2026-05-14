@@ -23,7 +23,7 @@
     --color-neutral-50: #f6f8fa;
     --color-neutral-100: #eff2f5;
     --color-neutral-200: #d1d9e0;
-    --color-neutral-300: #818b98;
+    --color-neutral-300: #6e7681;
     --color-neutral-400: #59636e;
     --color-neutral-500: #25292e;
     --color-neutral-600: #1f2328;
@@ -43,6 +43,20 @@
     --shadow-signal-floating: var(--signal-shadow-md);
     --shadow-signal-floating-md: var(--signal-shadow-lg);
     --shadow-signal-floating-lg: var(--signal-shadow-xl);
+
+    /* Signal UI semantic color tokens — map to CSS variables */
+    --color-signal-success: var(--signal-fg-success);
+    --color-signal-success-bg: var(--signal-bg-success-muted);
+    --color-signal-warning: var(--signal-fg-warning);
+    --color-signal-warning-bg: var(--signal-bg-warning-muted);
+    --color-signal-danger: var(--signal-fg-danger);
+    --color-signal-danger-bg: var(--signal-bg-danger-muted);
+    --color-signal-info: var(--signal-fg-info);
+    --color-signal-info-bg: var(--signal-bg-info-muted);
+    --color-signal-accent-bg: var(--signal-bg-accent-muted);
+    --color-signal-fg-subtle: var(--signal-fg-tertiary);
+    --color-signal-border-warning: var(--signal-border-warning-muted);
+    --color-signal-border-accent: var(--signal-border-accent-muted);
 
     /* Border radius */
     --radius-signal: var(--signal-radius-md);

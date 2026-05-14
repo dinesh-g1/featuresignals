@@ -1796,6 +1796,487 @@
           }
         },
         "type": "object"
+      },
+      "AgentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "org_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "brain_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "degraded",
+              "offline",
+              "provisioning"
+            ]
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "registered_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_heartbeat": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateAgentRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "brain_type": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateAgentRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "online",
+              "degraded",
+              "offline"
+            ]
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AgentHeartbeatRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object"
+          }
+        }
+      },
+      "PolicyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "org_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "block",
+              "warn",
+              "require_approval"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreatePolicyRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "rules"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "block",
+              "warn",
+              "require_approval"
+            ]
+          },
+          "scope": {
+            "type": "object"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "UpdatePolicyRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "block",
+              "warn",
+              "require_approval"
+            ]
+          },
+          "scope": {
+            "type": "object"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "TogglePolicyRequest": {
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ABMResolutionRequest": {
+        "type": "object",
+        "required": [
+          "behavior_key",
+          "agent_id",
+          "agent_type"
+        ],
+        "properties": {
+          "behavior_key": {
+            "type": "string"
+          },
+          "agent_id": {
+            "type": "string"
+          },
+          "agent_type": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object"
+          },
+          "session_id": {
+            "type": "string"
+          }
+        }
+      },
+      "ABMResolutionResponse": {
+        "type": "object",
+        "properties": {
+          "behavior_key": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "resolved_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_sticky": {
+            "type": "boolean"
+          },
+          "ttl_seconds": {
+            "type": "integer"
+          }
+        }
+      },
+      "ABMTrackRequest": {
+        "type": "object",
+        "required": [
+          "behavior_key",
+          "variant",
+          "agent_id",
+          "agent_type",
+          "action"
+        ],
+        "properties": {
+          "behavior_key": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string"
+          },
+          "agent_id": {
+            "type": "string"
+          },
+          "agent_type": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "session_id": {
+            "type": "string"
+          }
+        }
+      },
+      "ABMTrackBatchRequest": {
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "ABMBehaviorResponse": {
+        "type": "object",
+        "properties": {
+          "org_id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "agent_type": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "default_variant": {
+            "type": "string"
+          },
+          "rollout_percentage": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "paused",
+              "retired"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateABMBehaviorRequest": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "agent_type",
+          "variants"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "agent_type": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "default_variant": {
+            "type": "string"
+          },
+          "rollout_percentage": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "paused",
+              "retired"
+            ]
+          }
+        }
+      },
+      "UpdateABMBehaviorRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "default_variant": {
+            "type": "string"
+          },
+          "rollout_percentage": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "paused",
+              "retired"
+            ]
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -1818,7 +2299,7 @@
       "name": "FeatureSignals",
       "url": "https://featuresignals.com"
     },
-    "description": "Complete API reference for FeatureSignals \u2014 feature flag management platform.",
+    "description": "Complete API reference for FeatureSignals — feature flag management platform.",
     "license": {
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
@@ -2202,7 +2683,7 @@
                 }
               }
             },
-            "description": "List approvals \u2014 success"
+            "description": "List approvals — success"
           },
           "400": {
             "content": {
@@ -2253,6 +2734,30 @@
         "summary": "List approvals",
         "tags": [
           "Approvals"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       },
       "post": {
@@ -2276,7 +2781,7 @@
                 }
               }
             },
-            "description": "Create approval \u2014 success"
+            "description": "Create approval — success"
           },
           "400": {
             "content": {
@@ -2347,7 +2852,7 @@
                 }
               }
             },
-            "description": "Get approval \u2014 success"
+            "description": "Get approval — success"
           },
           "400": {
             "content": {
@@ -2428,7 +2933,7 @@
                 }
               }
             },
-            "description": "Review approval \u2014 success"
+            "description": "Review approval — success"
           },
           "400": {
             "content": {
@@ -2494,7 +2999,7 @@
                 }
               }
             },
-            "description": "List audit log \u2014 success"
+            "description": "List audit log — success"
           },
           "400": {
             "content": {
@@ -2545,6 +3050,30 @@
         "summary": "List audit log",
         "tags": [
           "Audit"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       }
     },
@@ -2629,7 +3158,7 @@
                 }
               }
             },
-            "description": "Complete signup \u2014 success"
+            "description": "Complete signup — success"
           },
           "400": {
             "content": {
@@ -2701,7 +3230,7 @@
                 }
               }
             },
-            "description": "Initiate signup \u2014 success"
+            "description": "Initiate signup — success"
           },
           "400": {
             "content": {
@@ -2773,7 +3302,7 @@
                 }
               }
             },
-            "description": "Log in \u2014 success"
+            "description": "Log in — success"
           },
           "400": {
             "content": {
@@ -2835,7 +3364,7 @@
                 }
               }
             },
-            "description": "Log out \u2014 success"
+            "description": "Log out — success"
           },
           "400": {
             "content": {
@@ -2911,7 +3440,7 @@
                 }
               }
             },
-            "description": "Disable MFA \u2014 success"
+            "description": "Disable MFA — success"
           },
           "400": {
             "content": {
@@ -2977,7 +3506,7 @@
                 }
               }
             },
-            "description": "Enable MFA \u2014 success"
+            "description": "Enable MFA — success"
           },
           "400": {
             "content": {
@@ -3043,7 +3572,7 @@
                 }
               }
             },
-            "description": "Get MFA status \u2014 success"
+            "description": "Get MFA status — success"
           },
           "400": {
             "content": {
@@ -3119,7 +3648,7 @@
                 }
               }
             },
-            "description": "Verify MFA code \u2014 success"
+            "description": "Verify MFA code — success"
           },
           "400": {
             "content": {
@@ -3195,7 +3724,7 @@
                 }
               }
             },
-            "description": "Refresh token \u2014 success"
+            "description": "Refresh token — success"
           },
           "400": {
             "content": {
@@ -3267,7 +3796,7 @@
                 }
               }
             },
-            "description": "Resend signup OTP \u2014 success"
+            "description": "Resend signup OTP — success"
           },
           "400": {
             "content": {
@@ -3329,7 +3858,7 @@
                 }
               }
             },
-            "description": "Send verification email \u2014 success"
+            "description": "Send verification email — success"
           },
           "400": {
             "content": {
@@ -3405,7 +3934,7 @@
                 }
               }
             },
-            "description": "Exchange one-time token \u2014 success"
+            "description": "Exchange one-time token — success"
           },
           "400": {
             "content": {
@@ -3532,7 +4061,7 @@
                 }
               }
             },
-            "description": "Cancel subscription \u2014 success"
+            "description": "Cancel subscription — success"
           },
           "400": {
             "content": {
@@ -3598,7 +4127,7 @@
                 }
               }
             },
-            "description": "Create checkout session \u2014 success"
+            "description": "Create checkout session — success"
           },
           "400": {
             "content": {
@@ -3674,7 +4203,7 @@
                 }
               }
             },
-            "description": "Update payment gateway \u2014 success"
+            "description": "Update payment gateway — success"
           },
           "400": {
             "content": {
@@ -3850,7 +4379,7 @@
                 }
               }
             },
-            "description": "Get billing portal URL \u2014 success"
+            "description": "Get billing portal URL — success"
           },
           "400": {
             "content": {
@@ -3971,7 +4500,7 @@
                 }
               }
             },
-            "description": "Get subscription \u2014 success"
+            "description": "Get subscription — success"
           },
           "400": {
             "content": {
@@ -4037,7 +4566,7 @@
                 }
               }
             },
-            "description": "Get usage \u2014 success"
+            "description": "Get usage — success"
           },
           "400": {
             "content": {
@@ -4143,6 +4672,30 @@
         "summary": "Get server capabilities",
         "tags": [
           "Pricing"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       }
     },
@@ -4275,6 +4828,28 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/EnvID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -4286,7 +4861,7 @@
                 }
               }
             },
-            "description": "List API keys \u2014 success"
+            "description": "List API keys — success"
           },
           "400": {
             "content": {
@@ -4434,7 +5009,7 @@
                 }
               }
             },
-            "description": "Evaluate a single flag \u2014 success"
+            "description": "Evaluate a single flag — success"
           },
           "400": {
             "content": {
@@ -4569,7 +5144,7 @@
                 }
               }
             },
-            "description": "List enabled features \u2014 success"
+            "description": "List enabled features — success"
           },
           "400": {
             "content": {
@@ -4704,7 +5279,7 @@
                 }
               }
             },
-            "description": "Get IP allowlist \u2014 success"
+            "description": "Get IP allowlist — success"
           },
           "400": {
             "content": {
@@ -4778,7 +5353,7 @@
                 }
               }
             },
-            "description": "Update IP allowlist \u2014 success"
+            "description": "Update IP allowlist — success"
           },
           "400": {
             "content": {
@@ -4844,7 +5419,7 @@
                 }
               }
             },
-            "description": "List members \u2014 success"
+            "description": "List members — success"
           },
           "400": {
             "content": {
@@ -4895,6 +5470,30 @@
         "summary": "List members",
         "tags": [
           "Team"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       }
     },
@@ -4920,7 +5519,7 @@
                 }
               }
             },
-            "description": "Invite member \u2014 success"
+            "description": "Invite member — success"
           },
           "400": {
             "content": {
@@ -5258,7 +5857,7 @@
                 }
               }
             },
-            "description": "Get evaluation metrics \u2014 success"
+            "description": "Get evaluation metrics — success"
           },
           "400": {
             "content": {
@@ -5324,7 +5923,7 @@
                 }
               }
             },
-            "description": "Reset evaluation metrics \u2014 success"
+            "description": "Reset evaluation metrics — success"
           },
           "400": {
             "content": {
@@ -5508,7 +6107,7 @@
                 }
               }
             },
-            "description": "Get onboarding state \u2014 success"
+            "description": "Get onboarding state — success"
           },
           "400": {
             "content": {
@@ -5582,7 +6181,7 @@
                 }
               }
             },
-            "description": "Update onboarding state \u2014 success"
+            "description": "Update onboarding state — success"
           },
           "400": {
             "content": {
@@ -5703,7 +6302,7 @@
                 }
               }
             },
-            "description": "List projects \u2014 success"
+            "description": "List projects — success"
           },
           "400": {
             "content": {
@@ -5754,6 +6353,30 @@
         "summary": "List projects",
         "tags": [
           "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       },
       "post": {
@@ -5777,7 +6400,7 @@
                 }
               }
             },
-            "description": "Create project \u2014 success"
+            "description": "Create project — success"
           },
           "400": {
             "content": {
@@ -5910,7 +6533,7 @@
                 }
               }
             },
-            "description": "Get project \u2014 success"
+            "description": "Get project — success"
           },
           "400": {
             "content": {
@@ -6059,6 +6682,28 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/ProjectID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -6070,7 +6715,7 @@
                 }
               }
             },
-            "description": "List environments \u2014 success"
+            "description": "List environments — success"
           },
           "400": {
             "content": {
@@ -6149,7 +6794,7 @@
                 }
               }
             },
-            "description": "Create environment \u2014 success"
+            "description": "Create environment — success"
           },
           "400": {
             "content": {
@@ -6515,6 +7160,28 @@
           },
           {
             "$ref": "#/components/parameters/EnvID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -6526,7 +7193,7 @@
                 }
               }
             },
-            "description": "List flag states \u2014 success"
+            "description": "List flag states — success"
           },
           "400": {
             "content": {
@@ -6663,6 +7330,28 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/ProjectID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -6674,7 +7363,7 @@
                 }
               }
             },
-            "description": "List flags \u2014 success"
+            "description": "List flags — success"
           },
           "400": {
             "content": {
@@ -6753,7 +7442,7 @@
                 }
               }
             },
-            "description": "Create flag \u2014 success"
+            "description": "Create flag — success"
           },
           "400": {
             "content": {
@@ -6824,7 +7513,7 @@
                 }
               }
             },
-            "description": "Compare environments \u2014 success"
+            "description": "Compare environments — success"
           },
           "400": {
             "content": {
@@ -7037,7 +7726,7 @@
                 }
               }
             },
-            "description": "Get flag \u2014 success"
+            "description": "Get flag — success"
           },
           "400": {
             "content": {
@@ -7119,7 +7808,7 @@
                 }
               }
             },
-            "description": "Update flag \u2014 success"
+            "description": "Update flag — success"
           },
           "400": {
             "content": {
@@ -7196,7 +7885,7 @@
                 }
               }
             },
-            "description": "Get flag state \u2014 success"
+            "description": "Get flag state — success"
           },
           "400": {
             "content": {
@@ -7281,7 +7970,7 @@
                 }
               }
             },
-            "description": "Update flag state \u2014 success"
+            "description": "Update flag state — success"
           },
           "400": {
             "content": {
@@ -7365,7 +8054,7 @@
                 }
               }
             },
-            "description": "Kill switch \u2014 success"
+            "description": "Kill switch — success"
           },
           "400": {
             "content": {
@@ -7449,7 +8138,7 @@
                 }
               }
             },
-            "description": "Promote flag \u2014 success"
+            "description": "Promote flag — success"
           },
           "400": {
             "content": {
@@ -7509,6 +8198,28 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/ProjectID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -7520,7 +8231,7 @@
                 }
               }
             },
-            "description": "List segments \u2014 success"
+            "description": "List segments — success"
           },
           "400": {
             "content": {
@@ -7599,7 +8310,7 @@
                 }
               }
             },
-            "description": "Create segment \u2014 success"
+            "description": "Create segment — success"
           },
           "400": {
             "content": {
@@ -7738,7 +8449,7 @@
                 }
               }
             },
-            "description": "Get segment \u2014 success"
+            "description": "Get segment — success"
           },
           "400": {
             "content": {
@@ -7820,7 +8531,7 @@
                 }
               }
             },
-            "description": "Update segment \u2014 success"
+            "description": "Update segment — success"
           },
           "400": {
             "content": {
@@ -7926,6 +8637,30 @@
         "summary": "List data regions",
         "tags": [
           "Pricing"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       }
     },
@@ -7985,6 +8720,30 @@
         "summary": "List custom roles",
         "tags": [
           "Custom Roles"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       },
       "post": {
@@ -8354,6 +9113,30 @@
         "summary": "List SCIM users",
         "tags": [
           "SCIM"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       },
       "post": {
@@ -8671,7 +9454,7 @@
                 }
               }
             },
-            "description": "Get SSO config \u2014 success"
+            "description": "Get SSO config — success"
           },
           "400": {
             "content": {
@@ -8745,7 +9528,7 @@
                 }
               }
             },
-            "description": "Create/update SSO config \u2014 success"
+            "description": "Create/update SSO config — success"
           },
           "400": {
             "content": {
@@ -9380,6 +10163,30 @@
         "summary": "Get status history",
         "tags": [
           "Status"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       }
     },
@@ -9804,6 +10611,30 @@
         "summary": "Get dismissed hints",
         "tags": [
           "User"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       },
       "post": {
@@ -9827,7 +10658,7 @@
                 }
               }
             },
-            "description": "Dismiss hint \u2014 success"
+            "description": "Dismiss hint — success"
           },
           "400": {
             "content": {
@@ -9893,7 +10724,7 @@
                 }
               }
             },
-            "description": "List webhooks \u2014 success"
+            "description": "List webhooks — success"
           },
           "400": {
             "content": {
@@ -9944,6 +10775,30 @@
         "summary": "List webhooks",
         "tags": [
           "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
         ]
       },
       "post": {
@@ -9967,7 +10822,7 @@
                 }
               }
             },
-            "description": "Create webhook \u2014 success"
+            "description": "Create webhook — success"
           },
           "400": {
             "content": {
@@ -10100,7 +10955,7 @@
                 }
               }
             },
-            "description": "Get webhook \u2014 success"
+            "description": "Get webhook — success"
           },
           "400": {
             "content": {
@@ -10179,7 +11034,7 @@
                 }
               }
             },
-            "description": "Update webhook \u2014 success"
+            "description": "Update webhook — success"
           },
           "400": {
             "content": {
@@ -10239,6 +11094,28 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/WebhookID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -10250,7 +11127,7 @@
                 }
               }
             },
-            "description": "List deliveries \u2014 success"
+            "description": "List deliveries — success"
           },
           "400": {
             "content": {
@@ -10303,6 +11180,1684 @@
           "Webhooks"
         ]
       }
+    },
+    "/v1/agents": {
+      "get": {
+        "description": "Lists all registered agents for the organization. Supports filtering by agent_type and status.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List all agents",
+        "tags": [
+          "Agent Registry"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "description": "Registers a new AI agent with the platform. Returns the created agent with its unique ID.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Register a new agent",
+        "tags": [
+          "Agent Registry"
+        ]
+      }
+    },
+    "/v1/policies": {
+      "get": {
+        "description": "Lists all governance policies for the organization.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List all policies",
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "description": "Creates a new CEL-based governance policy.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a policy",
+        "tags": [
+          "Policies"
+        ]
+      }
+    },
+    "/v1/abm/resolve": {
+      "post": {
+        "description": "Resolves which behavior variant an agent should use for the given context. ABM hot path — equivalent to flag evaluation.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ABMResolutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ABMResolutionResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Resolve behavior variant",
+        "tags": [
+          "ABM"
+        ]
+      }
+    },
+    "/v1/abm/track": {
+      "post": {
+        "description": "Records an agent behavior event for analytics and billing.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ABMTrackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Record track event",
+        "tags": [
+          "ABM"
+        ]
+      }
+    },
+    "/v1/abm/track/batch": {
+      "post": {
+        "description": "Records multiple agent behavior events in a single request.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ABMTrackBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Batch track events",
+        "tags": [
+          "ABM"
+        ]
+      }
+    },
+    "/v1/abm/behaviors": {
+      "get": {
+        "description": "Lists all ABM behaviors for the organization. Supports filtering by agent_type.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List behaviors",
+        "tags": [
+          "ABM"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (default 50, max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Number of items to skip before starting to collect results",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "description": "Creates a new ABM behavior with variants and targeting rules.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateABMBehaviorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ABMBehaviorResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create behavior",
+        "tags": [
+          "ABM"
+        ]
+      }
+    },
+    "/v1/abm/behaviors/{key}": {
+      "get": {
+        "description": "Returns details for a specific ABM behavior by its key.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ABMBehaviorResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get behavior",
+        "tags": [
+          "ABM"
+        ]
+      },
+      "patch": {
+        "description": "Updates an existing ABM behavior's variants, rules, or configuration.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateABMBehaviorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ABMBehaviorResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update behavior",
+        "tags": [
+          "ABM"
+        ]
+      },
+      "delete": {
+        "description": "Removes an ABM behavior.",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete behavior",
+        "tags": [
+          "ABM"
+        ]
+      }
+    },
+    "/v1/abm/behaviors/{key}/analytics": {
+      "get": {
+        "description": "Returns variant distribution and usage analytics for a behavior.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get behavior analytics",
+        "tags": [
+          "ABM"
+        ]
+      }
+    },
+    "/v1/eval-events": {
+      "get": {
+        "description": "Queries evaluation events for a specific flag. Supports filtering by flag_key, since, and interval.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Query evaluation events",
+        "tags": [
+          "Eval Events"
+        ]
+      }
+    },
+    "/v1/eval-events/volume": {
+      "get": {
+        "description": "Returns evaluation volume as a time series for analytics and billing.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get evaluation volume time series",
+        "tags": [
+          "Eval Events"
+        ]
+      }
+    },
+    "/v1/agents/{agentID}": {
+      "get": {
+        "description": "Returns details for a specific agent by its unique identifier.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get agent by ID",
+        "tags": [
+          "Agent Registry"
+        ]
+      },
+      "patch": {
+        "description": "Updates an existing agent's metadata, status, or scopes.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update agent",
+        "tags": [
+          "Agent Registry"
+        ]
+      },
+      "delete": {
+        "description": "Removes an agent from the registry.",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Remove agent",
+        "tags": [
+          "Agent Registry"
+        ]
+      }
+    },
+    "/v1/agents/{agentID}/heartbeat": {
+      "post": {
+        "description": "Records a heartbeat from an agent for health monitoring.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentHeartbeatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update agent heartbeat",
+        "tags": [
+          "Agent Registry"
+        ]
+      }
+    },
+    "/v1/agents/{agentID}/maturity": {
+      "get": {
+        "description": "Returns the maturity level history for an agent across all contexts.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get agent maturity levels",
+        "tags": [
+          "Agent Registry"
+        ]
+      }
+    },
+    "/v1/policies/{policyID}": {
+      "get": {
+        "description": "Returns details for a specific governance policy.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get policy by ID",
+        "tags": [
+          "Policies"
+        ]
+      },
+      "patch": {
+        "description": "Updates an existing governance policy's rules or configuration.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update policy",
+        "tags": [
+          "Policies"
+        ]
+      },
+      "delete": {
+        "description": "Removes a governance policy.",
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete policy",
+        "tags": [
+          "Policies"
+        ]
+      }
+    },
+    "/v1/policies/{policyID}/toggle": {
+      "post": {
+        "description": "Toggles a policy between enabled and disabled states.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TogglePolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Enable/disable policy",
+        "tags": [
+          "Policies"
+        ]
+      }
     }
   },
   "security": [
@@ -10326,7 +12881,7 @@
       "name": "Analytics"
     },
     {
-      "description": "Approval workflow for flag changes \u2014 Pro+",
+      "description": "Approval workflow for flag changes — Pro+",
       "name": "Approvals"
     },
     {
@@ -10342,11 +12897,11 @@
       "name": "Billing"
     },
     {
-      "description": "Custom role templates \u2014 Enterprise",
+      "description": "Custom role templates — Enterprise",
       "name": "Custom Roles"
     },
     {
-      "description": "Organization data export \u2014 Pro+",
+      "description": "Organization data export — Pro+",
       "name": "Data Export"
     },
     {
@@ -10378,7 +12933,7 @@
       "name": "Health"
     },
     {
-      "description": "IP allowlist management \u2014 Enterprise",
+      "description": "IP allowlist management — Enterprise",
       "name": "IP Allowlist"
     },
     {
@@ -10386,7 +12941,7 @@
       "name": "Insights"
     },
     {
-      "description": "Multi-factor authentication (TOTP) \u2014 Pro+",
+      "description": "Multi-factor authentication (TOTP) — Pro+",
       "name": "MFA"
     },
     {
@@ -10406,11 +12961,11 @@
       "name": "Projects"
     },
     {
-      "description": "SCIM 2.0 user provisioning \u2014 Enterprise",
+      "description": "SCIM 2.0 user provisioning — Enterprise",
       "name": "SCIM"
     },
     {
-      "description": "SSO configuration (SAML 2.0 / OIDC) \u2014 Enterprise",
+      "description": "SSO configuration (SAML 2.0 / OIDC) — Enterprise",
       "name": "SSO"
     },
     {
@@ -10434,8 +12989,24 @@
       "name": "User"
     },
     {
-      "description": "Webhook configuration and delivery history \u2014 Pro+",
+      "description": "Webhook configuration and delivery history — Pro+",
       "name": "Webhooks"
+    },
+    {
+      "description": "Agent Behavior Mesh — AI agent behavior resolution, tracking, and CRUD",
+      "name": "ABM"
+    },
+    {
+      "description": "Agent registry and lifecycle management",
+      "name": "Agent Registry"
+    },
+    {
+      "description": "CEL-based governance policies for agent actions",
+      "name": "Policies"
+    },
+    {
+      "description": "Evaluation event analytics and volume time series",
+      "name": "Eval Events"
     }
   ]
 }

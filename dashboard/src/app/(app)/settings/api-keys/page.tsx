@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -12,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
 import { KeyIcon, CopyIcon, LoaderIcon } from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
 import { FieldHelp } from "@/components/field-help";
@@ -27,10 +29,23 @@ export default function APIKeysPage() {
   const token = useAppStore((s) => s.token);
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const projectId = useAppStore((s) => s.currentProjectId);
+  const searchParams = useSearchParams();
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination from URL params
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offset = parseInt(searchParams.get("offset") || "0");
+  const total = keys.length;
+
+  // Client-side pagination slice
+  const paginatedKeys = useMemo(() => {
+    if (offset >= keys.length) return [];
+    const end = offset + limit;
+    return keys.slice(offset, end > keys.length ? keys.length : end);
+  }, [keys, limit, offset]);
   const [error, setError] = useState<string | null>(null);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -148,15 +163,19 @@ export default function APIKeysPage() {
     toast("API key copied to clipboard", "success");
   }
 
+  // ── Loading Skeleton (for Suspense fallback) ──
+
+  const apiKeysSkeleton = (
+    <div className="space-y-6">
+      <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
+      <div className="h-24 animate-pulse rounded-xl bg-[var(--signal-border-default)]" />
+      <SkeletonList rows={4} />
+    </div>
+  );
+
   // ── Loading ──
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
-        <div className="h-24 animate-pulse rounded-xl bg-[var(--signal-border-default)]" />
-        <SkeletonList rows={4} />
-      </div>
-    );
+    return apiKeysSkeleton;
   }
 
   // ── Error ──
@@ -178,196 +197,209 @@ export default function APIKeysPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <Label>Environment:</Label>
-        <div className="sm:w-auto">
-          <Select
-            value={selectedEnv}
-            onValueChange={setSelectedEnv}
-            options={envOptions}
-            placeholder="Select environment…"
-          />
-        </div>
-      </div>
-
-      {newKey && (
-        <Card className="border-[var(--signal-border-success-muted)] bg-emerald-50 p-4 ring-1 ring-emerald-100">
-          <p className="text-sm font-medium text-[var(--signal-fg-success)]">
-            API key created. Copy it now — it won&apos;t be shown again.
-          </p>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="flex-1 rounded-lg bg-[var(--signal-bg-success-muted)] p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">
-              {newKey}
-            </code>
-            <Button
-              size="sm"
-              onClick={() => copyToClipboard(newKey)}
-              className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
-            >
-              <CopyIcon className="h-3.5 w-3.5" />
-              Copy
-            </Button>
-          </div>
-          <button
-            onClick={() => setNewKey(null)}
-            className="mt-2 text-xs font-medium text-[var(--signal-fg-success)] transition-colors hover:text-emerald-700"
-          >
-            Dismiss
-          </button>
-        </Card>
-      )}
-
-      <form onSubmit={handleCreate} noValidate>
-        <FormLayout>
-          <FormField
-            label="Key Name"
-            error={fieldError}
-            required
-            hint="A human-readable name to identify this API key"
-          >
-            <div className="flex items-center gap-1.5">
-              <Input
-                value={form.name}
-                onChange={(e) => {
-                  setFieldError("");
-                  setForm({ ...form, name: e.target.value });
-                }}
-                required
-                className="flex-1"
-              />
-              <FieldHelp docsKey="apiKeys" label="API keys" />
-            </div>
-          </FormField>
-          <FormField
-            label="Key Type"
-            hint="Server keys can evaluate all flags. Client keys are safe for browser use."
-          >
+    <Suspense fallback={apiKeysSkeleton}>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <Label>Environment:</Label>
+          <div className="sm:w-auto">
             <Select
-              value={form.type}
-              onValueChange={(val) => setForm({ ...form, type: val })}
-              options={KEY_TYPE_OPTIONS}
+              value={selectedEnv}
+              onValueChange={setSelectedEnv}
+              options={envOptions}
+              placeholder="Select environment…"
             />
-          </FormField>
-          <FormField
-            label="Expiration"
-            hint="Optional. Leave blank for a key that never expires."
-          >
-            <Input
-              type="datetime-local"
-              value={form.expires_at}
-              onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-            />
-          </FormField>
-          <Button type="submit">Create Key</Button>
-        </FormLayout>
-      </form>
+          </div>
+        </div>
 
-      <Card>
-        <div className="divide-y divide-slate-100">
-          {keys.length === 0 ? (
-            <EmptyState
-              icon={KeyIcon}
-              title="No API keys for this environment"
-              description="API keys authenticate your SDK against this environment. Create a server key to start evaluating flags."
-              docsUrl={DOCS_LINKS.apiKeys}
-              docsLabel="API key types explained"
-            />
-          ) : (
-            keys.map((k) => {
-              const isExpired = k.expires_at
-                ? new Date(k.expires_at) < new Date()
-                : false;
-              const isRevoked = !!k.revoked_at;
-              const isDisabled = isRevoked || isExpired;
-              return (
-                <div
-                  key={k.id}
-                  className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${
-                    isDisabled
-                      ? " opacity-60"
-                      : " hover:bg-[var(--signal-bg-accent-emphasis)]-glass"
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
-                        {k.name}
+        {newKey && (
+          <Card className="border-[var(--signal-border-success-muted)] bg-emerald-50 p-4 ring-1 ring-emerald-100">
+            <p className="text-sm font-medium text-[var(--signal-fg-success)]">
+              API key created. Copy it now — it won&apos;t be shown again.
+            </p>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <code className="flex-1 rounded-lg bg-[var(--signal-bg-success-muted)] p-3 text-xs font-mono text-emerald-900 ring-1 ring-emerald-200 break-all">
+                {newKey}
+              </code>
+              <Button
+                size="sm"
+                onClick={() => copyToClipboard(newKey)}
+                className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
+              >
+                <CopyIcon className="h-3.5 w-3.5" />
+                Copy
+              </Button>
+            </div>
+            <button
+              onClick={() => setNewKey(null)}
+              className="mt-2 text-xs font-medium text-[var(--signal-fg-success)] transition-colors hover:text-emerald-700"
+            >
+              Dismiss
+            </button>
+          </Card>
+        )}
+
+        <form onSubmit={handleCreate} noValidate>
+          <FormLayout>
+            <FormField
+              label="Key Name"
+              error={fieldError}
+              required
+              hint="A human-readable name to identify this API key"
+            >
+              <div className="flex items-center gap-1.5">
+                <Input
+                  value={form.name}
+                  onChange={(e) => {
+                    setFieldError("");
+                    setForm({ ...form, name: e.target.value });
+                  }}
+                  required
+                  className="flex-1"
+                />
+                <FieldHelp docsKey="apiKeys" label="API keys" />
+              </div>
+            </FormField>
+            <FormField
+              label="Key Type"
+              hint="Server keys can evaluate all flags. Client keys are safe for browser use."
+            >
+              <Select
+                value={form.type}
+                onValueChange={(val) => setForm({ ...form, type: val })}
+                options={KEY_TYPE_OPTIONS}
+              />
+            </FormField>
+            <FormField
+              label="Expiration"
+              hint="Optional. Leave blank for a key that never expires."
+            >
+              <Input
+                type="datetime-local"
+                value={form.expires_at}
+                onChange={(e) =>
+                  setForm({ ...form, expires_at: e.target.value })
+                }
+              />
+            </FormField>
+            <Button type="submit">Create Key</Button>
+          </FormLayout>
+        </form>
+
+        <Card>
+          <div className="divide-y divide-slate-100">
+            {total === 0 ? (
+              <EmptyState
+                icon={KeyIcon}
+                title="No API keys for this environment"
+                description="API keys authenticate your SDK against this environment. Create a server key to start evaluating flags."
+                docsUrl={DOCS_LINKS.apiKeys}
+                docsLabel="API key types explained"
+              />
+            ) : (
+              paginatedKeys.map((k) => {
+                const isExpired = k.expires_at
+                  ? new Date(k.expires_at) < new Date()
+                  : false;
+                const isRevoked = !!k.revoked_at;
+                const isDisabled = isRevoked || isExpired;
+                return (
+                  <div
+                    key={k.id}
+                    className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 transition-colors${
+                      isDisabled
+                        ? " opacity-60"
+                        : " hover:bg-[var(--signal-bg-accent-emphasis)]-glass"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
+                          {k.name}
+                        </p>
+                        {isExpired && !isRevoked && (
+                          <Badge
+                            variant="default"
+                            className="px-2 py-0 text-[10px]"
+                          >
+                            Expired
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
+                        {k.key_prefix}... &middot; {k.type}
                       </p>
-                      {isExpired && !isRevoked && (
-                        <Badge
-                          variant="default"
-                          className="px-2 py-0 text-[10px]"
-                        >
-                          Expired
-                        </Badge>
-                      )}
+                      <p className="mt-0.5 text-xs text-[var(--signal-fg-tertiary)]">
+                        {k.last_used_at ? (
+                          `Last used ${formatRelativeTime(k.last_used_at)}`
+                        ) : (
+                          <em>Never used</em>
+                        )}
+                        {k.expires_at && (
+                          <>
+                            {" \u00B7 "}
+                            {isExpired
+                              ? `Expired ${formatRelativeTime(k.expires_at)}`
+                              : `Expires ${new Date(k.expires_at).toLocaleDateString()}`}
+                          </>
+                        )}
+                      </p>
                     </div>
-                    <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
-                      {k.key_prefix}... &middot; {k.type}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[var(--signal-fg-tertiary)]">
-                      {k.last_used_at ? (
-                        `Last used ${formatRelativeTime(k.last_used_at)}`
-                      ) : (
-                        <em>Never used</em>
-                      )}
-                      {k.expires_at && (
-                        <>
-                          {" \u00B7 "}
-                          {isExpired
-                            ? `Expired ${formatRelativeTime(k.expires_at)}`
-                            : `Expires ${new Date(k.expires_at).toLocaleDateString()}`}
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge
-                      variant={
-                        isRevoked ? "danger" : isExpired ? "default" : "success"
-                      }
-                      className="px-2.5 py-0.5 text-xs"
-                    >
-                      {isRevoked ? "Revoked" : isExpired ? "Expired" : "Active"}
-                    </Badge>
-                    {!isDisabled &&
-                      (revoking === k.id ? (
-                        <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge
+                        variant={
+                          isRevoked
+                            ? "danger"
+                            : isExpired
+                              ? "default"
+                              : "success"
+                        }
+                        className="px-2.5 py-0.5 text-xs"
+                      >
+                        {isRevoked
+                          ? "Revoked"
+                          : isExpired
+                            ? "Expired"
+                            : "Active"}
+                      </Badge>
+                      {!isDisabled &&
+                        (revoking === k.id ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="danger-ghost"
+                              size="sm"
+                              onClick={() => handleRevoke(k.id)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              Revoke
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRevoking(null)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
                           <Button
                             variant="danger-ghost"
                             size="sm"
-                            onClick={() => handleRevoke(k.id)}
+                            onClick={() => setRevoking(k.id)}
                             className="h-auto px-2 py-1 text-xs"
                           >
                             Revoke
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setRevoking(null)}
-                            className="h-auto px-2 py-1 text-xs"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="danger-ghost"
-                          size="sm"
-                          onClick={() => setRevoking(k.id)}
-                          className="h-auto px-2 py-1 text-xs"
-                        >
-                          Revoke
-                        </Button>
-                      ))}
+                        ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </Card>
-    </div>
+                );
+              })
+            )}
+          </div>
+        </Card>
+        {total > 0 && <Pagination total={total} />}
+      </div>
+    </Suspense>
   );
 }

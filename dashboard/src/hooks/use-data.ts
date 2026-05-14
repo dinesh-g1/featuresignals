@@ -57,6 +57,28 @@ export function useEnvironments(projectId: string | null) {
   );
 }
 
+export function useEnvironmentsPaginated(
+  projectId: string | null,
+  limit: number,
+  offset: number,
+) {
+  const token = useAppStore((s) => s.token);
+  const key = cacheKey("environments", projectId, "paginated", limit, offset);
+  return useQuery<{ data: Environment[]; total: number }>(
+    key,
+    async () => {
+      const result = await api.listEnvironmentsPaginated(
+        token!,
+        projectId!,
+        limit,
+        offset,
+      );
+      return { data: result.data, total: result.total };
+    },
+    { enabled: !!token && !!projectId },
+  );
+}
+
 export function useCreateEnvironment(projectId: string | null) {
   const token = useAppStore((s) => s.token);
   return useMutation(
@@ -94,6 +116,28 @@ export function useFlags(projectId: string | null) {
   return useQuery<Flag[]>(key, () => api.listFlags(token!, projectId!), {
     enabled: !!token && !!projectId,
   });
+}
+
+export function useFlagsPaginated(
+  projectId: string | null,
+  limit: number,
+  offset: number,
+) {
+  const token = useAppStore((s) => s.token);
+  const key = cacheKey("flags", projectId, "paginated", limit, offset);
+  return useQuery<{ data: Flag[]; total: number }>(
+    key,
+    async () => {
+      const result = await api.listFlagsPaginated(
+        token!,
+        projectId!,
+        limit,
+        offset,
+      );
+      return { data: result.data, total: result.total };
+    },
+    { enabled: !!token && !!projectId },
+  );
 }
 
 export function useFlag(projectId: string | null, flagKey: string | null) {
@@ -199,6 +243,28 @@ export function useSegments(projectId: string | null) {
   return useQuery<Segment[]>(key, () => api.listSegments(token!, projectId!), {
     enabled: !!token && !!projectId,
   });
+}
+
+export function useSegmentsPaginated(
+  projectId: string | null,
+  limit: number,
+  offset: number,
+) {
+  const token = useAppStore((s) => s.token);
+  const key = cacheKey("segments", projectId, "paginated", limit, offset);
+  return useQuery<{ data: Segment[]; total: number }>(
+    key,
+    async () => {
+      const result = await api.listSegmentsPaginated(
+        token!,
+        projectId!,
+        limit,
+        offset,
+      );
+      return { data: result.data, total: result.total };
+    },
+    { enabled: !!token && !!projectId },
+  );
 }
 
 export function useCreateSegment(projectId: string | null) {

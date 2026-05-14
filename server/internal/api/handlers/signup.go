@@ -83,7 +83,7 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 
 	var req initiateSignupRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -120,21 +120,21 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 	passwordHash, err := auth.HashPassword(req.Password)
 	if err != nil {
 		log.Error("password hashing failed", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	otp, err := generateOTP()
 	if err != nil {
 		log.Error("OTP generation failed", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	otpHash, err := auth.HashPassword(otp)
 	if err != nil {
 		log.Error("OTP hashing failed", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -184,7 +184,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 
 	var req completeSignupRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -223,7 +223,7 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 		EmailVerified: true,
 	}
 	if err := h.store.CreateUser(ctx, user); err != nil {
-		log.Error("failed to create user", "error", err)
+		log.Error("User creation failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
 		httputil.Error(w, http.StatusConflict, "email already registered")
 		return
 	}
@@ -350,7 +350,7 @@ func (h *SignupHandler) ResendSignupOTP(w http.ResponseWriter, r *http.Request) 
 
 	var req resendOTPRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Email == "" {
@@ -372,14 +372,14 @@ func (h *SignupHandler) ResendSignupOTP(w http.ResponseWriter, r *http.Request) 
 	otp, err := generateOTP()
 	if err != nil {
 		log.Error("OTP generation failed", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	otpHash, err := auth.HashPassword(otp)
 	if err != nil {
 		log.Error("OTP hashing failed", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

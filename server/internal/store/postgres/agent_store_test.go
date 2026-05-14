@@ -114,7 +114,7 @@ func TestAgentStore_ListByType(t *testing.T) {
 	})
 
 	// List all
-	allAgents, err := store.ListAgents(ctx, org.ID)
+	allAgents, err := store.ListAgents(ctx, org.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list all agents: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestAgentStore_ListByType(t *testing.T) {
 	}
 
 	// List by janitor type
-	janitors, err := store.ListAgentsByType(ctx, org.ID, "janitor")
+	janitors, err := store.ListAgentsByType(ctx, org.ID, "janitor", 50, 0)
 	if err != nil {
 		t.Fatalf("list janitor agents: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestAgentStore_ListByType(t *testing.T) {
 	}
 
 	// List by preflight type
-	preflights, err := store.ListAgentsByType(ctx, org.ID, "preflight")
+	preflights, err := store.ListAgentsByType(ctx, org.ID, "preflight", 50, 0)
 	if err != nil {
 		t.Fatalf("list preflight agents: %v", err)
 	}
@@ -415,7 +415,7 @@ func TestAgentMaturity_UpsertAndList(t *testing.T) {
 	}
 
 	// List maturities for the agent
-	maturities, err := store.ListMaturities(ctx, "agent-mat-001")
+	maturities, err := store.ListMaturities(ctx, "agent-mat-001", 50, 0)
 	if err != nil {
 		t.Fatalf("list maturities: %v", err)
 	}

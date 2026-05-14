@@ -37,7 +37,7 @@ func TierEnforce(store domain.Store, logger *slog.Logger) func(next http.Handler
 					return
 				}
 				if org.PlanProjectsLimit >= 0 {
-					projects, _ := store.ListProjects(r.Context(), orgID)
+					projects, _ := store.ListProjects(r.Context(), orgID, 1000, 0)
 					if len(projects) >= org.PlanProjectsLimit {
 						tierError(w, "projects")
 						return
@@ -53,7 +53,7 @@ func TierEnforce(store domain.Store, logger *slog.Logger) func(next http.Handler
 				}
 				if org.PlanEnvironmentsLimit >= 0 {
 					projectID := extractSegment(path, 2) // /v1/projects/{id}/environments
-					envs, _ := store.ListEnvironments(r.Context(), projectID)
+					envs, _ := store.ListEnvironments(r.Context(), projectID, 1000, 0)
 					if len(envs) >= org.PlanEnvironmentsLimit {
 						tierError(w, "environments")
 						return
@@ -68,7 +68,7 @@ func TierEnforce(store domain.Store, logger *slog.Logger) func(next http.Handler
 					return
 				}
 				if org.PlanSeatsLimit >= 0 {
-					members, _ := store.ListOrgMembers(r.Context(), orgID)
+					members, _ := store.ListOrgMembers(r.Context(), orgID, 1000, 0)
 					if len(members) >= org.PlanSeatsLimit {
 						tierError(w, "seats")
 						return

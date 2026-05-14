@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
@@ -41,11 +40,11 @@ func (h *ApprovalHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateApprovalRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.FlagID == "" || req.EnvID == "" || req.ChangeType == "" {
-		httputil.Error(w, http.StatusBadRequest, "flag_id, env_id, and change_type are required")
+		httputil.Error(w, http.StatusBadRequest, "Approval creation blocked — flag_id, env_id, and change_type are required fields. Provide all three.")
 		return
 	}
 
@@ -60,8 +59,8 @@ func (h *ApprovalHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.CreateApprovalRequest(r.Context(), ar); err != nil {
-		logger.Error("failed to create approval request", "error", err, "flag_id", req.FlagID, "env_id", req.EnvID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to create approval request")
+		logger.Error("Approval creation failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "flag_id", req.FlagID, "env_id", req.EnvID)
+		httputil.Error(w, http.StatusInternalServerError, "Approval creation failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -78,7 +77,7 @@ func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 	results, err := h.store.ListApprovalRequests(r.Context(), orgID, status, p.Limit, p.Offset)
 	if err != nil {
 		logger.Error("failed to list approval requests", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list approvals")
+		httputil.Error(w, http.StatusInternalServerError, "Approval listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 	if results == nil {
@@ -88,7 +87,7 @@ func (h *ApprovalHandler) List(w http.ResponseWriter, r *http.Request) {
 	total, err := h.store.CountApprovalRequests(r.Context(), orgID, status)
 	if err != nil {
 		logger.Error("failed to count approval requests", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to count approvals")
+		httputil.Error(w, http.StatusInternalServerError, "Approval counting failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -117,40 +116,28 @@ func (h *ApprovalHandler) Review(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	userID := middleware.GetUserID(r.Context())
-	if ar.Status != domain.ApprovalPending {
-		httputil.Error(w, http.StatusConflict, "request is no longer pending")
-		return
-	}
-	if ar.RequestorID == userID {
-		httputil.Error(w, http.StatusForbidden, "cannot review your own request")
-		return
-	}
 
 	var req ReviewRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
-	now := time.Now()
-	ar.ReviewerID = &userID
-	ar.ReviewNote = req.Note
-	ar.ReviewedAt = &now
-
-	switch req.Action {
-	case "approve":
-		ar.Status = domain.ApprovalApproved
-	case "reject":
-		ar.Status = domain.ApprovalRejected
-	default:
-		httputil.Error(w, http.StatusBadRequest, "action must be 'approve' or 'reject'")
+	userID := middleware.GetUserID(r.Context())
+	if err := ar.ProcessDecision(req.Action, req.Note, userID); err != nil {
+		status := http.StatusBadRequest
+		if err.Error() == "approval request is no longer pending" {
+			status = http.StatusConflict
+		} else if err.Error() == "cannot review your own request" {
+			status = http.StatusForbidden
+		}
+		httputil.Error(w, status, err.Error())
 		return
 	}
 
 	if err := h.store.UpdateApprovalRequest(r.Context(), ar); err != nil {
 		logger.Error("failed to update approval request", "error", err, "approval_id", ar.ID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update approval")
+		httputil.Error(w, http.StatusInternalServerError, "Approval update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 

@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
 
-export default function ProjectLayout({ children }: { children: React.ReactNode }) {
+export default function ProjectLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const params = useParams();
   const projectId = params.projectId as string;
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
@@ -21,7 +25,8 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
     return () => {
       // Check after a tick to see if we're still on a project route
       setTimeout(() => {
-        const stillOnProject = window.location.pathname.match(/^\/projects\/[^/]+\//);
+        const stillOnProject =
+          window.location.pathname.match(/^\/projects\/[^/]+\//);
         if (!stillOnProject) {
           setCurrentProject("");
         }
@@ -29,5 +34,5 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
     };
   }, [setCurrentProject]);
 
-  return <>{children}</>;
+  return <Suspense fallback={<div className="p-6" />}>{children}</Suspense>;
 }

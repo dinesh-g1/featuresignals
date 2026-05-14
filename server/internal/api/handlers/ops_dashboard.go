@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/featuresignals/server/internal/config"
-	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
@@ -15,14 +14,13 @@ var opsDashboardHTML embed.FS
 
 // OpsDashboardHandler serves the ops dashboard UI and cluster status APIs.
 type OpsDashboardHandler struct {
-	store  domain.Store
 	config *config.Config
 	logger *slog.Logger
 }
 
 // NewOpsDashboardHandler creates a new OpsDashboardHandler.
-func NewOpsDashboardHandler(store domain.Store, cfg *config.Config, logger *slog.Logger) *OpsDashboardHandler {
-	return &OpsDashboardHandler{store: store, config: cfg, logger: logger}
+func NewOpsDashboardHandler(cfg *config.Config, logger *slog.Logger) *OpsDashboardHandler {
+	return &OpsDashboardHandler{config: cfg, logger: logger}
 }
 
 // ServeDashboard serves the ops dashboard HTML page.

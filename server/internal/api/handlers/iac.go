@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -124,13 +123,13 @@ func (h *IaCHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
 	var req GenerateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Format == "" {
-		httputil.Error(w, http.StatusBadRequest, "format is required")
+		httputil.Error(w, http.StatusBadRequest, "Generation blocked — the format field is missing. Specify the IaC format (e.g., terraform, pulumi).")
 		return
 	}
 
@@ -147,8 +146,8 @@ func (h *IaCHandler) Generate(w http.ResponseWriter, r *http.Request) {
 
 	projects, err := h.store.GetProjects(r.Context(), orgID)
 	if err != nil {
-		logger.Error("failed to fetch projects", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to fetch projects")
+		logger.Error("Project fetch failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Project fetch failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -243,7 +242,7 @@ func (h *IaCHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	files, err := gen.Generate(r.Context(), model)
 	if err != nil {
 		logger.Error("failed to generate IaC configs", "format", req.Format, "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to generate configuration")
+		httputil.Error(w, http.StatusInternalServerError, "Configuration generation failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -264,13 +263,13 @@ func (h *IaCHandler) Generate(w http.ResponseWriter, r *http.Request) {
 // Preview shows what generated configs would look like without full content.
 func (h *IaCHandler) Preview(w http.ResponseWriter, r *http.Request) {
 	var req PreviewRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Format == "" {
-		httputil.Error(w, http.StatusBadRequest, "format is required")
+		httputil.Error(w, http.StatusBadRequest, "Generation blocked — the format field is missing. Specify the IaC format (e.g., terraform, pulumi).")
 		return
 	}
 
@@ -286,7 +285,7 @@ func (h *IaCHandler) Preview(w http.ResponseWriter, r *http.Request) {
 	files, err := gen.Generate(r.Context(), model)
 	if err != nil {
 		h.logger.Error("failed to preview IaC configs", "format", req.Format, "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to preview configuration")
+		httputil.Error(w, http.StatusInternalServerError, "Configuration preview failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 

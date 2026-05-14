@@ -128,7 +128,7 @@ func TestWebhookHandler_Get(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	r := httptest.NewRequest("GET", "/v1/webhooks/"+whID, nil)
@@ -150,7 +150,7 @@ func TestWebhookHandler_Get_OrgIsolation(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	r := httptest.NewRequest("GET", "/v1/webhooks/"+whID, nil)
@@ -172,7 +172,7 @@ func TestWebhookHandler_Update(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	body := `{"name":"Updated Hook"}`
@@ -200,7 +200,7 @@ func TestWebhookHandler_Update_OrgIsolation(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	body := `{"name":"Hacked"}`
@@ -223,7 +223,7 @@ func TestWebhookHandler_Delete(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	r := httptest.NewRequest("DELETE", "/v1/webhooks/"+whID, nil)
@@ -245,7 +245,7 @@ func TestWebhookHandler_Delete_OrgIsolation(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	r := httptest.NewRequest("DELETE", "/v1/webhooks/"+whID, nil)
@@ -267,7 +267,7 @@ func TestWebhookHandler_ListDeliveries(t *testing.T) {
 	store.CreateWebhook(context.Background(), &domain.Webhook{
 		OrgID: testOrgID, Name: "Hook 1", URL: "https://a.com", Events: []string{"flag.updated"}, Enabled: true,
 	})
-	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID)
+	webhooks, _ := store.ListWebhooks(context.Background(), testOrgID, 0, 0)
 	whID := webhooks[0].ID
 
 	store.CreateWebhookDelivery(context.Background(), &domain.WebhookDelivery{

@@ -114,32 +114,53 @@ func (h *AgentHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "agent_create_flag")
 
 	var req AgentCreateFlagRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
-	// Validate inputs
-	if err := middleware.ValidateFlagKey(req.Key); err != nil {
+	flag, err := buildFlagFromRequest(&req)
+	if err != nil {
 		httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
-	if err := middleware.ValidateString(req.Name, "name", 255); err != nil {
-		httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
+
+	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
+		if errors.Is(err, domain.ErrConflict) {
+			httputil.Error(w, http.StatusConflict, "Creation blocked — a feature with this key already exists. Use a unique key or update the existing feature.")
+			return
+		}
+		logger.Error("Feature creation failed — an unexpected error occurred on the server. Try again or contact support if the issue persists.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Feature creation failed — an unexpected error occurred on the server. Try again or contact support if the issue persists.")
 		return
+	}
+
+	logger.Info("flag created by agent",
+		"flag_key", req.Key,
+		"project_id", req.ProjectID,
+		"actor_type", "agent",
+	)
+
+	httputil.JSON(w, http.StatusCreated, flag.ToAgentDetailResponse())
+}
+
+// buildFlagFromRequest validates and builds a domain.Flag from an agent request.
+func buildFlagFromRequest(req *AgentCreateFlagRequest) (*domain.Flag, error) {
+	if err := middleware.ValidateFlagKey(req.Key); err != nil {
+		return nil, err
+	}
+	if err := middleware.ValidateString(req.Name, "name", 255); err != nil {
+		return nil, err
 	}
 	if req.Description != "" {
 		if err := middleware.ValidateString(req.Description, "description", 1000); err != nil {
-			httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
-			return
+			return nil, err
 		}
 	}
 	if err := middleware.ValidateUUID(req.ProjectID); err != nil {
-		httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
-		return
+		return nil, err
 	}
 
-	// Set defaults
 	if req.Type == "" {
 		req.Type = "boolean"
 	}
@@ -147,19 +168,14 @@ func (h *AgentHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 		req.DefaultValue = false
 	}
 
-	// Validate flag type
 	validTypes := map[string]bool{"boolean": true, "string": true, "number": true, "json": true}
 	if !validTypes[req.Type] {
-		httputil.Error(w, http.StatusUnprocessableEntity, "invalid flag type, must be one of: boolean, string, number, json")
-		return
+		return nil, domain.NewValidationError("type", "must be one of: boolean, string, number, json")
 	}
 
-	// Convert default value to JSON
 	defaultJSON, err := json.Marshal(req.DefaultValue)
 	if err != nil {
-		logger.Error("failed to marshal default value", "error", err)
-		httputil.Error(w, http.StatusBadRequest, "invalid default_value")
-		return
+		return nil, domain.NewValidationError("default_value", "invalid")
 	}
 
 	flag := &domain.Flag{
@@ -171,31 +187,8 @@ func (h *AgentHandler) CreateFlag(w http.ResponseWriter, r *http.Request) {
 		Tags:         req.Tags,
 		ProjectID:    req.ProjectID,
 	}
-
-	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
-		if errors.Is(err, domain.ErrConflict) {
-			httputil.Error(w, http.StatusConflict, "flag with this key already exists")
-			return
-		}
-		logger.Error("failed to create flag", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to create flag")
-		return
-	}
-
-	// Log with agent identification
-	logger.Info("flag created by agent",
-		"flag_key", req.Key,
-		"project_id", req.ProjectID,
-		"actor_type", "agent",
-	)
-
-	httputil.JSON(w, http.StatusCreated, map[string]any{
-		"key":         req.Key,
-		"name":        req.Name,
-		"description": req.Description,
-		"type":        req.Type,
-		"project_id":  req.ProjectID,
-	})
+	flag.SetDefaults()
+	return flag, nil
 }
 
 // Evaluate handles POST /v1/agent/evaluate.
@@ -205,51 +198,27 @@ func (h *AgentHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "agent_evaluate")
 
 	var req AgentEvaluateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
-	// Validate inputs
+	ruleset, err := h.resolveEnvironmentAndRuleset(r, req.Environment)
+	if err != nil {
+		httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
 	if err := middleware.ValidateFlagKey(req.FlagKey); err != nil {
 		httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
-	if req.Environment == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "environment is required")
-		return
-	}
 
-	// Get environment
-	env, err := h.store.GetEnvironment(r.Context(), req.Environment)
-	if err != nil {
-		logger.Error("failed to get environment", "error", err, "env_id", req.Environment)
-		httputil.Error(w, http.StatusInternalServerError, "failed to evaluate flag")
-		return
-	}
-
-	// Get ruleset
-	ruleset := h.cache.GetRuleset(env.ID)
-	if ruleset == nil {
-		httputil.Error(w, http.StatusNotFound, "ruleset not found")
-		return
-	}
-
-	// Build evaluation context
-	evalCtx := domain.EvalContext{
-		Key:        req.Key,
-		Attributes: req.Attributes,
-	}
-
-	// Evaluate flag
-	result := h.engine.Evaluate(req.FlagKey, evalCtx, ruleset)
-
+	result := h.engine.Evaluate(req.FlagKey, buildEvalContext(req.Key, req.Attributes), ruleset)
 	evalTimeMs := int(time.Since(start).Milliseconds())
 
-	// Log evaluation with agent identification
 	logger.Debug("agent flag evaluation",
 		"flag_key", req.FlagKey,
-		"env_id", req.Environment,
 		"eval_time_ms", evalTimeMs,
 		"actor_type", "agent",
 	)
@@ -263,70 +232,31 @@ func (h *AgentHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 }
 
 // BulkEvaluate handles POST /v1/agent/bulk-eval.
-// Optimized for bulk flag evaluation (up to 50 flags).
 func (h *AgentHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	logger := h.logger.With("handler", "agent_bulk_evaluate")
 
 	var req AgentBulkEvaluateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
-	// Validate limits
 	if len(req.FlagKeys) > 50 {
-		httputil.Error(w, http.StatusUnprocessableEntity, "maximum 50 flags per bulk evaluation")
-		return
-	}
-	if req.Environment == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "environment is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Bulk evaluation blocked — the maximum is 50 flags per request. Reduce the number of flag keys.")
 		return
 	}
 
-	// Validate all flag keys
-	for _, key := range req.FlagKeys {
-		if err := middleware.ValidateFlagKey(key); err != nil {
-			httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
-			return
-		}
-	}
-
-	// Get environment and ruleset
-	env, err := h.store.GetEnvironment(r.Context(), req.Environment)
+	ruleset, err := h.resolveEnvironmentAndRuleset(r, req.Environment)
 	if err != nil {
-		logger.Error("failed to get environment", "error", err, "env_id", req.Environment)
-		httputil.Error(w, http.StatusInternalServerError, "failed to evaluate flags")
+		httputil.Error(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 
-	ruleset := h.cache.GetRuleset(env.ID)
-	if ruleset == nil {
-		httputil.Error(w, http.StatusNotFound, "ruleset not found")
-		return
-	}
-
-	// Evaluate all flags
-	results := make([]AgentEvaluateResponse, 0, len(req.FlagKeys))
-	evalCtx := domain.EvalContext{
-		Key:        req.Key,
-		Attributes: req.Attributes,
-	}
-
-	for _, key := range req.FlagKeys {
-		result := h.engine.Evaluate(key, evalCtx, ruleset)
-		results = append(results, AgentEvaluateResponse{
-			FlagKey: result.FlagKey,
-			Value:   result.Value,
-			Reason:  result.Reason,
-		})
-	}
-
+	results := h.bulkEvaluateFlags(req.FlagKeys, buildEvalContext(req.Key, req.Attributes), ruleset)
 	totalTimeMs := int(time.Since(start).Milliseconds())
 
-	// Log bulk evaluation
 	logger.Info("agent bulk flag evaluation",
-		"env_id", req.Environment,
 		"flag_count", len(req.FlagKeys),
 		"result_count", len(results),
 		"total_time_ms", totalTimeMs,
@@ -340,7 +270,6 @@ func (h *AgentHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetFlag handles GET /v1/agent/flag/{key}.
-// Returns agent-readable flag details.
 func (h *AgentHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "agent_get_flag")
 
@@ -352,45 +281,74 @@ func (h *AgentHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
 
 	projectID := r.URL.Query().Get("project_id")
 	if projectID == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "project_id query parameter is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Query blocked — the project_id query parameter is missing. Add ?project_id= to your request URL.")
 		return
 	}
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 			return
 		}
-		logger.Error("failed to get flag", "error", err, "flag_key", flagKey)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		logger.Error("Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
-	// Log agent flag access
-	logger.Debug("agent flag access",
-		"flag_key", flagKey,
-		"actor_type", "agent",
-	)
+	logger.Debug("agent flag access", "flag_key", flagKey, "actor_type", "agent")
+	httputil.JSON(w, http.StatusOK, flag.ToAgentDetailResponse())
+}
 
-	httputil.JSON(w, http.StatusOK, AgentFlagDetailResponse{
-		Key:          flag.Key,
-		Name:         flag.Name,
-		Description:  flag.Description,
-		Type:         string(flag.FlagType),
-		DefaultValue: flag.DefaultValue,
-		Status:       string(flag.Status),
-		Category:     string(flag.Category),
-		Tags:         flag.Tags,
-		CreatedAt:    flag.CreatedAt,
-		UpdatedAt:    flag.UpdatedAt,
-	})
+// ─── Helper methods ──────────────────────────────────────────────────────
+
+// resolveEnvironmentAndRuleset looks up the environment and its ruleset.
+func (h *AgentHandler) resolveEnvironmentAndRuleset(r *http.Request, envID string) (*domain.Ruleset, error) {
+	if envID == "" {
+		return nil, domain.NewValidationError("environment", "is required")
+	}
+
+	env, err := h.store.GetEnvironment(r.Context(), envID)
+	if err != nil {
+		h.logger.Error("failed to get environment", "error", err, "env_id", envID)
+		return nil, domain.NewValidationError("environment", "not found")
+	}
+
+	ruleset := h.cache.GetRuleset(env.ID)
+	if ruleset == nil {
+		return nil, domain.NewValidationError("ruleset", "not found")
+	}
+	return ruleset, nil
+}
+
+// buildEvalContext constructs the eval context for agent evaluation.
+func buildEvalContext(key string, attrs map[string]any) domain.EvalContext {
+	return domain.EvalContext{
+		Key:        key,
+		Attributes: attrs,
+	}
+}
+
+// bulkEvaluateFlags evaluates all requested flags against a ruleset.
+func (h *AgentHandler) bulkEvaluateFlags(flagKeys []string, evalCtx domain.EvalContext, ruleset *domain.Ruleset) []AgentEvaluateResponse {
+	results := make([]AgentEvaluateResponse, 0, len(flagKeys))
+	for _, key := range flagKeys {
+		if err := middleware.ValidateFlagKey(key); err != nil {
+			continue
+		}
+		result := h.engine.Evaluate(key, evalCtx, ruleset)
+		results = append(results, AgentEvaluateResponse{
+			FlagKey: result.FlagKey,
+			Value:   result.Value,
+			Reason:  result.Reason,
+		})
+	}
+	return results
 }
 
 // RegisterRoutes registers agent API routes.
 func (h *AgentHandler) RegisterRoutes(r chi.Router) {
 	r.Group(func(r chi.Router) {
-		// Apply agent-specific body limit
 		r.Use(middleware.AgentBodyLimit)
 
 		r.Post("/evaluate", h.Evaluate)

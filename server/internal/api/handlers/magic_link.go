@@ -44,7 +44,7 @@ func (h *MagicLinkHandler) Exchange(w http.ResponseWriter, r *http.Request) {
 
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		httputil.Error(w, http.StatusBadRequest, "token is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the token field is missing. Provide an access token for the repository provider.")
 		return
 	}
 

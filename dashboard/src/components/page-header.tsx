@@ -62,7 +62,7 @@ export interface PageHeaderProps {
  * ```tsx
  * <PageHeader
  *   title="Feature Flags"
- *   description="Manage and toggle your feature flags across environments"
+ *   description="Manage and activate/pause your features across environments"
  *   primaryAction={<Button onClick={create}>Create Flag</Button>}
  *   secondaryActions={<Button variant="ghost">Import</Button>}
  *   statusBadge={<Badge>12 flags</Badge>}

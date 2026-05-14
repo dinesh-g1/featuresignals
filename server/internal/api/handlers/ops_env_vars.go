@@ -15,16 +15,14 @@ import (
 // Values are encrypted at rest via the EnvVarStore.
 type OpsEnvVarsHandler struct {
 	envVarStore domain.EnvVarStore
-	store       domain.Store
 	masterKey   [32]byte
 	logger      *slog.Logger
 }
 
 // NewOpsEnvVarsHandler creates a new ops env vars handler with DB-backed encrypted storage.
-func NewOpsEnvVarsHandler(envVarStore domain.EnvVarStore, store domain.Store, masterKey [32]byte, logger *slog.Logger) *OpsEnvVarsHandler {
+func NewOpsEnvVarsHandler(envVarStore domain.EnvVarStore, masterKey [32]byte, logger *slog.Logger) *OpsEnvVarsHandler {
 	return &OpsEnvVarsHandler{
 		envVarStore: envVarStore,
-		store:       store,
 		masterKey:   masterKey,
 		logger:      logger,
 	}
@@ -50,7 +48,7 @@ func (h *OpsEnvVarsHandler) List(w http.ResponseWriter, r *http.Request) {
 	envVars, err := h.envVarStore.List(r.Context(), filter)
 	if err != nil {
 		log.Error("failed to list env vars", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -93,7 +91,7 @@ func (h *OpsEnvVarsHandler) GetEffective(w http.ResponseWriter, r *http.Request)
 			globalVars, listErr := h.envVarStore.List(r.Context(), filter)
 			if listErr != nil {
 				log.Error("failed to list global env vars", "error", listErr)
-				httputil.Error(w, http.StatusInternalServerError, "internal error")
+				httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 				return
 			}
 			httputil.JSON(w, http.StatusOK, map[string]any{
@@ -103,7 +101,7 @@ func (h *OpsEnvVarsHandler) GetEffective(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		log.Error("failed to get effective env vars", "error", err, "tenant_id", tenantID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -124,7 +122,7 @@ func (h *OpsEnvVarsHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 		Vars    []domain.EnvVarInput `json:"env_vars"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -162,7 +160,7 @@ func (h *OpsEnvVarsHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Error("failed to upsert env vars", "error", err, "scope", req.Scope, "scope_id", req.ScopeID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

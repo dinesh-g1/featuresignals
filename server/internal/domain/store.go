@@ -11,11 +11,14 @@ import (
 // FlagReader provides read-only access to flags and their states.
 type FlagReader interface {
 	GetFlag(ctx context.Context, projectID, key string) (*Flag, error)
-	ListFlags(ctx context.Context, projectID string) ([]Flag, error)
-	ListFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]Flag, error)
-	ListFlagsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]Flag, error)
+	ListFlags(ctx context.Context, projectID string, limit, offset int) ([]Flag, error)
+	ListFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string, limit, offset int) ([]Flag, error)
+	CountFlagsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) (int, error)
+	ListFlagsSorted(ctx context.Context, projectID, sortField, sortDir string, limit, offset int) ([]Flag, error)
+	CountFlagsByProject(ctx context.Context, projectID string) (int, error)
 	GetFlagState(ctx context.Context, flagID, envID string) (*FlagState, error)
-	ListFlagStatesByEnv(ctx context.Context, envID string) ([]FlagState, error)
+	ListFlagStatesByEnv(ctx context.Context, envID string, limit, offset int) ([]FlagState, error)
+	CountFlagStatesByEnv(ctx context.Context, envID string) (int, error)
 }
 
 // FlagWriter provides mutating operations on flags and their states.
@@ -29,9 +32,11 @@ type FlagWriter interface {
 // SegmentStore provides CRUD for segments.
 type SegmentStore interface {
 	CreateSegment(ctx context.Context, seg *Segment) error
-	ListSegments(ctx context.Context, projectID string) ([]Segment, error)
-	ListSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) ([]Segment, error)
-	ListSegmentsSorted(ctx context.Context, projectID, sortField, sortDir string) ([]Segment, error)
+	ListSegments(ctx context.Context, projectID string, limit, offset int) ([]Segment, error)
+	ListSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string, limit, offset int) ([]Segment, error)
+	CountSegmentsWithFilter(ctx context.Context, orgID, projectID, labelSelector string) (int, error)
+	CountSegmentsByProject(ctx context.Context, projectID string) (int, error)
+	ListSegmentsSorted(ctx context.Context, projectID, sortField, sortDir string, limit, offset int) ([]Segment, error)
 	GetSegment(ctx context.Context, projectID, key string) (*Segment, error)
 	UpdateSegment(ctx context.Context, seg *Segment) error
 	DeleteSegment(ctx context.Context, id string) error
@@ -64,7 +69,8 @@ type AuditReader interface {
 // ProjectReader provides read access to projects.
 type ProjectReader interface {
 	GetProject(ctx context.Context, id string) (*Project, error)
-	ListProjects(ctx context.Context, orgID string) ([]Project, error)
+	ListProjects(ctx context.Context, orgID string, limit, offset int) ([]Project, error)
+	CountProjects(ctx context.Context, orgID string) (int, error)
 }
 
 // ProjectWriter provides mutating operations on projects.
@@ -77,7 +83,8 @@ type ProjectWriter interface {
 // EnvironmentReader provides read access to environments.
 type EnvironmentReader interface {
 	GetEnvironment(ctx context.Context, id string) (*Environment, error)
-	ListEnvironments(ctx context.Context, projectID string) ([]Environment, error)
+	ListEnvironments(ctx context.Context, projectID string, limit, offset int) ([]Environment, error)
+	CountEnvironmentsByProject(ctx context.Context, projectID string) (int, error)
 }
 
 // EnvironmentWriter provides mutating operations on environments.
@@ -102,6 +109,7 @@ type OrgWriter interface {
 type UserReader interface {
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
+	GetUsersByIDs(ctx context.Context, ids []string) ([]User, error)
 	GetUserByEmailVerifyToken(ctx context.Context, token string) (*User, error)
 }
 
@@ -122,7 +130,8 @@ type OrgMemberStore interface {
 	AddOrgMember(ctx context.Context, member *OrgMember) error
 	GetOrgMember(ctx context.Context, orgID, userID string) (*OrgMember, error)
 	GetOrgMemberByID(ctx context.Context, memberID string) (*OrgMember, error)
-	ListOrgMembers(ctx context.Context, orgID string) ([]OrgMember, error)
+	ListOrgMembers(ctx context.Context, orgID string, limit, offset int) ([]OrgMember, error)
+	CountOrgMembers(ctx context.Context, orgID string) (int, error)
 	UpdateOrgMemberRole(ctx context.Context, memberID string, role Role) error
 	RemoveOrgMember(ctx context.Context, memberID string) error
 }
@@ -139,7 +148,8 @@ type APIKeyStore interface {
 	CreateAPIKey(ctx context.Context, k *APIKey) error
 	GetAPIKeyByID(ctx context.Context, id string) (*APIKey, error)
 	GetAPIKeyByHash(ctx context.Context, keyHash string) (*APIKey, error)
-	ListAPIKeys(ctx context.Context, envID string) ([]APIKey, error)
+	ListAPIKeys(ctx context.Context, envID string, limit, offset int) ([]APIKey, error)
+	CountAPIKeysByEnv(ctx context.Context, envID string) (int, error)
 	RevokeAPIKey(ctx context.Context, id string) error
 	RotateAPIKey(ctx context.Context, oldKeyID, envID, name, newKeyHash, newKeyPrefix string, gracePeriod time.Duration) (*APIKey, error)
 	CleanExpiredGracePeriodKeys(ctx context.Context) error
@@ -149,11 +159,13 @@ type APIKeyStore interface {
 type WebhookStore interface {
 	CreateWebhook(ctx context.Context, w *Webhook) error
 	GetWebhook(ctx context.Context, id string) (*Webhook, error)
-	ListWebhooks(ctx context.Context, orgID string) ([]Webhook, error)
+	ListWebhooks(ctx context.Context, orgID string, limit, offset int) ([]Webhook, error)
+	CountWebhooks(ctx context.Context, orgID string) (int, error)
 	UpdateWebhook(ctx context.Context, w *Webhook) error
 	DeleteWebhook(ctx context.Context, id string) error
 	CreateWebhookDelivery(ctx context.Context, d *WebhookDelivery) error
 	ListWebhookDeliveries(ctx context.Context, webhookID string, limit int) ([]WebhookDelivery, error)
+	CountWebhookDeliveries(ctx context.Context, webhookID string) (int, error)
 }
 
 // ApprovalStore provides CRUD for approval requests.
@@ -270,7 +282,8 @@ type IPAllowlistStore interface {
 type CustomRoleStore interface {
 	CreateCustomRole(ctx context.Context, role *CustomRole) error
 	GetCustomRole(ctx context.Context, id string) (*CustomRole, error)
-	ListCustomRoles(ctx context.Context, orgID string) ([]CustomRole, error)
+	ListCustomRoles(ctx context.Context, orgID string, limit, offset int) ([]CustomRole, error)
+	CountCustomRoles(ctx context.Context, orgID string) (int, error)
 	UpdateCustomRole(ctx context.Context, role *CustomRole) error
 	DeleteCustomRole(ctx context.Context, id string) error
 }
@@ -293,6 +306,7 @@ type FeedbackWriter interface {
 // FlagVersionStore provides CRUD for flag version history.
 type FlagVersionStore interface {
 	ListFlagVersions(ctx context.Context, flagID string, limit, offset int) ([]FlagVersion, error)
+	CountFlagVersions(ctx context.Context, flagID string) (int, error)
 	GetFlagVersion(ctx context.Context, flagID string, version int) (*FlagVersion, error)
 	RollbackFlagToVersion(ctx context.Context, flagID string, version int, userID string, reason string) error
 }
@@ -327,7 +341,8 @@ type LimitsReader interface {
 
 // PinnedItemsStore manages user-pinned resource bookmarks.
 type PinnedItemsStore interface {
-	ListPinnedItems(ctx context.Context, orgID, userID, projectID string) ([]PinnedItem, error)
+	ListPinnedItems(ctx context.Context, orgID, userID, projectID string, limit, offset int) ([]PinnedItem, error)
+	CountPinnedItems(ctx context.Context, orgID, userID, projectID string) (int, error)
 	CreatePinnedItem(ctx context.Context, orgID, userID, projectID, resourceType, resourceID string) (*PinnedItem, error)
 	DeletePinnedItem(ctx context.Context, orgID, userID, pinnedItemID string) error
 }
@@ -341,8 +356,10 @@ type SearchStore interface {
 type AgentStore interface {
 	CreateAgent(ctx context.Context, agent *Agent) error
 	GetAgent(ctx context.Context, orgID, agentID string) (*Agent, error)
-	ListAgents(ctx context.Context, orgID string) ([]Agent, error)
-	ListAgentsByType(ctx context.Context, orgID, agentType string) ([]Agent, error)
+	ListAgents(ctx context.Context, orgID string, limit, offset int) ([]Agent, error)
+	ListAgentsByType(ctx context.Context, orgID, agentType string, limit, offset int) ([]Agent, error)
+	CountAgents(ctx context.Context, orgID string) (int, error)
+	CountAgentsByType(ctx context.Context, orgID, agentType string) (int, error)
 	UpdateAgent(ctx context.Context, agent *Agent) error
 	UpdateAgentHeartbeat(ctx context.Context, agentID string) error
 	DeleteAgent(ctx context.Context, orgID, agentID string) error
@@ -352,7 +369,8 @@ type AgentStore interface {
 type AgentMaturityStore interface {
 	UpsertMaturity(ctx context.Context, agentID string, m *AgentMaturity) error
 	GetMaturity(ctx context.Context, agentID, contextKey string) (*AgentMaturity, error)
-	ListMaturities(ctx context.Context, agentID string) ([]AgentMaturity, error)
+	ListMaturities(ctx context.Context, agentID string, limit, offset int) ([]AgentMaturity, error)
+	CountMaturities(ctx context.Context, agentID string) (int, error)
 }
 
 type Store interface {

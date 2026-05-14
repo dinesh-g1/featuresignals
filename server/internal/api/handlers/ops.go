@@ -93,7 +93,7 @@ func (h *OpsHandler) CreateLicense(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt        *time.Time `json:"expires_at,omitempty"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -142,7 +142,7 @@ func (h *OpsHandler) RevokeLicense(w http.ResponseWriter, r *http.Request) {
 		Reason string `json:"reason"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Reason == "" {
@@ -170,7 +170,7 @@ func (h *OpsHandler) OverrideLicenseQuota(w http.ResponseWriter, r *http.Request
 
 	var updates map[string]any
 	if err := httputil.DecodeJSON(r, &updates); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -247,7 +247,7 @@ func (h *OpsHandler) CreateOpsUser(w http.ResponseWriter, r *http.Request) {
 		MaxSandboxEnvs  int      `json:"max_sandbox_envs"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -300,7 +300,7 @@ func (h *OpsHandler) UpdateOpsUser(w http.ResponseWriter, r *http.Request) {
 
 	var req map[string]any
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 

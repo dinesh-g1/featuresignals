@@ -486,3 +486,29 @@ export interface AnalyticsOverview {
   plan_distribution: Record<string, number>;
   event_counts: Record<string, number>;
 }
+
+// ── Eval Events ─────────────────────────────────────────────────
+
+export interface TimeSeriesPoint {
+  timestamp: string;
+  value: number;
+}
+
+export interface EvalEventAnalytics {
+  flag_key: string;
+  total_evaluations: number;
+  since: string;
+  by_variant?: Record<string, number>;
+  by_variant_error?: string;
+  latency_us?: {
+    p50: number;
+    p95: number;
+    p99: number;
+  } | null;
+}
+
+export interface EvalEventVolume {
+  interval: string;
+  since: string;
+  data: TimeSeriesPoint[];
+}

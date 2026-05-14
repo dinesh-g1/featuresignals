@@ -58,7 +58,7 @@ func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request)
 	logger := httputil.LoggerFromContext(r.Context())
 	apiKey := r.Header.Get("X-API-Key")
 	if apiKey == "" {
-		httputil.Error(w, http.StatusUnauthorized, "missing X-API-Key header")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication failed — the X-API-Key header is missing. Include your API key in the request.")
 		return
 	}
 	// Use HMAC-SHA-256 with server-side pepper for API key hashing.
@@ -66,7 +66,7 @@ func (h *MetricsHandler) TrackImpression(w http.ResponseWriter, r *http.Request)
 	keyHash := HashAPIKey(apiKey)
 	if _, _, err := h.store.GetEnvironmentByAPIKeyHash(r.Context(), keyHash); err != nil {
 		logger.Warn("failed to authenticate impression API key", "error", err)
-		httputil.Error(w, http.StatusUnauthorized, "invalid API key")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication failed — the provided API key is invalid. Generate a new API key from your dashboard settings.")
 		return
 	}
 

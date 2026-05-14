@@ -27,13 +27,15 @@ func NewCustomRoleHandler(store customRoleStore) *CustomRoleHandler {
 
 func (h *CustomRoleHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
-	roles, err := h.store.ListCustomRoles(r.Context(), orgID)
+	p := dto.ParsePagination(r)
+	roles, err := h.store.ListCustomRoles(r.Context(), orgID, p.Limit, p.Offset)
 	if err != nil {
 		httputil.LoggerFromContext(r.Context()).Error("failed to list custom roles", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(roles, len(roles), len(roles), 0))
+	total, _ := h.store.CountCustomRoles(r.Context(), orgID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(roles, total, p.Limit, p.Offset))
 }
 
 func (h *CustomRoleHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +47,7 @@ func (h *CustomRoleHandler) Get(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrNotFound) {
 			httputil.Error(w, http.StatusNotFound, "role not found")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "internal error")
+			httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		}
 		return
 	}
@@ -69,11 +71,11 @@ func (h *CustomRoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req createCustomRoleRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "name is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Creation blocked — the name field is missing. Include the required name in your request body.")
 		return
 	}
 
@@ -97,7 +99,7 @@ func (h *CustomRoleHandler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		logger.Error("failed to create custom role", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -121,7 +123,7 @@ func (h *CustomRoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrNotFound) {
 			httputil.Error(w, http.StatusNotFound, "role not found")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "internal error")
+			httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		}
 		return
 	}
@@ -132,7 +134,7 @@ func (h *CustomRoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req createCustomRoleRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -154,7 +156,7 @@ func (h *CustomRoleHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.UpdateCustomRole(r.Context(), existing); err != nil {
 		logger.Error("failed to update custom role", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -178,7 +180,7 @@ func (h *CustomRoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrNotFound) {
 			httputil.Error(w, http.StatusNotFound, "role not found")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "internal error")
+			httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		}
 		return
 	}
@@ -189,7 +191,7 @@ func (h *CustomRoleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.DeleteCustomRole(r.Context(), roleID); err != nil {
 		logger.Error("failed to delete custom role", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 
+	"github.com/featuresignals/server/internal/agent"
 	"github.com/featuresignals/server/internal/api"
 	"github.com/featuresignals/server/internal/api/handlers"
 	"github.com/featuresignals/server/internal/auth"
@@ -502,6 +503,23 @@ func main() {
 			"encryption", tokenEncryptor != nil,
 		)
 	}
+
+	// ── Agent Governance Pipeline (CEL Policy Evaluator) ──────────
+	// The CEL evaluator powers the policy governance step in the
+	// agent runtime pipeline. It evaluates CEL-like expressions
+	// against agent actions to enforce governance policies.
+	celTimeout := time.Duration(cfg.PolicyEvalTimeoutMs) * time.Millisecond
+	celEvaluator := agent.NewCELEvaluator(celTimeout)
+	policyStep := agent.NewPolicyGovernanceStep(store, celEvaluator, logger)
+	governancePipeline := agent.NewInMemoryPipeline(logger)
+	governancePipeline.AddStep(policyStep)
+	logger.Info("CEL evaluator and governance pipeline initialized",
+		"timeout_ms", celTimeout.Milliseconds(),
+		"policy_eval_timeout_ms", cfg.PolicyEvalTimeoutMs,
+	)
+	// governancePipeline is ready for wiring into agent handlers
+	// when the full agent runtime is activated.
+	_ = governancePipeline
 
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
 		Registry:     paymentRegistry,

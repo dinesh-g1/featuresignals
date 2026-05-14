@@ -27,7 +27,7 @@ func (h *FeaturesHandler) List(w http.ResponseWriter, r *http.Request) {
 	org, err := h.orgReader.GetOrganization(r.Context(), orgID)
 	if err != nil {
 		logger.Error("failed to get organization", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

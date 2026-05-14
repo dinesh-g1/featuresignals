@@ -87,13 +87,13 @@ func (s *JanitorStore) UpsertJanitorConfig(ctx context.Context, cfg *store.Janit
 
 // ─── Repositories ────────────────────────────────────────────────────────
 
-func (s *JanitorStore) ListRepositories(ctx context.Context, orgID string) ([]store.JanitorRepository, error) {
+func (s *JanitorStore) ListRepositories(ctx context.Context, orgID string, limit, offset int) ([]store.JanitorRepository, error) {
 	query := `SELECT id, org_id, provider, provider_repo_id, name, full_name,
 		default_branch, private, connected, last_scanned, created_at
 		FROM janitor_repositories WHERE org_id = $1 AND connected = true
-		ORDER BY name ASC`
+		ORDER BY name ASC LIMIT $2 OFFSET $3`
 
-	rows, err := s.pool.Query(ctx, query, orgID)
+	rows, err := s.pool.Query(ctx, query, orgID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list repositories: %w", err)
 	}
@@ -114,6 +114,14 @@ func (s *JanitorStore) ListRepositories(ctx context.Context, orgID string) ([]st
 		repos = []store.JanitorRepository{}
 	}
 	return repos, nil
+}
+
+// CountRepositories returns the total number of connected repositories for an org.
+func (s *JanitorStore) CountRepositories(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM janitor_repositories WHERE org_id = $1 AND connected = true`, orgID).Scan(&count)
+	return count, err
 }
 
 func (s *JanitorStore) GetRepository(ctx context.Context, id string) (*store.JanitorRepository, error) {
@@ -243,16 +251,16 @@ func (s *JanitorStore) GetScan(ctx context.Context, id string) (*store.JanitorSc
 	return &scan, nil
 }
 
-func (s *JanitorStore) ListScans(ctx context.Context, orgID string, limit int) ([]store.JanitorScan, error) {
+func (s *JanitorStore) ListScans(ctx context.Context, orgID string, limit, offset int) ([]store.JanitorScan, error) {
 	if limit <= 0 {
 		limit = 20
 	}
 
 	query := `SELECT id, org_id, status, progress, total_repos, completed_repos,
 		total_flags, stale_flags_found, started_at, completed_at, error_message, created_at
-		FROM janitor_scans WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2`
+		FROM janitor_scans WHERE org_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
 
-	rows, err := s.pool.Query(ctx, query, orgID, limit)
+	rows, err := s.pool.Query(ctx, query, orgID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list scans: %w", err)
 	}
@@ -273,6 +281,14 @@ func (s *JanitorStore) ListScans(ctx context.Context, orgID string, limit int) (
 		scans = []store.JanitorScan{}
 	}
 	return scans, nil
+}
+
+// CountScans returns the total number of scans for an org.
+func (s *JanitorStore) CountScans(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM janitor_scans WHERE org_id = $1`, orgID).Scan(&count)
+	return count, err
 }
 
 // ─── Scan Events ─────────────────────────────────────────────────────────
@@ -315,7 +331,7 @@ func (s *JanitorStore) GetScanEventsSince(ctx context.Context, scanID string, af
 
 // ─── Stale Flags ─────────────────────────────────────────────────────────
 
-func (s *JanitorStore) ListStaleFlags(ctx context.Context, orgID string, dismissed *bool, limit int) ([]store.StaleFlag, error) {
+func (s *JanitorStore) ListStaleFlags(ctx context.Context, orgID string, dismissed *bool, limit, offset int) ([]store.StaleFlag, error) {
 	if limit <= 0 {
 		limit = 100
 	}
@@ -336,8 +352,8 @@ func (s *JanitorStore) ListStaleFlags(ctx context.Context, orgID string, dismiss
 		query += " AND dismissed = false"
 	}
 
-	query += " ORDER BY days_served DESC, percentage_true DESC LIMIT $" + fmt.Sprintf("%d", argIdx)
-	args = append(args, limit)
+	query += " ORDER BY days_served DESC, percentage_true DESC LIMIT $" + fmt.Sprintf("%d", argIdx) + " OFFSET $" + fmt.Sprintf("%d", argIdx+1)
+	args = append(args, limit, offset)
 
 	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -361,6 +377,24 @@ func (s *JanitorStore) ListStaleFlags(ctx context.Context, orgID string, dismiss
 		flags = []store.StaleFlag{}
 	}
 	return flags, nil
+}
+
+// CountStaleFlags returns the total number of stale flags matching the filter.
+func (s *JanitorStore) CountStaleFlags(ctx context.Context, orgID string, dismissed *bool) (int, error) {
+	query := `SELECT COUNT(*) FROM janitor_stale_flags WHERE org_id = $1`
+	args := []interface{}{orgID}
+	argIdx := 2
+
+	if dismissed != nil {
+		query += fmt.Sprintf(" AND dismissed = $%d", argIdx)
+		args = append(args, *dismissed)
+	} else {
+		query += " AND dismissed = false"
+	}
+
+	var count int
+	err := s.pool.QueryRow(ctx, query, args...).Scan(&count)
+	return count, err
 }
 
 func (s *JanitorStore) GetStaleFlag(ctx context.Context, id string) (*store.StaleFlag, error) {
@@ -474,7 +508,7 @@ func (s *JanitorStore) UpdateJanitorPR(ctx context.Context, id string, updates m
 	return nil
 }
 
-func (s *JanitorStore) ListJanitorPRs(ctx context.Context, orgID string, status string) ([]store.JanitorPR, error) {
+func (s *JanitorStore) ListJanitorPRs(ctx context.Context, orgID string, status string, limit, offset int) ([]store.JanitorPR, error) {
 	query := `SELECT id, org_id, flag_key, stale_flag_id, repository_id, provider,
 		pr_number, pr_url, branch_name, status, analysis_confidence,
 		llm_provider, llm_model, tokens_used, validation_passed, files_modified,
@@ -489,7 +523,8 @@ func (s *JanitorStore) ListJanitorPRs(ctx context.Context, orgID string, status 
 		argIdx++
 	}
 
-	query += " ORDER BY created_at DESC LIMIT 100"
+	query += " ORDER BY created_at DESC LIMIT $" + fmt.Sprintf("%d", argIdx) + " OFFSET $" + fmt.Sprintf("%d", argIdx+1)
+	args = append(args, limit, offset)
 
 	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
@@ -513,4 +548,20 @@ func (s *JanitorStore) ListJanitorPRs(ctx context.Context, orgID string, status 
 		prs = []store.JanitorPR{}
 	}
 	return prs, nil
+}
+
+// CountJanitorPRs returns the total number of janitor PRs matching the filter.
+func (s *JanitorStore) CountJanitorPRs(ctx context.Context, orgID string, status string) (int, error) {
+	query := `SELECT COUNT(*) FROM janitor_prs WHERE org_id = $1`
+	args := []interface{}{orgID}
+	argIdx := 2
+
+	if status != "" {
+		query += fmt.Sprintf(" AND status = $%d", argIdx)
+		args = append(args, status)
+	}
+
+	var count int
+	err := s.pool.QueryRow(ctx, query, args...).Scan(&count)
+	return count, err
 }

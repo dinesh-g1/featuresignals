@@ -49,11 +49,11 @@ func (h *InsightsHandler) InspectEntity(w http.ResponseWriter, r *http.Request) 
 
 	var req InspectEntityRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Key == "" {
-		httputil.Error(w, http.StatusBadRequest, "key is required")
+		httputil.Error(w, http.StatusBadRequest, "Behavior creation blocked — the key field is missing. Include the required key in your request body.")
 		return
 	}
 
@@ -115,7 +115,7 @@ func (h *InsightsHandler) CompareEntities(w http.ResponseWriter, r *http.Request
 
 	var req CompareEntitiesRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.EntityA.Key == "" || req.EntityB.Key == "" {

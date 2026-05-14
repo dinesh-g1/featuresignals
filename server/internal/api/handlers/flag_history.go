@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -36,23 +37,8 @@ func (h *FlagHistoryHandler) ListVersions(w http.ResponseWriter, r *http.Request
 	flagKey := chi.URLParam(r, "flagKey")
 	projectID := chi.URLParam(r, "projectID")
 
-	// Parse pagination params
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	limit := 50
-	offset := 0
-
-	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
-			limit = l
-		}
-	}
-	if offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
-			offset = o
-		}
-	}
+	// Parse pagination using standard parser
+	p := dto.ParsePagination(r)
 
 	// Get flag to resolve flagID from projectID+key
 	// Note: This handler depends on FlagReader to resolve flagID
@@ -60,25 +46,27 @@ func (h *FlagHistoryHandler) ListVersions(w http.ResponseWriter, r *http.Request
 		GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error)
 	})
 	if !ok {
-		httputil.Error(w, http.StatusInternalServerError, "store does not support flag lookup")
+		httputil.Error(w, http.StatusInternalServerError, "Configuration error — the storage backend does not support flag lookup. This is a server configuration issue. Contact support.")
 		return
 	}
 
 	flag, err := flagReader.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 			return
 		}
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
-	versions, err := h.store.ListFlagVersions(r.Context(), flag.ID, limit, offset)
+	versions, err := h.store.ListFlagVersions(r.Context(), flag.ID, p.Limit, p.Offset)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, "failed to list flag versions")
+		httputil.Error(w, http.StatusInternalServerError, "Version listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
+
+	total, _ := h.store.CountFlagVersions(r.Context(), flag.ID)
 
 	// Convert to response format
 	type versionResponse struct {
@@ -102,12 +90,7 @@ func (h *FlagHistoryHandler) ListVersions(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]any{
-		"data":   resp,
-		"total":  len(versions),
-		"limit":  limit,
-		"offset": offset,
-	})
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(resp, total, p.Limit, p.Offset))
 }
 
 // GetVersion handles GET /v1/projects/{projectID}/flags/{flagKey}/history/{version}
@@ -119,7 +102,7 @@ func (h *FlagHistoryHandler) GetVersion(w http.ResponseWriter, r *http.Request) 
 
 	version, err := strconv.Atoi(versionStr)
 	if err != nil || version < 1 {
-		httputil.Error(w, http.StatusBadRequest, "invalid version number")
+		httputil.Error(w, http.StatusBadRequest, "Version lookup blocked — the version number is invalid. Provide a positive integer version number.")
 		return
 	}
 
@@ -128,27 +111,27 @@ func (h *FlagHistoryHandler) GetVersion(w http.ResponseWriter, r *http.Request) 
 		GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error)
 	})
 	if !ok {
-		httputil.Error(w, http.StatusInternalServerError, "store does not support flag lookup")
+		httputil.Error(w, http.StatusInternalServerError, "Configuration error — the storage backend does not support flag lookup. This is a server configuration issue. Contact support.")
 		return
 	}
 
 	flag, err := flagReader.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 			return
 		}
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
 	flagVersion, err := h.store.GetFlagVersion(r.Context(), flag.ID, version)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "version not found")
+			httputil.Error(w, http.StatusNotFound, "Version lookup failed — the requested version does not exist. Check the version number and try again.")
 			return
 		}
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag version")
+		httputil.Error(w, http.StatusInternalServerError, "Version retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -175,13 +158,13 @@ func (h *FlagHistoryHandler) Rollback(w http.ResponseWriter, r *http.Request) {
 		Reason  string `json:"reason,omitempty"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Version < 1 {
-		httputil.Error(w, http.StatusBadRequest, "version must be >= 1")
+		httputil.Error(w, http.StatusBadRequest, "Revert blocked — the version number must be 1 or greater. Specify a valid version to revert to.")
 		return
 	}
 
@@ -190,17 +173,17 @@ func (h *FlagHistoryHandler) Rollback(w http.ResponseWriter, r *http.Request) {
 		GetFlag(ctx context.Context, projectID, key string) (*domain.Flag, error)
 	})
 	if !ok {
-		httputil.Error(w, http.StatusInternalServerError, "store does not support flag lookup")
+		httputil.Error(w, http.StatusInternalServerError, "Configuration error — the storage backend does not support flag lookup. This is a server configuration issue. Contact support.")
 		return
 	}
 
 	flag, err := flagReader.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 			return
 		}
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -214,20 +197,20 @@ func (h *FlagHistoryHandler) Rollback(w http.ResponseWriter, r *http.Request) {
 
 	reason := req.Reason
 	if reason == "" {
-		reason = "Rollback to version " + strconv.Itoa(req.Version)
+		reason = "Revert to version " + strconv.Itoa(req.Version)
 	}
 
 	if err := h.store.RollbackFlagToVersion(r.Context(), flag.ID, req.Version, userID, reason); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "version not found")
+			httputil.Error(w, http.StatusNotFound, "Version lookup failed — the requested version does not exist. Check the version number and try again.")
 			return
 		}
-		httputil.Error(w, http.StatusInternalServerError, "failed to rollback flag")
+		httputil.Error(w, http.StatusInternalServerError, "Revert failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
-		"message": "flag rolled back to version " + strconv.Itoa(req.Version),
+		"message": "feature reverted to version " + strconv.Itoa(req.Version),
 		"version": req.Version,
 	})
 }

@@ -223,7 +223,7 @@ func TestOrgMembers(t *testing.T) {
 		t.Errorf("expected admin, got %s", got.Role)
 	}
 
-	members, err := store.ListOrgMembers(ctx, org.ID)
+	members, err := store.ListOrgMembers(ctx, org.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list members: %v", err)
 	}
@@ -253,18 +253,18 @@ func TestProject_CRUD(t *testing.T) {
 		t.Errorf("expected MyProject, got %s", got.Name)
 	}
 
-	projects, err := store.ListProjects(ctx, org.ID)
+	projects, err := store.ListProjects(ctx, org.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
 	if len(projects) != 1 {
-		t.Errorf("expected 1, got %d", len(projects))
+		t.Errorf("expected 1 project, got %d", len(projects))
 	}
 
 	if err := store.DeleteProject(ctx, p.ID); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	projects, _ = store.ListProjects(ctx, org.ID)
+	projects, _ = store.ListProjects(ctx, org.ID, 50, 0)
 	if len(projects) != 0 {
 		t.Errorf("expected 0 after delete, got %d", len(projects))
 	}
@@ -292,7 +292,7 @@ func TestEnvironment_CRUD(t *testing.T) {
 		t.Errorf("expected production, got %s", got.Slug)
 	}
 
-	envs, err := store.ListEnvironments(ctx, proj.ID)
+	envs, err := store.ListEnvironments(ctx, proj.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -348,7 +348,7 @@ func TestFlag_CRUD(t *testing.T) {
 		t.Errorf("expected Dark Theme, got %s", got.Name)
 	}
 
-	flags, err := store.ListFlags(ctx, proj.ID)
+	flags, err := store.ListFlags(ctx, proj.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -359,7 +359,7 @@ func TestFlag_CRUD(t *testing.T) {
 	if err := store.DeleteFlag(ctx, flag.ID); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	flags, _ = store.ListFlags(ctx, proj.ID)
+	flags, _ = store.ListFlags(ctx, proj.ID, 50, 0)
 	if len(flags) != 0 {
 		t.Errorf("expected 0, got %d", len(flags))
 	}
@@ -511,7 +511,7 @@ func TestSegment_CRUD(t *testing.T) {
 		t.Errorf("expected Beta Testers, got %s", got.Name)
 	}
 
-	segs, err := store.ListSegments(ctx, proj.ID)
+	segs, err := store.ListSegments(ctx, proj.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
@@ -554,7 +554,7 @@ func TestAPIKey_CRUD(t *testing.T) {
 		t.Errorf("expected Dev Key, got %s", got.Name)
 	}
 
-	keys, err := store.ListAPIKeys(ctx, env.ID)
+	keys, err := store.ListAPIKeys(ctx, env.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}

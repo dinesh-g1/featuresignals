@@ -10,6 +10,8 @@ package domain
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"time"
 )
@@ -240,6 +242,68 @@ type Agent struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// Validate checks required fields for agent registration/creation.
+func (a *Agent) Validate() error {
+	if a.Name == "" {
+		return NewValidationError("name", "is required")
+	}
+	if a.Type == "" {
+		return NewValidationError("type", "is required")
+	}
+	return nil
+}
+
+// GenerateID ensures the agent has a non-empty ID, generating one if needed.
+// The caller should set a.ID before calling if they want a specific ID.
+func (a *Agent) GenerateID() {
+	if a.ID == "" {
+		a.ID = "agt_" + newShortID()
+	}
+}
+
+// AgentUpdate holds partial update fields for an agent. Only non-nil
+// fields are applied; nil means "leave unchanged". String-based fields
+// (BrainType, Status) are converted to domain types internally.
+type AgentUpdate struct {
+	Name        *string           `json:"name,omitempty"`
+	Type        *string           `json:"type,omitempty"`
+	Version     *string           `json:"version,omitempty"`
+	BrainType   *string           `json:"brain_type,omitempty"`
+	Status      *string           `json:"status,omitempty"`
+	Scopes      *[]string         `json:"scopes,omitempty"`
+	RateLimits  *AgentRateLimits  `json:"rate_limits,omitempty"`
+	CostProfile *AgentCostProfile `json:"cost_profile,omitempty"`
+}
+
+// MergeUpdate applies a partial update from an AgentUpdate onto the
+// existing agent. Only non-nil pointer fields are applied.
+func (a *Agent) MergeUpdate(upd *AgentUpdate) {
+	if upd.Name != nil {
+		a.Name = *upd.Name
+	}
+	if upd.Type != nil {
+		a.Type = *upd.Type
+	}
+	if upd.Version != nil {
+		a.Version = *upd.Version
+	}
+	if upd.BrainType != nil {
+		a.BrainType = BrainType(*upd.BrainType)
+	}
+	if upd.Status != nil {
+		a.Status = AgentStatus(*upd.Status)
+	}
+	if upd.Scopes != nil {
+		a.Scopes = *upd.Scopes
+	}
+	if upd.RateLimits != nil {
+		a.RateLimits = *upd.RateLimits
+	}
+	if upd.CostProfile != nil {
+		a.CostProfile = *upd.CostProfile
+	}
+}
+
 // AgentRateLimits constrains agent throughput.
 type AgentRateLimits struct {
 	// PerMinute is the maximum actions per minute.
@@ -350,4 +414,15 @@ type AgentContext struct {
 
 	// Metadata carries arbitrary key-value pairs for protocol adapters.
 	Metadata map[string]any `json:"metadata,omitempty"`
+}
+
+// newShortID generates a short random hex identifier for agent IDs.
+func newShortID() string {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand.Read failing is catastrophic; use a fallback that
+		// still produces unique-enough IDs for the agent registry.
+		return hex.EncodeToString([]byte(time.Now().UTC().Format(time.RFC3339Nano)))
+	}
+	return hex.EncodeToString(b)
 }

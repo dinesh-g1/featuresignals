@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -61,23 +60,22 @@ func (h *ImportHandler) ImportLaunchDarkly(w http.ResponseWriter, r *http.Reques
 	logger := h.logger.With("handler", "import_launchdarkly")
 
 	var req ImportLDRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
-	defer r.Body.Close()
 
 	// ── Validate request ────────────────────────────────────────────
 	if req.APIKey == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "api_key is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Import blocked — the api_key field is missing. Provide a valid API key to access the source provider.")
 		return
 	}
 	if req.ProjectKey == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "project_key is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Import blocked — the project_key field is missing. Specify the source project key.")
 		return
 	}
 	if req.TargetProjectID == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "target_project_id is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Import blocked — the target_project_id field is missing. Specify the destination project.")
 		return
 	}
 
@@ -85,11 +83,11 @@ func (h *ImportHandler) ImportLaunchDarkly(w http.ResponseWriter, r *http.Reques
 	project, err := h.projectStore.GetProject(r.Context(), req.TargetProjectID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "target project not found")
+			httputil.Error(w, http.StatusNotFound, "Project lookup failed — the target project does not exist. Verify the project ID and try again.")
 			return
 		}
-		logger.Error("failed to verify target project", "error", err, "target_project_id", req.TargetProjectID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		logger.Error("Project verification failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "target_project_id", req.TargetProjectID)
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -137,7 +135,7 @@ func (h *ImportHandler) ImportLaunchDarkly(w http.ResponseWriter, r *http.Reques
 				logger.Warn("flag already exists, skipping", "flag_key", ldFlag.Key)
 				continue
 			}
-			logger.Error("failed to create flag", "error", err,
+			logger.Error("Feature creation failed — an unexpected error occurred on the server. Try again or contact support if the issue persists.", "error", err,
 				"flag_key", ldFlag.Key,
 				"project_id", project.ID,
 			)

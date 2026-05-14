@@ -425,7 +425,7 @@ export default function FlagDetailPage() {
             <Switch
               checked={state?.enabled ?? false}
               onCheckedChange={toggleFlag}
-              aria-label="Toggle flag"
+              aria-label="Activate/Pause feature"
             />
           </div>
         }
@@ -453,7 +453,7 @@ export default function FlagDetailPage() {
               variant="danger-ghost"
               onClick={() => setConfirmDelete(true)}
             >
-              Delete
+              Retire Feature
             </Button>
           </div>
         }
@@ -480,10 +480,11 @@ export default function FlagDetailPage() {
         <Card className="border-red-200 bg-[var(--signal-bg-danger-muted)] ring-1 ring-red-100">
           <CardContent>
             <p className="text-sm font-semibold text-red-800">
-              Delete this flag?
+              Retire this feature?
             </p>
             <p className="text-xs text-red-600 mt-1">
-              This action cannot be undone.
+              Retiring a feature is permanent and cannot be undone. All
+              environments will lose this feature's configuration.
             </p>
 
             {deleteImpact && (
@@ -550,7 +551,7 @@ export default function FlagDetailPage() {
 
             <div className="mt-4 flex gap-2">
               <Button variant="danger" onClick={handleDelete}>
-                Delete Flag
+                Retire Feature
               </Button>
               <Button
                 variant="secondary"
@@ -920,15 +921,18 @@ export default function FlagDetailPage() {
               </CardContent>
             </Card>
 
-          {/* Dependency Graph */}
-          <Card>
-            <CardContent>
-              <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">Dependency Graph</h3>
-              <p className="text-xs text-[var(--signal-fg-tertiary)] mt-1">
-                Prerequisites: {prereqs.length > 0 ? prereqs.join(", ") : "None"}
-              </p>
-            </CardContent>
-          </Card>
+            {/* Dependency Graph */}
+            <Card>
+              <CardContent>
+                <h3 className="text-sm font-medium text-[var(--signal-fg-secondary)]">
+                  Dependency Graph
+                </h3>
+                <p className="text-xs text-[var(--signal-fg-tertiary)] mt-1">
+                  Prerequisites:{" "}
+                  {prereqs.length > 0 ? prereqs.join(", ") : "None"}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

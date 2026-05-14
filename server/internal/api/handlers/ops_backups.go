@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 )
 
@@ -168,15 +167,13 @@ func (s *inMemoryBackupStore) GetStatus(_ context.Context) (*BackupStatus, error
 
 // OpsBackupsHandler serves backup management endpoints for the ops portal.
 type OpsBackupsHandler struct {
-	store   domain.Store
 	backups *inMemoryBackupStore
 	logger  *slog.Logger
 }
 
 // NewOpsBackupsHandler creates a new ops backups handler.
-func NewOpsBackupsHandler(store domain.Store, logger *slog.Logger) *OpsBackupsHandler {
+func NewOpsBackupsHandler(logger *slog.Logger) *OpsBackupsHandler {
 	return &OpsBackupsHandler{
-		store:   store,
 		backups: newInMemoryBackupStore(),
 		logger:  logger,
 	}

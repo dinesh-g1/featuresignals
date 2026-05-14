@@ -64,7 +64,7 @@ func (noopStore) GetOrgMember(context.Context, string, string) (*domain.OrgMembe
 func (noopStore) GetOrgMemberByID(context.Context, string) (*domain.OrgMember, error) {
 	return nil, errNoop
 }
-func (noopStore) ListOrgMembers(context.Context, string) ([]domain.OrgMember, error) {
+func (noopStore) ListOrgMembers(context.Context, string, int, int) ([]domain.OrgMember, error) {
 	return nil, errNoop
 }
 func (noopStore) UpdateOrgMemberRole(context.Context, string, domain.Role) error { return errNoop }
@@ -80,14 +80,14 @@ func (noopStore) CreateProject(context.Context, *domain.Project) error { return 
 func (noopStore) GetProject(context.Context, string) (*domain.Project, error) {
 	return nil, errNoop
 }
-func (noopStore) ListProjects(context.Context, string) ([]domain.Project, error) {
+func (noopStore) ListProjects(context.Context, string, int, int) ([]domain.Project, error) {
 	return nil, errNoop
 }
 func (noopStore) DeleteProject(context.Context, string) error          { return errNoop }
 func (noopStore) UpdateProject(context.Context, *domain.Project) error { return errNoop }
 
 func (noopStore) CreateEnvironment(context.Context, *domain.Environment) error { return errNoop }
-func (noopStore) ListEnvironments(context.Context, string) ([]domain.Environment, error) {
+func (noopStore) ListEnvironments(context.Context, string, int, int) ([]domain.Environment, error) {
 	return nil, errNoop
 }
 func (noopStore) GetEnvironment(context.Context, string) (*domain.Environment, error) {
@@ -100,11 +100,11 @@ func (noopStore) CreateFlag(context.Context, *domain.Flag) error { return errNoo
 func (noopStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, errNoop
 }
-func (noopStore) ListFlags(context.Context, string) ([]domain.Flag, error)           { return nil, errNoop }
-func (noopStore) ListFlagsWithFilter(context.Context, string, string, string) ([]domain.Flag, error) {
+func (noopStore) ListFlags(context.Context, string, int, int) ([]domain.Flag, error)           { return nil, errNoop }
+func (noopStore) ListFlagsWithFilter(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, errNoop
 }
-func (noopStore) ListFlagsSorted(context.Context, string, string, string) ([]domain.Flag, error) {
+func (noopStore) ListFlagsSorted(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, errNoop
 }
 func (noopStore) UpdateFlag(context.Context, *domain.Flag) error           { return errNoop }
@@ -114,7 +114,7 @@ func (noopStore) UpsertFlagState(context.Context, *domain.FlagState) error { ret
 func (noopStore) GetFlagState(context.Context, string, string) (*domain.FlagState, error) {
 	return nil, errNoop
 }
-func (noopStore) ListFlagStatesByEnv(context.Context, string) ([]domain.FlagState, error) {
+func (noopStore) ListFlagStatesByEnv(context.Context, string, int, int) ([]domain.FlagState, error) {
 	return nil, errNoop
 }
 func (noopStore) ListPendingSchedules(context.Context, time.Time) ([]domain.FlagState, error) {
@@ -122,13 +122,13 @@ func (noopStore) ListPendingSchedules(context.Context, time.Time) ([]domain.Flag
 }
 
 func (noopStore) CreateSegment(context.Context, *domain.Segment) error { return errNoop }
-func (noopStore) ListSegments(context.Context, string) ([]domain.Segment, error) {
+func (noopStore) ListSegments(context.Context, string, int, int) ([]domain.Segment, error) {
 	return nil, errNoop
 }
-func (noopStore) ListSegmentsWithFilter(context.Context, string, string, string) ([]domain.Segment, error) {
+func (noopStore) ListSegmentsWithFilter(context.Context, string, string, string, int, int) ([]domain.Segment, error) {
 	return nil, errNoop
 }
-func (noopStore) ListSegmentsSorted(context.Context, string, string, string) ([]domain.Segment, error) {
+func (noopStore) ListSegmentsSorted(context.Context, string, string, string, int, int) ([]domain.Segment, error) {
 	return nil, errNoop
 }
 func (noopStore) GetSegment(context.Context, string, string) (*domain.Segment, error) {
@@ -144,7 +144,7 @@ func (noopStore) GetAPIKeyByID(context.Context, string) (*domain.APIKey, error) 
 func (noopStore) GetAPIKeyByHash(context.Context, string) (*domain.APIKey, error) {
 	return nil, errNoop
 }
-func (noopStore) ListAPIKeys(context.Context, string) ([]domain.APIKey, error) {
+func (noopStore) ListAPIKeys(context.Context, string, int, int) ([]domain.APIKey, error) {
 	return nil, errNoop
 }
 func (noopStore) RevokeAPIKey(context.Context, string) error { return errNoop }
@@ -158,7 +158,7 @@ func (noopStore) CreateWebhook(context.Context, *domain.Webhook) error { return 
 func (noopStore) GetWebhook(context.Context, string) (*domain.Webhook, error) {
 	return nil, errNoop
 }
-func (noopStore) ListWebhooks(context.Context, string) ([]domain.Webhook, error) {
+func (noopStore) ListWebhooks(context.Context, string, int, int) ([]domain.Webhook, error) {
 	return nil, errNoop
 }
 func (noopStore) UpdateWebhook(context.Context, *domain.Webhook) error { return errNoop }
@@ -204,8 +204,9 @@ func (noopStore) CountEnvironments(context.Context, string) (int, error) { retur
 func (noopStore) CountMembers(context.Context, string) (int, error)     { return 0, errNoop }
 func (noopStore) CountWebhooks(context.Context, string) (int, error)    { return 0, errNoop }
 func (noopStore) CountAPIKeys(context.Context, string) (int, error)     { return 0, errNoop }
+func (noopStore) CountAPIKeysByEnv(context.Context, string) (int, error) { return 0, errNoop }
 func (noopStore) CountProjects(context.Context, string) (int, error)    { return 0, errNoop }
-func (noopStore) ListPinnedItems(context.Context, string, string, string) ([]domain.PinnedItem, error) {
+func (noopStore) ListPinnedItems(context.Context, string, string, string, int, int) ([]domain.PinnedItem, error) {
 	return nil, errNoop
 }
 func (noopStore) CreatePinnedItem(context.Context, string, string, string, string, string) (*domain.PinnedItem, error) {
@@ -310,14 +311,16 @@ func (noopStore) IsTokenRevoked(context.Context, string) (bool, error)          
 func (noopStore) CleanExpiredRevocations(context.Context) error                        { return nil }
 func (noopStore) CreateAgent(_ context.Context, _ *domain.Agent) error                 { return errNoop }
 func (noopStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error)       { return nil, errNoop }
-func (noopStore) ListAgents(_ context.Context, _ string) ([]domain.Agent, error)       { return nil, errNoop }
-func (noopStore) ListAgentsByType(_ context.Context, _, _ string) ([]domain.Agent, error) { return nil, errNoop }
+func (noopStore) ListAgents(_ context.Context, _ string, _, _ int) ([]domain.Agent, error)       { return nil, errNoop }
+func (noopStore) ListAgentsByType(_ context.Context, _, _ string, _, _ int) ([]domain.Agent, error) { return nil, errNoop }
+func (noopStore) CountAgents(_ context.Context, _ string) (int, error)                 { return 0, errNoop }
+func (noopStore) CountAgentsByType(_ context.Context, _, _ string) (int, error)        { return 0, errNoop }
 func (noopStore) UpdateAgent(_ context.Context, _ *domain.Agent) error                 { return errNoop }
 func (noopStore) UpdateAgentHeartbeat(_ context.Context, _ string) error               { return errNoop }
 func (noopStore) DeleteAgent(_ context.Context, _, _ string) error                     { return errNoop }
 func (noopStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error { return errNoop }
 func (noopStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) { return nil, errNoop }
-func (noopStore) ListMaturities(_ context.Context, _ string) ([]domain.AgentMaturity, error) { return nil, errNoop }
+func (noopStore) ListMaturities(_ context.Context, _ string, _, _ int) ([]domain.AgentMaturity, error) { return nil, errNoop }
 func (noopStore) UpsertMFASecret(context.Context, string, string) error                { return nil }
 func (noopStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
 	return nil, errNoop
@@ -336,7 +339,7 @@ func (noopStore) CreateCustomRole(context.Context, *domain.CustomRole) error    
 func (noopStore) GetCustomRole(context.Context, string) (*domain.CustomRole, error) {
 	return nil, errNoop
 }
-func (noopStore) ListCustomRoles(context.Context, string) ([]domain.CustomRole, error) {
+func (noopStore) ListCustomRoles(context.Context, string, int, int) ([]domain.CustomRole, error) {
 	return nil, errNoop
 }
 func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return errNoop }
@@ -945,7 +948,7 @@ func (noopStore) CreateIntegration(context.Context, domain.CreateIntegrationRequ
 func (noopStore) GetIntegration(context.Context, string, string) (*domain.Integration, error) {
 	return nil, nil
 }
-func (noopStore) ListIntegrations(context.Context, string) ([]domain.Integration, error) {
+func (noopStore) ListIntegrations(context.Context, string, int, int) ([]domain.Integration, error) {
 	return nil, nil
 }
 func (noopStore) UpdateIntegration(context.Context, string, string, domain.UpdateIntegrationRequest) (*domain.Integration, error) {
@@ -1058,14 +1061,31 @@ func (noopStore) CountEventsByAgent(_ context.Context, _, _ string, _ time.Time)
 func (noopStore) GetVariantDistribution(_ context.Context, _, _ string, _ time.Time) (map[string]int, error) {
 	return nil, errNoop
 }
+func (noopStore) CountBehaviors(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountBehaviorsByAgentType(_ context.Context, _, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountCustomRoles(_ context.Context, _ string) (int, error)      { return 0, errNoop }
+func (noopStore) CountEnvironmentsByProject(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountFlagStatesByEnv(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountFlagsByProject(_ context.Context, _ string) (int, error)   { return 0, errNoop }
+func (noopStore) CountSegmentsByProject(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountOrgMembers(_ context.Context, _ string) (int, error)       { return 0, errNoop }
+func (noopStore) CountWebhookDeliveries(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountMaturities(_ context.Context, _ string) (int, error)       { return 0, errNoop }
+func (noopStore) CountFlagVersions(_ context.Context, _ string) (int, error)     { return 0, errNoop }
+func (noopStore) CountFlagsWithFilter(_ context.Context, _, _, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountSegmentsWithFilter(_ context.Context, _, _, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountPinnedItems(_ context.Context, _, _, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountIntegrations(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) GetUsersByIDs(_ context.Context, _ []string) ([]domain.User, error) { return nil, errNoop }
 
+func (noopStore) CountPolicies(_ context.Context, _ string) (int, error) { return 0, errNoop }
 // ─── PolicyStore ───────────────────────────────────────────────────────────
 
 func (noopStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
 	return nil, errNoop
 }
 
-func (noopStore) ListPolicies(_ context.Context, _ string) ([]domain.Policy, error) {
+func (noopStore) ListPolicies(_ context.Context, _ string, _, _ int) ([]domain.Policy, error) {
 	return nil, errNoop
 }
 
@@ -1099,11 +1119,11 @@ func (noopStore) GetBehavior(_ context.Context, _, _ string) (*domain.ABMBehavio
 	return nil, errNoop
 }
 
-func (noopStore) ListBehaviors(_ context.Context, _ string) ([]domain.ABMBehavior, error) {
+func (noopStore) ListBehaviors(_ context.Context, _ string, _, _ int) ([]domain.ABMBehavior, error) {
 	return nil, errNoop
 }
 
-func (noopStore) ListBehaviorsByAgentType(_ context.Context, _, _ string) ([]domain.ABMBehavior, error) {
+func (noopStore) ListBehaviorsByAgentType(_ context.Context, _, _ string, _, _ int) ([]domain.ABMBehavior, error) {
 	return nil, errNoop
 }
 

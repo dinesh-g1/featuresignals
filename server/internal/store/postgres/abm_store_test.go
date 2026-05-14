@@ -87,7 +87,7 @@ func TestABMStore_ListByAgentType(t *testing.T) {
 	})
 
 	// List all
-	all, err := store.ListBehaviors(ctx, org.ID)
+	all, err := store.ListBehaviors(ctx, org.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list all behaviors: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestABMStore_ListByAgentType(t *testing.T) {
 	}
 
 	// List by recommender
-	recs, err := store.ListBehaviorsByAgentType(ctx, org.ID, "recommender")
+	recs, err := store.ListBehaviorsByAgentType(ctx, org.ID, "recommender", 50, 0)
 	if err != nil {
 		t.Fatalf("list recommender behaviors: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestABMStore_ListByAgentType(t *testing.T) {
 	}
 
 	// List by janitor
-	jans, err := store.ListBehaviorsByAgentType(ctx, org.ID, "janitor")
+	jans, err := store.ListBehaviorsByAgentType(ctx, org.ID, "janitor", 50, 0)
 	if err != nil {
 		t.Fatalf("list janitor behaviors: %v", err)
 	}

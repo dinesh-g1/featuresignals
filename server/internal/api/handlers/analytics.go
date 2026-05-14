@@ -56,28 +56,28 @@ func (h *AnalyticsHandler) Overview(w http.ResponseWriter, r *http.Request) {
 	funnel, err := h.store.EventFunnel(ctx, funnelEvents, since)
 	if err != nil {
 		logger.Error("failed to load funnel", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	activeWorkspaces, err := h.store.CountDistinctOrgs(ctx, domain.EventFlagCreated, since)
 	if err != nil {
 		logger.Error("failed to count active workspaces", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	activeUsers, err := h.store.CountDistinctUsers(ctx, since)
 	if err != nil {
 		logger.Error("failed to count active users", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	plans, err := h.store.PlanDistribution(ctx)
 	if err != nil {
 		logger.Error("failed to load plan distribution", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

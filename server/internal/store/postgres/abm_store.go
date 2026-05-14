@@ -73,13 +73,14 @@ func (s *Store) GetBehavior(ctx context.Context, orgID, behaviorKey string) (*do
 }
 
 // ListBehaviors returns all ABM behaviors for an organization.
-func (s *Store) ListBehaviors(ctx context.Context, orgID string) ([]domain.ABMBehavior, error) {
+func (s *Store) ListBehaviors(ctx context.Context, orgID string, limit, offset int) ([]domain.ABMBehavior, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT key, name, description, agent_type, variants, default_variant,
 		        targeting_rules, rollout_percentage, status, created_at, updated_at
 		 FROM abm_behaviors WHERE org_id = $1
-		 ORDER BY created_at DESC`,
-		orgID,
+		 ORDER BY created_at DESC
+		 LIMIT $2 OFFSET $3`,
+		orgID, limit, offset,
 	)
 	if err != nil {
 		return nil, err
@@ -90,13 +91,14 @@ func (s *Store) ListBehaviors(ctx context.Context, orgID string) ([]domain.ABMBe
 }
 
 // ListBehaviorsByAgentType returns ABM behaviors filtered by agent type.
-func (s *Store) ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string) ([]domain.ABMBehavior, error) {
+func (s *Store) ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string, limit, offset int) ([]domain.ABMBehavior, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT key, name, description, agent_type, variants, default_variant,
 		        targeting_rules, rollout_percentage, status, created_at, updated_at
 		 FROM abm_behaviors WHERE org_id = $1 AND agent_type = $2
-		 ORDER BY created_at DESC`,
-		orgID, agentType,
+		 ORDER BY created_at DESC
+		 LIMIT $3 OFFSET $4`,
+		orgID, agentType, limit, offset,
 	)
 	if err != nil {
 		return nil, err
@@ -104,6 +106,22 @@ func (s *Store) ListBehaviorsByAgentType(ctx context.Context, orgID, agentType s
 	defer rows.Close()
 
 	return scanBehaviors(rows)
+}
+
+// CountBehaviors returns the total number of ABM behaviors in an organization.
+func (s *Store) CountBehaviors(ctx context.Context, orgID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM abm_behaviors WHERE org_id = $1`, orgID).Scan(&count)
+	return count, err
+}
+
+// CountBehaviorsByAgentType returns the total number of ABM behaviors of a specific agent type.
+func (s *Store) CountBehaviorsByAgentType(ctx context.Context, orgID, agentType string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM abm_behaviors WHERE org_id = $1 AND agent_type = $2`, orgID, agentType).Scan(&count)
+	return count, err
 }
 
 // UpdateBehavior updates an existing ABM behavior's mutable fields.

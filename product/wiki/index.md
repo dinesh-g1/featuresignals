@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-05-18
-> **Total pages:** 36 (11 public, 21 private, 4 internal, 0 archive)
+> **Updated:** 2026-05-21
+> **Total pages:** 35 (10 public, 23 private, 4 internal, 0 archive)
 
 ---
 
@@ -36,7 +36,7 @@
 
 | Page | Status | Summary | Inbound Links |
 |------|--------|---------|---------------|
-| [[PERFORMANCE.md]] | `current` | Evaluation hot path targets (<1ms p99), stateless Engine struct, 9-step short-circuit algorithm, cache architecture (sync.RWMutex, O(1) lookup, PG LISTEN/NOTIFY), SSE streaming (buffered channels, non-blocking broadcast), database performance (pgxpool tuning 20-50 conns), index strategy, general performance rules, benchmark history placeholder | 0 |
+| [[PERFORMANCE.md]] | `current` | Evaluation hot path targets (<1ms p99), stateless Engine struct, 9-step short-circuit algorithm, cache architecture (sync.RWMutex, O(1) lookup, PG LISTEN/NOTIFY), SSE streaming (buffered channels, non-blocking broadcast), database performance (pgxpool tuning 20-50 conns), index strategy, general performance rules, benchmark history placeholder | 1 (PERFORMANCE_BUDGETS.md) |
 
 ### Compliance
 
@@ -86,6 +86,9 @@
 | [[HUMAN_PROCESS_PRODUCT_ARCHITECTURE.md]] | `current` | **SUPERSEDES** previous product planning documents. Definitive product architecture rooted in the 14-step human feature lifecycle (CONCEIVE through LEARN). 13 AI extensions mapped to each human step — each with concrete outputs, hallucination risk scoring, and human/AI role boundaries. Consolidates the fragmented 9-product Stage 3 plan into 4 unified products (Code2Flag, Preflight, IncidentFlag+AutoMonitor, Impact Analyzer+Org Learning). 11 of 14 existing products killed or absorbed. Unified vision: "FeatureSignals is not a feature flag platform. It is a feature lifecycle platform." | high |
 | [[PROCESS_ALIGNMENT_ARCHITECTURE.md]] | `current` | **FINAL ARCHITECTURAL LAYER.** Makes FeatureSignals a true reflection of each customer's existing business process — not a rigid product they must adapt to. 5-level company maturity model (Solo→Regulated), Policy-as-Configuration engine (CEL-based), customer-definable Workflow Engine (replaces hardcoded phases), Reflection Architecture (bi-directional integration with Jira/Slack/GitHub/PagerDuty/Datadog/ServiceNow), 9 industry template packs (Solo Dev through GovTech), graduated onboarding path. Design invariant: same codebase supports "no process" (Level 1) and "maximum process" (Level 5 bank) — only configuration differs. Implementation blueprint with Go schemas, SQL migrations, API design, and 6-phase build plan. | high |
 | FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx | `current` | **Canonical product specification.** 100+ concrete requirements with unique IDs across 22 sections. Covers all 5 value-chain stages. Single source of truth for Engineering, Design, QA, Sales, and all departments. Must be updated whenever features change. | high |
+| [[MASTER_IMPLEMENTATION_PROTOCOL.md]] | `current` | **MIP v1.1.0 — SINGLE ENFORCEMENT MECHANISM.** Non-negotiable protocol governing every agent prompt and every feature implementation. 1,159 lines, 17 sections, consolidates enforceable requirements from 19 source documents at ~92% coverage. Agent prompt template with mandatory MIP-ENFORCED header. Completion reporting format with per-layer verification. **This document takes precedence over ALL other documents when conflicts arise.** | high |
+| [[API_VERSIONING_POLICY.md]] | `current` | **API Versioning Policy** — Formal, implementable policy covering breaking/non-breaking changes, URL-based versioning (/v1, /v2) with N-1 support (maximum 2 active versions), 6-month deprecation notice with Sunset/Deprecation/Link headers, beta API lifecycle (90-day max, X-FS-Beta header), SDK versioning alignment, and compliance requirements (CHANGELOG, PRS update, migration guides, dual-version CI tests). Closes P0 item #6 from PRE_IMPLEMENTATION_GAP_ANALYSIS Dimension 4. | high |
+| [[PERFORMANCE_BUDGETS.md]] | `current` | **Formal subsystem performance budgets** — concrete, measurable, enforceable latency/throughput targets for all 10 subsystems: eval hot path (p99 < 1ms), management API (p95 < 100ms CRUD, < 200ms list), Code2Flag (scan < 5min/100KL, PR < 30s), Preflight (report < 2s, impact < 500ms), IncidentFlag (correlation p99 < 5s, remediation p99 < 2s), Impact Analyzer (report < 3s, cost < 1s/flag), Event Pipeline (10K events/s, < 500ms e2e p99), ABM (resolve p99 < 5ms), Dashboard Core Web Vitals (LCP < 2s, INP < 100ms, CLS < 0.1), scalability targets per tier. 3-level enforcement (L1 middleware warn, L2 CI 10% regression block, L3 production 2× alert). 30+ benchmark definitions across all subsystems. Implements P0 item #11 from PRE_IMPLEMENTATION_GAP_ANALYSIS. | high |
 | [[PEOPLE.md]] | `current` | Team & hiring — structure, hiring plans, skill gaps (placeholder shell) | low |
 | [[UI_UX_SPECIFICATION.md]] | `current` | **v1 Complete UI/UX Specification** — 4,392 lines. Every page, component, state, and Don Norman principle application for the FeatureSignals dashboard. Covers 7 nav sections, settings, component library (12 new, 6 modified), state handling (13 universal rules), accessibility (WCAG 2.1 AA), responsive strategy, dark mode, performance requirements, 6-persona matrix, 6-phase implementation plan. Companion to DASHBOARD_AUDIT.md. | high |
 

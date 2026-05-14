@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { toast } from "@/components/toast";
@@ -24,6 +25,7 @@ import {
   CopyIcon,
 } from "@/components/icons/nav-icons";
 import { DOCS_LINKS } from "@/components/docs-link";
+import { Pagination } from "@/components/ui/pagination";
 import type { Webhook, WebhookDelivery } from "@/lib/types";
 
 const EVENT_TYPES = [
@@ -102,7 +104,23 @@ const SAMPLE_PAYLOADS: Record<string, unknown> = {
 
 export default function WebhooksPage() {
   const token = useAppStore((s) => s.token);
+  const searchParams = useSearchParams();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+
+  // Pagination from URL params
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offset = parseInt(searchParams.get("offset") || "0");
+  const total = webhooks.length;
+
+  // Client-side pagination slice
+  const paginatedWebhooks = useMemo(() => {
+    if (offset >= webhooks.length) return [];
+    const end = offset + limit;
+    return webhooks.slice(
+      offset,
+      end > webhooks.length ? webhooks.length : end,
+    );
+  }, [webhooks, limit, offset]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -279,419 +297,442 @@ export default function WebhooksPage() {
     }
   }
 
-  return (
+  const webhooksSkeleton = (
     <div className="space-y-6">
-      <Card className="p-4 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
-            Webhooks
-          </h2>
-          <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
-            Add Webhook
-          </Button>
-        </div>
+      <div className="h-8 w-32 animate-pulse rounded bg-[var(--signal-border-default)]" />
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-20 animate-pulse rounded-lg bg-[var(--signal-border-default)]"
+          />
+        ))}
+      </div>
+    </div>
+  );
 
-        {showCreate && (
-          <form
-            onSubmit={handleCreate}
-            noValidate
-            className="mb-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 space-y-3"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  return (
+    <Suspense fallback={webhooksSkeleton}>
+      <div className="space-y-6">
+        <Card className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
+              Webhooks
+            </h2>
+            <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
+              Add Webhook
+            </Button>
+          </div>
+
+          {showCreate && (
+            <form
+              onSubmit={handleCreate}
+              noValidate
+              className="mb-4 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 space-y-3"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Name</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => {
+                      setForm({ ...form, name: e.target.value });
+                      if (fieldErrors.name)
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          name: undefined,
+                        }));
+                    }}
+                    placeholder="Slack Notifications"
+                    required
+                    aria-invalid={!!fieldErrors.name}
+                    aria-describedby={
+                      fieldErrors.name ? "name-error" : undefined
+                    }
+                    className="mt-1 py-1.5"
+                  />
+                  {fieldErrors.name && (
+                    <p
+                      className="text-xs text-red-500 mt-1"
+                      role="alert"
+                      id="name-error"
+                    >
+                      {fieldErrors.name}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs">URL</Label>
+                  <Input
+                    value={form.url}
+                    onChange={(e) => {
+                      setForm({ ...form, url: e.target.value });
+                      if (fieldErrors.url)
+                        setFieldErrors((prev) => ({ ...prev, url: undefined }));
+                    }}
+                    onBlur={() => setUrlTouched(true)}
+                    placeholder="https://hooks.slack.com/..."
+                    required
+                    type="url"
+                    aria-invalid={!!fieldErrors.url || urlShowError}
+                    aria-describedby={
+                      fieldErrors.url || urlShowError ? "url-error" : undefined
+                    }
+                    className={cn(
+                      "mt-1 py-1.5",
+                      urlShowError &&
+                        "border-red-300 focus-visible:ring-red-400",
+                    )}
+                  />
+                  {fieldErrors.url && (
+                    <p
+                      className="text-xs text-red-500 mt-1"
+                      role="alert"
+                      id="url-error"
+                    >
+                      {fieldErrors.url}
+                    </p>
+                  )}
+                  {urlShowError && !fieldErrors.url && (
+                    <p
+                      className="text-xs text-red-500 mt-1"
+                      role="alert"
+                      id="url-error"
+                    >
+                      Invalid URL format
+                    </p>
+                  )}
+                </div>
+              </div>
               <div>
-                <Label className="text-xs">Name</Label>
+                <Label className="text-xs">
+                  Secret (for HMAC signature verification)
+                </Label>
                 <Input
-                  value={form.name}
-                  onChange={(e) => {
-                    setForm({ ...form, name: e.target.value });
-                    if (fieldErrors.name)
-                      setFieldErrors((prev) => ({ ...prev, name: undefined }));
-                  }}
-                  placeholder="Slack Notifications"
-                  required
-                  aria-invalid={!!fieldErrors.name}
-                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                  value={form.secret}
+                  onChange={(e) => setForm({ ...form, secret: e.target.value })}
+                  placeholder="Optional shared secret"
                   className="mt-1 py-1.5"
                 />
-                {fieldErrors.name && (
-                  <p
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
-                    id="name-error"
-                  >
-                    {fieldErrors.name}
-                  </p>
-                )}
               </div>
               <div>
-                <Label className="text-xs">URL</Label>
-                <Input
-                  value={form.url}
-                  onChange={(e) => {
-                    setForm({ ...form, url: e.target.value });
-                    if (fieldErrors.url)
-                      setFieldErrors((prev) => ({ ...prev, url: undefined }));
-                  }}
-                  onBlur={() => setUrlTouched(true)}
-                  placeholder="https://hooks.slack.com/..."
-                  required
-                  type="url"
-                  aria-invalid={!!fieldErrors.url || urlShowError}
-                  aria-describedby={
-                    fieldErrors.url || urlShowError ? "url-error" : undefined
-                  }
-                  className={cn(
-                    "mt-1 py-1.5",
-                    urlShowError && "border-red-300 focus-visible:ring-red-400",
-                  )}
-                />
-                {fieldErrors.url && (
-                  <p
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
-                    id="url-error"
-                  >
-                    {fieldErrors.url}
-                  </p>
-                )}
-                {urlShowError && !fieldErrors.url && (
-                  <p
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
-                    id="url-error"
-                  >
-                    Invalid URL format
-                  </p>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs">
-                Secret (for HMAC signature verification)
-              </Label>
-              <Input
-                value={form.secret}
-                onChange={(e) => setForm({ ...form, secret: e.target.value })}
-                placeholder="Optional shared secret"
-                className="mt-1 py-1.5"
-              />
-            </div>
-            <div>
-              <Label className="text-xs mb-1.5">Events</Label>
-              <div className="flex flex-wrap gap-2">
-                {EVENT_TYPES.map((evt) => (
-                  <button
-                    key={evt}
-                    type="button"
-                    onClick={() => toggleEvent(evt)}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors",
-                      form.events.includes(evt)
-                        ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] ring-[var(--signal-border-accent-muted)]"
-                        : "bg-white text-[var(--signal-fg-secondary)] ring-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)]",
-                    )}
-                  >
-                    {evt}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Sample Payload Preview Button */}
-            <div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowPayloadPreview(!showPayloadPreview)}
-                className="text-xs"
-              >
-                {showPayloadPreview ? (
-                  <>
-                    <EyeOffIcon className="h-3.5 w-3.5 mr-1" />
-                    Hide Sample Payload
-                  </>
-                ) : (
-                  <>
-                    <EyeIcon className="h-3.5 w-3.5 mr-1" />
-                    View Sample Payload
-                  </>
-                )}
-              </Button>
-              {showPayloadPreview && (
-                <div className="mt-3 rounded-lg border border-[var(--signal-border-default)] bg-white overflow-hidden">
-                  <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-slate-100 bg-[var(--signal-bg-secondary)]">
-                    {EVENT_TYPES.map((evt) => (
-                      <button
-                        key={evt}
-                        type="button"
-                        onClick={() => setSelectedPreviewEvent(evt)}
-                        className={cn(
-                          "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
-                          selectedPreviewEvent === evt
-                            ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
-                            : "bg-white text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
-                        )}
-                      >
-                        {evt}
-                      </button>
-                    ))}
+                <Label className="text-xs mb-1.5">Events</Label>
+                <div className="flex flex-wrap gap-2">
+                  {EVENT_TYPES.map((evt) => (
                     <button
+                      key={evt}
                       type="button"
-                      onClick={copyPayload}
-                      className="ml-auto rounded px-2 py-0.5 text-[10px] font-medium bg-white text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] flex items-center gap-1"
-                      title="Copy to clipboard"
+                      onClick={() => toggleEvent(evt)}
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors",
+                        form.events.includes(evt)
+                          ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)] ring-[var(--signal-border-accent-muted)]"
+                          : "bg-white text-[var(--signal-fg-secondary)] ring-[var(--signal-border-default)] hover:bg-[var(--signal-bg-secondary)]",
+                      )}
                     >
-                      <CopyIcon className="h-3 w-3" />
-                      Copy
+                      {evt}
                     </button>
-                  </div>
-                  <pre className="p-3 text-xs text-[var(--signal-fg-primary)] overflow-x-auto max-h-64 overflow-y-auto text-[11px] leading-relaxed font-mono">
-                    {JSON.stringify(
-                      SAMPLE_PAYLOADS[selectedPreviewEvent],
-                      null,
-                      2,
-                    )}
-                  </pre>
+                  ))}
                 </div>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" size="sm">
-                Create Webhook
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setShowCreate(false);
-                  setForm({ name: "", url: "", secret: "", events: [] });
-                  setUrlTouched(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
-
-        <div className="space-y-2">
-          {webhooks.length === 0 ? (
-            <EmptyState
-              icon={LinkIcon}
-              title="No webhooks configured"
-              description="Webhooks send real-time HTTP notifications when flags change. Connect your CI/CD pipeline, Slack, or monitoring tools."
-              docsUrl={DOCS_LINKS.webhooks}
-              docsLabel="Webhook setup guide"
-              className="rounded-lg border border-dashed border-[var(--signal-border-emphasis)]"
-            />
-          ) : (
-            webhooks.map((wh) => {
-              const testResult = testResults[wh.id];
-              const isTesting = testingId === wh.id;
-
-              return (
-                <div key={wh.id}>
-                  <div className="flex flex-col gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass sm:flex-row sm:items-center sm:justify-between">
-                    <div
-                      className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
-                      onClick={() => loadDeliveries(wh.id)}
-                    >
-                      <div
-                        className={cn(
-                          "h-2.5 w-2.5 rounded-full shrink-0",
-                          wh.enabled ? "bg-emerald-500" : "bg-slate-300",
-                        )}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
-                          {wh.name}
-                        </p>
-                        <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
-                          {wh.url}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 shrink-0 ml-5 sm:ml-0">
-                      <div className="flex flex-wrap gap-1">
-                        {(wh.events ?? []).map((e) => (
-                          <Badge
-                            key={e}
-                            variant="primary"
-                            className="text-[10px]"
-                          >
-                            {e}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      {/* Test button */}
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleTest(wh)}
-                        disabled={isTesting}
-                        className="text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)]"
-                        title="Test webhook"
-                      >
-                        {isTesting ? (
-                          <LoaderIcon className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <SendIcon className="h-4 w-4" />
-                        )}
-                      </Button>
-
-                      <button
-                        onClick={() => toggleEnabled(wh)}
-                        className={cn(
-                          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0",
-                          wh.enabled ? "bg-emerald-500" : "bg-slate-300",
-                        )}
-                      >
-                        <span
+              </div>
+              {/* Sample Payload Preview Button */}
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowPayloadPreview(!showPayloadPreview)}
+                  className="text-xs"
+                >
+                  {showPayloadPreview ? (
+                    <>
+                      <EyeOffIcon className="h-3.5 w-3.5 mr-1" />
+                      Hide Sample Payload
+                    </>
+                  ) : (
+                    <>
+                      <EyeIcon className="h-3.5 w-3.5 mr-1" />
+                      View Sample Payload
+                    </>
+                  )}
+                </Button>
+                {showPayloadPreview && (
+                  <div className="mt-3 rounded-lg border border-[var(--signal-border-default)] bg-white overflow-hidden">
+                    <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-slate-100 bg-[var(--signal-bg-secondary)]">
+                      {EVENT_TYPES.map((evt) => (
+                        <button
+                          key={evt}
+                          type="button"
+                          onClick={() => setSelectedPreviewEvent(evt)}
                           className={cn(
-                            "inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform",
-                            wh.enabled ? "translate-x-4" : "translate-x-0.5",
+                            "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
+                            selectedPreviewEvent === evt
+                              ? "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]"
+                              : "bg-white text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)]",
+                          )}
+                        >
+                          {evt}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={copyPayload}
+                        className="ml-auto rounded px-2 py-0.5 text-[10px] font-medium bg-white text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] flex items-center gap-1"
+                        title="Copy to clipboard"
+                      >
+                        <CopyIcon className="h-3 w-3" />
+                        Copy
+                      </button>
+                    </div>
+                    <pre className="p-3 text-xs text-[var(--signal-fg-primary)] overflow-x-auto max-h-64 overflow-y-auto text-[11px] leading-relaxed font-mono">
+                      {JSON.stringify(
+                        SAMPLE_PAYLOADS[selectedPreviewEvent],
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" size="sm">
+                  Create Webhook
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreate(false);
+                    setForm({ name: "", url: "", secret: "", events: [] });
+                    setUrlTouched(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-2">
+            {total === 0 ? (
+              <EmptyState
+                icon={LinkIcon}
+                title="No webhooks configured"
+                description="Webhooks send real-time HTTP notifications when flags change. Connect your CI/CD pipeline, Slack, or monitoring tools."
+                docsUrl={DOCS_LINKS.webhooks}
+                docsLabel="Webhook setup guide"
+                className="rounded-lg border border-dashed border-[var(--signal-border-emphasis)]"
+              />
+            ) : (
+              paginatedWebhooks.map((wh) => {
+                const testResult = testResults[wh.id];
+                const isTesting = testingId === wh.id;
+
+                return (
+                  <div key={wh.id}>
+                    <div className="flex flex-col gap-2 rounded-lg bg-[var(--signal-bg-secondary)] p-3 ring-1 ring-slate-100 transition-colors hover:bg-[var(--signal-bg-accent-emphasis)]-glass sm:flex-row sm:items-center sm:justify-between">
+                      <div
+                        className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                        onClick={() => loadDeliveries(wh.id)}
+                      >
+                        <div
+                          className={cn(
+                            "h-2.5 w-2.5 rounded-full shrink-0",
+                            wh.enabled ? "bg-emerald-500" : "bg-slate-300",
                           )}
                         />
-                      </button>
-                      {deleting === wh.id ? (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="danger-ghost"
-                            size="sm"
-                            onClick={() => handleDelete(wh.id)}
-                            className="h-auto px-2 py-1 text-xs"
-                          >
-                            Confirm
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleting(null)}
-                            className="h-auto px-2 py-1 text-xs"
-                          >
-                            Cancel
-                          </Button>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
+                            {wh.name}
+                          </p>
+                          <p className="text-xs text-[var(--signal-fg-secondary)] truncate">
+                            {wh.url}
+                          </p>
                         </div>
-                      ) : (
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0 ml-5 sm:ml-0">
+                        <div className="flex flex-wrap gap-1">
+                          {(wh.events ?? []).map((e) => (
+                            <Badge
+                              key={e}
+                              variant="primary"
+                              className="text-[10px]"
+                            >
+                              {e}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Test button */}
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => setDeleting(wh.id)}
-                          className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
+                          onClick={() => handleTest(wh)}
+                          disabled={isTesting}
+                          className="text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-accent)] hover:bg-[var(--signal-bg-accent-muted)]"
+                          title="Test webhook"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          {isTesting ? (
+                            <LoaderIcon className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <SendIcon className="h-4 w-4" />
+                          )}
                         </Button>
-                      )}
-                      <ChevronDownIcon
-                        className={cn(
-                          "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform",
-                          expandedId === wh.id && "rotate-180",
-                        )}
-                      />
-                    </div>
 
-                    {/* Test result display */}
-                    {testResult && (
-                      <div className="px-3 py-2 rounded-lg border border-[var(--signal-border-default)] bg-white text-xs flex items-center gap-2">
-                        {testResult.success ? (
-                          <CheckIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        ) : (
-                          <XIcon className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                        )}
-                        <span
+                        <button
+                          onClick={() => toggleEnabled(wh)}
                           className={cn(
-                            "font-mono font-semibold",
-                            getStatusCodeColor(testResult.status),
+                            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0",
+                            wh.enabled ? "bg-emerald-500" : "bg-slate-300",
                           )}
                         >
-                          {testResult.status || "ERR"}
-                        </span>
-                        <span className="text-[var(--signal-fg-secondary)] truncate">
-                          {testResult.message ||
-                            (testResult.success ? "OK" : "Failed")}
-                        </span>
+                          <span
+                            className={cn(
+                              "inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform",
+                              wh.enabled ? "translate-x-4" : "translate-x-0.5",
+                            )}
+                          />
+                        </button>
+                        {deleting === wh.id ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="danger-ghost"
+                              size="sm"
+                              onClick={() => handleDelete(wh.id)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleting(null)}
+                              className="h-auto px-2 py-1 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setDeleting(wh.id)}
+                            className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <ChevronDownIcon
+                          className={cn(
+                            "h-4 w-4 text-[var(--signal-fg-tertiary)] transition-transform",
+                            expandedId === wh.id && "rotate-180",
+                          )}
+                        />
+                      </div>
+
+                      {/* Test result display */}
+                      {testResult && (
+                        <div className="px-3 py-2 rounded-lg border border-[var(--signal-border-default)] bg-white text-xs flex items-center gap-2">
+                          {testResult.success ? (
+                            <CheckIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                          ) : (
+                            <XIcon className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                          )}
+                          <span
+                            className={cn(
+                              "font-mono font-semibold",
+                              getStatusCodeColor(testResult.status),
+                            )}
+                          >
+                            {testResult.status || "ERR"}
+                          </span>
+                          <span className="text-[var(--signal-fg-secondary)] truncate">
+                            {testResult.message ||
+                              (testResult.success ? "OK" : "Failed")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {expandedId === wh.id && (
+                      <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--signal-border-default)] bg-white">
+                        <div className="px-4 py-2 border-b border-slate-100">
+                          <p className="text-xs font-semibold text-[var(--signal-fg-secondary)]">
+                            Recent Deliveries
+                          </p>
+                        </div>
+                        {deliveries.length === 0 ? (
+                          <div className="px-4 py-6 text-center">
+                            <p className="text-xs text-[var(--signal-fg-tertiary)]">
+                              No deliveries yet.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-slate-100 overflow-x-auto">
+                            {deliveries.map((d) => (
+                              <div key={d.id} className="px-4 py-2.5">
+                                <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span
+                                      className={cn(
+                                        "inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold shrink-0",
+                                        d.success
+                                          ? "bg-[var(--signal-bg-success-muted)] text-emerald-700"
+                                          : "bg-red-100 text-red-700",
+                                      )}
+                                    >
+                                      {d.success ? (
+                                        <CheckIcon className="h-3 w-3" />
+                                      ) : (
+                                        <XIcon className="h-3 w-3" />
+                                      )}
+                                    </span>
+                                    <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
+                                      {d.event_type}
+                                    </span>
+                                    <span
+                                      className={cn(
+                                        "text-[10px] font-mono px-1.5 py-0.5 rounded font-medium",
+                                        getStatusCodeBg(d.response_status),
+                                      )}
+                                    >
+                                      {d.response_status || "err"}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
+                                      {d.attempt > 0
+                                        ? `Retry ${d.attempt} of ${d.max_attempts}`
+                                        : `Attempt 1 of ${d.max_attempts}`}
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] text-[var(--signal-fg-tertiary)] ml-7 sm:ml-0">
+                                    {timeAgo(d.delivered_at)}
+                                  </span>
+                                </div>
+                                {d.response_body && (
+                                  <details className="mt-2 ml-7">
+                                    <summary className="text-[10px] text-[var(--signal-fg-tertiary)] cursor-pointer hover:text-[var(--signal-fg-secondary)]">
+                                      Response body
+                                    </summary>
+                                    <pre className="mt-1 p-2 rounded bg-[var(--signal-bg-secondary)] border border-slate-100 text-[10px] font-mono text-[var(--signal-fg-secondary)] overflow-x-auto whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+                                      {d.response_body}
+                                    </pre>
+                                  </details>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-
-                  {expandedId === wh.id && (
-                    <div className="ml-0 sm:ml-4 mt-1 mb-2 rounded-lg border border-[var(--signal-border-default)] bg-white">
-                      <div className="px-4 py-2 border-b border-slate-100">
-                        <p className="text-xs font-semibold text-[var(--signal-fg-secondary)]">
-                          Recent Deliveries
-                        </p>
-                      </div>
-                      {deliveries.length === 0 ? (
-                        <div className="px-4 py-6 text-center">
-                          <p className="text-xs text-[var(--signal-fg-tertiary)]">
-                            No deliveries yet.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-slate-100 overflow-x-auto">
-                          {deliveries.map((d) => (
-                            <div key={d.id} className="px-4 py-2.5">
-                              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span
-                                    className={cn(
-                                      "inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold shrink-0",
-                                      d.success
-                                        ? "bg-[var(--signal-bg-success-muted)] text-emerald-700"
-                                        : "bg-red-100 text-red-700",
-                                    )}
-                                  >
-                                    {d.success ? (
-                                      <CheckIcon className="h-3 w-3" />
-                                    ) : (
-                                      <XIcon className="h-3 w-3" />
-                                    )}
-                                  </span>
-                                  <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
-                                    {d.event_type}
-                                  </span>
-                                  <span
-                                    className={cn(
-                                      "text-[10px] font-mono px-1.5 py-0.5 rounded font-medium",
-                                      getStatusCodeBg(d.response_status),
-                                    )}
-                                  >
-                                    {d.response_status || "err"}
-                                  </span>
-                                  <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
-                                    {d.attempt > 0
-                                      ? `Retry ${d.attempt} of ${d.max_attempts}`
-                                      : `Attempt 1 of ${d.max_attempts}`}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-[var(--signal-fg-tertiary)] ml-7 sm:ml-0">
-                                  {timeAgo(d.delivered_at)}
-                                </span>
-                              </div>
-                              {d.response_body && (
-                                <details className="mt-2 ml-7">
-                                  <summary className="text-[10px] text-[var(--signal-fg-tertiary)] cursor-pointer hover:text-[var(--signal-fg-secondary)]">
-                                    Response body
-                                  </summary>
-                                  <pre className="mt-1 p-2 rounded bg-[var(--signal-bg-secondary)] border border-slate-100 text-[10px] font-mono text-[var(--signal-fg-secondary)] overflow-x-auto whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
-                                    {d.response_body}
-                                  </pre>
-                                </details>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </Card>
-    </div>
+                );
+              })
+            )}
+          </div>
+        </Card>
+        {total > 0 && <Pagination total={total} />}
+      </div>
+    </Suspense>
   );
 }

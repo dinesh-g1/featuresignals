@@ -81,12 +81,12 @@ func (s *Store) CountProjects(ctx context.Context, orgID string) (int, error) {
 
 // ─── Pinned Items ───────────────────────────────────────────────────
 
-func (s *Store) ListPinnedItems(ctx context.Context, orgID, userID, projectID string) ([]domain.PinnedItem, error) {
+func (s *Store) ListPinnedItems(ctx context.Context, orgID, userID, projectID string, limit, offset int) ([]domain.PinnedItem, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, project_id, user_id, resource_type, resource_id, created_at
 		 FROM pinned_items
 		 WHERE org_id = $1 AND user_id = $2 AND project_id = $3
-		 ORDER BY created_at DESC`, orgID, userID, projectID)
+		 ORDER BY created_at DESC LIMIT $4 OFFSET $5`, orgID, userID, projectID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list pinned items: %w", err)
 	}
@@ -104,6 +104,15 @@ func (s *Store) ListPinnedItems(ctx context.Context, orgID, userID, projectID st
 		items = make([]domain.PinnedItem, 0)
 	}
 	return items, nil
+}
+
+// CountPinnedItems returns the total number of pinned items for a user/project.
+func (s *Store) CountPinnedItems(ctx context.Context, orgID, userID, projectID string) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM pinned_items WHERE org_id = $1 AND user_id = $2 AND project_id = $3`,
+		orgID, userID, projectID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) CreatePinnedItem(ctx context.Context, orgID, userID, projectID, resourceType, resourceID string) (*domain.PinnedItem, error) {

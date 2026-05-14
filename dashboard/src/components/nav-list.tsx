@@ -102,6 +102,7 @@ const flagsAndSegments: NavItemDef[] = [
 const insights: NavItemDef[] = [
   { href: path("/analytics"), label: "Analytics", icon: GraphIcon },
   { href: path("/metrics"), label: "Eval Metrics", icon: TrendingUpIcon },
+  { href: path("/eval-events"), label: "Eval Events", icon: BarChartIcon },
   { href: path("/health"), label: "Flag Health", icon: HeartIcon },
   {
     href: path("/usage-insights"),

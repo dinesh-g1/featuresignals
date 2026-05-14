@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -17,15 +16,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// opsAuthStore is the narrow interface OpsAuthHandler needs from the data layer.
+type opsAuthStore interface {
+	GetOpsUserByEmail(ctx context.Context, email string) (*domain.OpsUser, error)
+	GetOpsUser(ctx context.Context, id string) (*domain.OpsUser, error)
+	CreateOpsSession(ctx context.Context, opsUserID, refreshTokenHash string, expiresAt time.Time) (string, error)
+	GetOpsSessionByRefreshToken(ctx context.Context, refreshTokenHash string) (*domain.OpsUser, error)
+	DeleteOpsSession(ctx context.Context, opsUserID, refreshTokenHash string) error
+}
+
 // OpsAuthHandler handles ops portal authentication endpoints.
 type OpsAuthHandler struct {
-	store  domain.Store
+	store  opsAuthStore
 	jwtMgr auth.TokenManager
 	logger *slog.Logger
 }
 
 // NewOpsAuthHandler creates a new ops auth handler.
-func NewOpsAuthHandler(store domain.Store, jwtMgr auth.TokenManager, logger *slog.Logger) *OpsAuthHandler {
+func NewOpsAuthHandler(store opsAuthStore, jwtMgr auth.TokenManager, logger *slog.Logger) *OpsAuthHandler {
 	return &OpsAuthHandler{store: store, jwtMgr: jwtMgr, logger: logger}
 }
 
@@ -42,8 +50,8 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "ops_auth_login")
 
 	var req domain.OpsLoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -51,16 +59,16 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			// Use same error message to prevent email enumeration
-			httputil.Error(w, http.StatusUnauthorized, "invalid email or password")
+			httputil.Error(w, http.StatusUnauthorized, "Authentication failed — the email or password is incorrect. Verify your credentials and try again.")
 			return
 		}
 		logger.Error("failed to get ops user", "error", err, "email", req.Email)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		httputil.Error(w, http.StatusUnauthorized, "invalid email or password")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication failed — the email or password is incorrect. Verify your credentials and try again.")
 		return
 	}
 
@@ -69,7 +77,7 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	tokenPair, err := h.jwtMgr.GenerateTokenPair(user.UserID, "", user.OpsRole, user.UserEmail, "")
 	if err != nil {
 		logger.Error("failed to generate token pair", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -78,7 +86,7 @@ func (h *OpsAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	expiresAt := time.Unix(tokenPair.ExpiresAt, 0).UTC()
 	if _, err := h.store.CreateOpsSession(r.Context(), user.ID, refreshTokenHash, expiresAt); err != nil {
 		logger.Error("failed to create session", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -124,15 +132,15 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "ops_auth_refresh")
 
 	var req domain.OpsRefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	// Validate the refresh token JWT first (checks expiration and signature)
 	claims, err := h.jwtMgr.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		httputil.Error(w, http.StatusUnauthorized, "invalid or expired refresh token")
+		httputil.Error(w, http.StatusUnauthorized, "Session expired — your refresh token is invalid or has expired. Sign in again to continue.")
 		return
 	}
 
@@ -141,17 +149,17 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	user, err := h.store.GetOpsSessionByRefreshToken(r.Context(), refreshTokenHash)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusUnauthorized, "invalid or expired refresh token")
+			httputil.Error(w, http.StatusUnauthorized, "Session expired — your refresh token is invalid or has expired. Sign in again to continue.")
 			return
 		}
 		logger.Error("failed to get session", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
 	// Ensure the JWT user matches the session user
 	if claims.UserID != user.UserID {
-		httputil.Error(w, http.StatusUnauthorized, "token mismatch")
+		httputil.Error(w, http.StatusUnauthorized, "Session validation failed — the token does not match the current session. Sign in again.")
 		return
 	}
 
@@ -159,7 +167,7 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	tokenPair, err := h.jwtMgr.GenerateTokenPair(user.UserID, "", user.OpsRole, user.UserEmail, "")
 	if err != nil {
 		logger.Error("failed to generate token pair", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -173,7 +181,7 @@ func (h *OpsAuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err := h.store.CreateOpsSession(r.Context(), user.ID, newRefreshTokenHash, expiresAt); err != nil {
 		logger.Error("failed to create new session", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -213,12 +221,12 @@ func (h *OpsAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	opsUserID := getOpsUserID(r.Context())
 	if opsUserID == "" {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 
 	var req domain.OpsRefreshRequest
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	_ = httputil.DecodeJSON(r, &req)
 
 	if req.RefreshToken != "" {
 		refreshTokenHash := hashToken(req.RefreshToken)
@@ -236,18 +244,18 @@ func (h *OpsAuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "ops_auth_me")
 	id := getOpsUserID(r.Context())
 	if id == "" {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 
 	user, err := h.store.GetOpsUser(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "user not found")
+			httputil.Error(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 			return
 		}
 		logger.Error("failed to get ops user", "error", err, "ops_user_id", id)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -262,8 +270,8 @@ func (h *OpsAuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) 
 	var req struct {
 		Email string `json:"email"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 

@@ -48,7 +48,7 @@ func (h *IPAllowlistHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 
 	var req ipAllowlistRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 

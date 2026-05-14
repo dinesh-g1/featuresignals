@@ -105,7 +105,7 @@ export function StepWelcome({
         Feature flags that don&apos;t cost a fortune.
       </p>
       <p className="animate-fade-in mt-2 max-w-md text-sm text-[var(--signal-fg-secondary)]">
-        Ship faster, reduce risk, and toggle features without redeploying. Get
+        Ship faster, reduce risk, and toggle features without re-shipping. Get
         your first flag running in under 60 seconds.
       </p>
 

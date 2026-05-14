@@ -11,7 +11,13 @@ interface StatsCardsProps {
   className?: string;
 }
 
-export function StatsCards({ totalFlags, staleFlags, safeToRemove, prsGenerated, className }: StatsCardsProps) {
+export function StatsCards({
+  totalFlags,
+  staleFlags,
+  safeToRemove,
+  prsGenerated,
+  className,
+}: StatsCardsProps) {
   return (
     <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
       <StatCard label="Total Flags" value={totalFlags} icon="⚑" />
@@ -31,7 +37,7 @@ export function StatsCards({ totalFlags, staleFlags, safeToRemove, prsGenerated,
         label="PRs Generated"
         value={prsGenerated}
         icon="✅"
-        tooltip="Total cleanup PRs generated and merged"
+        tooltip="Total sweep PRs generated and merged"
       />
     </div>
   );

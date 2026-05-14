@@ -52,9 +52,9 @@ func TestAgentRegistryHandler_Create(t *testing.T) {
 			wantErr:    "already exists",
 		},
 		{
-			name:       "missing id",
+			name:       "missing id (auto-generated)",
 			body:       `{"name":"No ID","type":"janitor"}`,
-			wantStatus: http.StatusBadRequest,
+			wantStatus: http.StatusCreated,
 		},
 		{
 			name:       "missing name",

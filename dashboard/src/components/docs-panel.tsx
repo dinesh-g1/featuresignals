@@ -126,13 +126,103 @@ const PAGE_DOCS_MAP: Record<string, DocsSection[]> = {
       description:
         "Automatically detect and remove stale feature flags from your codebase.",
       href: DOCS_LINKS.janitor,
-      keywords: ["janitor", "ai", "stale", "cleanup", "tech debt"],
+      keywords: ["janitor", "ai", "stale", "sweep", "tech debt"],
     },
     {
       title: "AI Janitor Quickstart",
       description: "Get started with the AI Janitor in under 5 minutes.",
       href: DOCS_LINKS.janitorQuickstart,
       keywords: ["janitor", "quickstart", "setup"],
+    },
+  ],
+  "/abm": [
+    {
+      title: "Agent Behavior Mesh",
+      description:
+        "Configure and manage AI agent behaviors — the runtime configuration that controls what your AI agents can do.",
+      href: DOCS_LINKS.abm,
+      keywords: ["abm", "agent", "behavior", "variant", "mesh", "ai"],
+    },
+    {
+      title: "What is ABM?",
+      description:
+        "The Agent Behavior Mesh (ABM) is the agent equivalent of feature management. It lets you define behaviors, targeting rules, and variants for AI agents — enabling safe rollout, A/B testing, and kill switches for agent capabilities.",
+      href: DOCS_LINKS.abm,
+      keywords: ["abm", "concept", "overview"],
+    },
+    {
+      title: "Creating a Behavior",
+      description:
+        "Define a behavior key, name, agent type, and variants. Each variant has a configuration that the agent receives at resolution time.",
+      href: DOCS_LINKS.abm,
+      keywords: ["behavior", "create", "variant", "configuration"],
+    },
+    {
+      title: "Resolution",
+      description:
+        "When an agent requests a behavior, ABM evaluates targeting rules and rollout percentages to determine which variant to serve, returning the variant configuration.",
+      href: DOCS_LINKS.abm,
+      keywords: ["resolve", "resolution", "targeting", "rollout"],
+    },
+  ],
+  "/agents": [
+    {
+      title: "Agent Registry",
+      description:
+        "Register and manage AI agents that interact with your FeatureSignals platform.",
+      href: DOCS_LINKS.agents,
+      keywords: ["agent", "registry", "register", "ai"],
+    },
+    {
+      title: "Registering an Agent",
+      description:
+        "Register an agent with a unique ID, type, and allowed scopes. Agents authenticate with API keys rotated every 90 days.",
+      href: DOCS_LINKS.agents,
+      keywords: ["register", "api key", "scope"],
+    },
+    {
+      title: "Maturity Levels",
+      description:
+        "Agents progress through 5 maturity levels (L1 Shadow → L5 Sentinel) based on accuracy, incidents, and override rate.",
+      href: DOCS_LINKS.agents,
+      keywords: ["maturity", "level", "shadow", "sentinel"],
+    },
+    {
+      title: "Heartbeat Monitoring",
+      description:
+        "Agents send periodic heartbeats. If an agent misses heartbeats, it is marked as degraded or offline.",
+      href: DOCS_LINKS.agents,
+      keywords: ["heartbeat", "monitor", "health", "degraded", "offline"],
+    },
+  ],
+  "/policies": [
+    {
+      title: "Governance Policies",
+      description:
+        "Define CEL-based policies that control what agents can do and under what conditions.",
+      href: DOCS_LINKS.policies,
+      keywords: ["policy", "governance", "cel", "rule"],
+    },
+    {
+      title: "Policy Evaluation",
+      description:
+        "Policies are evaluated on every agent action. A policy can allow, block, warn, or require human approval.",
+      href: DOCS_LINKS.policies,
+      keywords: ["evaluate", "allow", "block", "warn", "approval"],
+    },
+    {
+      title: "CEL Expressions",
+      description:
+        "Policies use Common Expression Language (CEL) for conditions. Example: agent.maturity >= 3 && action.scope != 'production'.",
+      href: DOCS_LINKS.policies,
+      keywords: ["cel", "expression", "condition", "syntax"],
+    },
+    {
+      title: "Enforcement Modes",
+      description:
+        "Policies support four modes: allow (permit), block (deny), warn (allow with warning), and require_approval (human review).",
+      href: DOCS_LINKS.policies,
+      keywords: ["enforce", "mode", "block", "warn", "require_approval"],
     },
   ],
 };
@@ -166,10 +256,10 @@ const GLOBAL_DOCS: DocsSection[] = [
     keywords: ["api", "rest", "reference", "endpoint"],
   },
   {
-    title: "Deployment Guide",
+    title: "Shipping Guide",
     description: "Docker, Kubernetes, self-hosted setup instructions.",
     href: DOCS_LINKS.deployment,
-    keywords: ["deploy", "docker", "kubernetes", "self-hosted", "install"],
+    keywords: ["ship", "docker", "kubernetes", "self-hosted", "install"],
   },
   {
     title: "Relay Proxy",

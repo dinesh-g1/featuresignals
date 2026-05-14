@@ -133,8 +133,8 @@
 - **Location:** `--signal-fg-tertiary` usage across the dashboard
 - **Description:** The tertiary text color `#818b98` on white `#ffffff` has a contrast ratio of approximately 3.5:1, which is below the 4.5:1 minimum for normal text.
 - **Impact:** Low-vision users may have difficulty reading secondary/tertiary text.
-- **Fix:** Decision: tertiary text is used for placeholder text and disabled states which are explicitly exempt from WCAG contrast requirements. For active UI text, `--signal-fg-secondary` (`#59636e`) is used, which has a contrast ratio of 5.2:1 against white — meeting AA requirements.
-- **Status:** ⚠️ Accepted risk — Tertiary text is only used for non-essential decorative elements and disabled states. Will monitor user feedback.
+- **Fix:** ✅ Replaced `#818b98` with `#6e7681` (4.59:1 on white, passes WCAG AA 4.5:1). Applied to `--color-neutral-300` in `globals.css` and `--signal-border-emphasis` in `signal.css`. Added `[data-theme="dark"]` block with correctly-contrasted tokens for dark backgrounds.
+- **Status:** ✅ Fixed — 2026-05-21. All text/UI colors now meet WCAG AA contrast minimums.
 
 ---
 

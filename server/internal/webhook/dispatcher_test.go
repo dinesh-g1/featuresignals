@@ -20,7 +20,7 @@ type mockWebhookStore struct {
 	deliveries []domain.WebhookDelivery
 }
 
-func (m *mockWebhookStore) ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error) {
+func (m *mockWebhookStore) ListWebhooks(ctx context.Context, orgID string, limit, offset int) ([]domain.Webhook, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var result []domain.Webhook
@@ -29,7 +29,17 @@ func (m *mockWebhookStore) ListWebhooks(ctx context.Context, orgID string) ([]do
 			result = append(result, w)
 		}
 	}
-	return result, nil
+	if result == nil {
+		return []domain.Webhook{}, nil
+	}
+	if offset >= len(result) {
+		return []domain.Webhook{}, nil
+	}
+	end := offset + limit
+	if end > len(result) || limit <= 0 {
+		end = len(result)
+	}
+	return result[offset:end], nil
 }
 
 func (m *mockWebhookStore) CreateWebhookDelivery(ctx context.Context, d *domain.WebhookDelivery) error {

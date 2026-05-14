@@ -173,16 +173,7 @@ func (h *EvalHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := h.engine.Evaluate(req.FlagKey, req.Context, ruleset)
-
-	if h.metrics != nil {
-		h.metrics.Record(req.FlagKey, envID, result.Reason)
-		if vr, ok := h.metrics.(ValueRecorder); ok {
-			vr.RecordValue(req.FlagKey, envID, result.Value)
-		}
-	}
-	if h.otel != nil {
-		h.otel.RecordEval(r.Context(), req.FlagKey, result.Reason, 0)
-	}
+	h.recordEvalMetrics(r.Context(), req.FlagKey, envID, result)
 
 	httputil.JSON(w, http.StatusOK, result)
 }
@@ -210,26 +201,11 @@ func (h *EvalHandler) BulkEvaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results := make(map[string]domain.EvalResult, len(req.FlagKeys))
-	for _, key := range req.FlagKeys {
-		result := h.engine.Evaluate(key, req.Context, ruleset)
-		results[key] = result
-		if h.metrics != nil {
-			h.metrics.Record(key, envID, result.Reason)
-			if vr, ok := h.metrics.(ValueRecorder); ok {
-				vr.RecordValue(key, envID, result.Value)
-			}
-		}
-		if h.otel != nil {
-			h.otel.RecordEval(r.Context(), key, result.Reason, 0)
-		}
-	}
-
+	results := h.evaluateFlags(r.Context(), req.FlagKeys, req.Context, ruleset, envID)
 	httputil.JSON(w, http.StatusOK, results)
 }
 
 // ClientFlags handles GET /v1/client/{envKey}/flags — returns all flags for client SDKs.
-// The envKey path parameter is validated against the environment resolved from the API key.
 func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 	ruleset, envID, err := h.getRulesetFromAPIKey(r)
 	if err != nil {
@@ -237,43 +213,78 @@ func (h *EvalHandler) ClientFlags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger := httputil.LoggerFromContext(r.Context()).With("env_id", envID)
-	envKey := chi.URLParam(r, "envKey")
-	if envKey != "" {
-		env, envErr := h.store.GetEnvironment(r.Context(), envID)
-		if envErr == nil && env.Slug != envKey {
-			logger.Warn("envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug)
-			httputil.Error(w, http.StatusForbidden, "API key does not belong to environment "+envKey)
-			return
-		}
+	if !h.validateEnvKey(w, r, envID) {
+		return
 	}
 
-	// Extract context from query params
-	ctx := domain.EvalContext{
-		Key:        r.URL.Query().Get("key"),
-		Attributes: make(map[string]interface{}),
-	}
-	if ctx.Key == "" {
-		ctx.Key = "anonymous"
-	}
+	evalCtx := buildEvalContextFromQuery(r)
+	results := h.engine.EvaluateAll(evalCtx, ruleset)
+	values := h.extractValues(r.Context(), results, envID)
+	httputil.JSON(w, http.StatusOK, values)
+}
 
-	results := h.engine.EvaluateAll(ctx, ruleset)
+// ─── Helpers ────────────────────────────────────────────────────────────
 
+// evaluateFlags evaluates multiple flag keys against a ruleset and records metrics.
+func (h *EvalHandler) evaluateFlags(ctx context.Context, flagKeys []string, evalCtx domain.EvalContext, ruleset *domain.Ruleset, envID string) map[string]domain.EvalResult {
+	results := make(map[string]domain.EvalResult, len(flagKeys))
+	for _, key := range flagKeys {
+		result := h.engine.Evaluate(key, evalCtx, ruleset)
+		results[key] = result
+		h.recordEvalMetrics(ctx, key, envID, result)
+	}
+	return results
+}
+
+// extractValues strips evaluation metadata, returning only flag→value mappings.
+func (h *EvalHandler) extractValues(ctx context.Context, results map[string]domain.EvalResult, envID string) map[string]interface{} {
 	values := make(map[string]interface{}, len(results))
 	for k, v := range results {
 		values[k] = v.Value
-		if h.metrics != nil {
-			h.metrics.Record(k, envID, v.Reason)
-			if vr, ok := h.metrics.(ValueRecorder); ok {
-				vr.RecordValue(k, envID, v.Value)
-			}
-		}
-		if h.otel != nil {
-			h.otel.RecordEval(r.Context(), k, v.Reason, 0)
+		h.recordEvalMetrics(ctx, k, envID, v)
+	}
+	return values
+}
+
+// recordEvalMetrics records evaluation metrics if collectors are configured.
+func (h *EvalHandler) recordEvalMetrics(ctx context.Context, flagKey, envID string, result domain.EvalResult) {
+	if h.metrics != nil {
+		h.metrics.Record(flagKey, envID, result.Reason)
+		if vr, ok := h.metrics.(ValueRecorder); ok {
+			vr.RecordValue(flagKey, envID, result.Value)
 		}
 	}
+	if h.otel != nil {
+		h.otel.RecordEval(ctx, flagKey, result.Reason, 0)
+	}
+}
 
-	httputil.JSON(w, http.StatusOK, values)
+// validateEnvKey checks that the URL env key matches the API key's environment.
+func (h *EvalHandler) validateEnvKey(w http.ResponseWriter, r *http.Request, envID string) bool {
+	logger := httputil.LoggerFromContext(r.Context()).With("env_id", envID)
+	envKey := chi.URLParam(r, "envKey")
+	if envKey == "" {
+		return true
+	}
+	env, envErr := h.store.GetEnvironment(r.Context(), envID)
+	if envErr == nil && env.Slug != envKey {
+		logger.Warn("envKey mismatch", "url_env_key", envKey, "api_key_env_slug", env.Slug)
+		httputil.Error(w, http.StatusForbidden, "API key does not belong to environment "+envKey)
+		return false
+	}
+	return true
+}
+
+// buildEvalContextFromQuery extracts an evaluation context from query parameters.
+func buildEvalContextFromQuery(r *http.Request) domain.EvalContext {
+	evalCtx := domain.EvalContext{
+		Key:        r.URL.Query().Get("key"),
+		Attributes: make(map[string]interface{}),
+	}
+	if evalCtx.Key == "" {
+		evalCtx.Key = "anonymous"
+	}
+	return evalCtx
 }
 
 // Stream handles GET /v1/stream/{envKey} — SSE endpoint

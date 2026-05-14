@@ -53,7 +53,7 @@ export function useFlagToggle(
   const performToggle = useCallback(
     async (ctx: ToggleContext) => {
       if (!token || !projectId || !envId) {
-        toast("Cannot toggle flag — no environment selected", "error");
+        toast("Cannot activate/pause feature — no environment selected", "error");
         return;
       }
 
@@ -120,7 +120,7 @@ export function useFlagToggle(
       if (ctx.isProduction) {
         // Read current state to determine action direction
         if (!token || !projectId || !envId) {
-          toast("Cannot toggle flag — no environment selected", "error");
+          toast("Cannot activate/pause feature — no environment selected", "error");
           return;
         }
         try {

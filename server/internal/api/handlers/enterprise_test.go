@@ -261,8 +261,8 @@ func TestMFAHandler_Disable_WrongPassword(t *testing.T) {
 	var resp map[string]string
 	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if resp["error"] != "invalid password" {
-		t.Errorf("expected 'invalid password' error, got %q", resp["error"])
+	if !strings.Contains(resp["error"], "password is incorrect") {
+		t.Errorf("expected password incorrect error, got %q", resp["error"])
 	}
 
 	secret, err := store.GetMFASecret(context.Background(), user.ID)
@@ -401,8 +401,8 @@ func TestSCIMHandler_GetUser_NotFound(t *testing.T) {
 	var resp scimError
 	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if resp.Detail != "user not found" {
-		t.Errorf("expected 'user not found', got %q", resp.Detail)
+	if !strings.Contains(resp.Detail, "no user matches") {
+		t.Errorf("expected 'no user matches' error, got %q", resp.Detail)
 	}
 }
 

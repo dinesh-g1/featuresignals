@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { EVENTS } from "@/lib/constants";
 import { EventBus } from "@/lib/event-bus";
@@ -8,6 +9,7 @@ import { toast } from "@/components/toast";
 import { showFeedback } from "@/components/action-feedback";
 import { PageHeader } from "@/components/page-header";
 import { Card, Button, Badge } from "@/components/ui";
+import { Pagination } from "@/components/ui/pagination";
 import {
   CreateEnvironmentDialog,
   EditEnvironmentDialog,
@@ -29,7 +31,7 @@ import {
 import { DOCS_LINKS } from "@/components/docs-link";
 import type { Environment } from "@/lib/types";
 import { useAppStore } from "@/stores/app-store";
-import { useEnvironments, useProjects } from "@/hooks/use-data";
+import { useEnvironmentsPaginated, useProjects } from "@/hooks/use-data";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 import { Blankslate } from "@/components/blankslate";
 import { EnvironmentIcon } from "@/components/icons/nav-icons";
@@ -41,29 +43,35 @@ export default function EnvironmentsPage() {
     refresh: refreshPrereqs,
   } = usePrerequisites();
 
-  if (prereqLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-36" />
-            <Skeleton className="h-4 w-56" />
-          </div>
-          <Skeleton className="h-9 w-36 rounded-lg" />
+  // ── Loading Skeleton (for Suspense fallback) ──
+
+  const envsSkeleton = (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-36" />
+          <Skeleton className="h-4 w-56" />
         </div>
-        <SkeletonCard />
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+        <Skeleton className="h-9 w-36 rounded-lg" />
       </div>
-    );
+      <SkeletonCard />
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    </div>
+  );
+
+  if (prereqLoading) {
+    return envsSkeleton;
   }
 
   return (
     <PrerequisiteGate state={prereqState} onRefresh={refreshPrereqs}>
-      <EnvironmentsContent onRefresh={refreshPrereqs} />
+      <Suspense fallback={envsSkeleton}>
+        <EnvironmentsContent onRefresh={refreshPrereqs} />
+      </Suspense>
     </PrerequisiteGate>
   );
 }
@@ -73,12 +81,23 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
   const currentEnvId = useAppStore((s) => s.currentEnvId);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
   const token = useAppStore((s) => s.token);
+  const searchParams = useSearchParams();
+
+  // Pagination from URL params (must be before useEnvironmentsPaginated)
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offset = parseInt(searchParams.get("offset") || "0");
 
   const { data: projects = [] } = useProjects();
-  const { data: envs = [], refetch } = useEnvironments(currentProjectId);
+  const { data: envsPaginated, refetch } = useEnvironmentsPaginated(
+    currentProjectId,
+    limit,
+    offset,
+  );
+  const envs = envsPaginated?.data ?? [];
+  const envsTotal = envsPaginated?.total ?? 0;
   const [loading, setLoading] = useState(true);
 
-  // Dialog state
+  const total = envsTotal;
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -208,7 +227,7 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
     <div className="space-y-6">
       <PageHeader
         title="Environments"
-        description={`Manage deployment environments for ${currentProject?.name || "this project"}`}
+        description={`Manage shipping environments for ${currentProject?.name || "this project"}`}
         primaryAction={
           <Button onClick={openCreateDialog}>
             <PlusIcon className="mr-2 h-4 w-4" />
@@ -243,11 +262,11 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
       </Card>
 
       {/* Environments Grid */}
-      {envs.length === 0 ? (
+      {total === 0 ? (
         <Blankslate
           icon={EnvironmentIcon}
           title="You haven't created any environments yet"
-          description="Environments let you manage flag states across deployment stages like development, staging, and production — each with its own targeting rules and rollouts."
+          description="Environments let you manage flag states across shipping stages like development, staging, and production — each with its own targeting rules and rollouts."
           actionLabel="Create your first environment"
           onAction={openCreateDialog}
           learnMoreUrl={DOCS_LINKS.quickstart}
@@ -255,89 +274,92 @@ function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
           variant="bordered"
         />
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {envs.map((env) => {
-            const isActive = env.id === currentEnvId;
-            return (
-              <Card
-                key={env.id}
-                className={`group relative p-4 sm:p-5 transition-all hover:shadow-md ${
-                  isActive
-                    ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-2 ring-[var(--signal-border-accent-muted)]"
-                    : "hover:border-[var(--signal-border-accent-muted)]"
-                }`}
-              >
-                {/* Active indicator */}
-                {isActive && (
-                  <div className="absolute -top-1.5 -right-1.5">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white shadow-sm">
-                      <CheckCircleFillIcon className="h-3.5 w-3.5" />
+        <>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {envs.map((env) => {
+              const isActive = env.id === currentEnvId;
+              return (
+                <Card
+                  key={env.id}
+                  className={`group relative p-4 sm:p-5 transition-all hover:shadow-md ${
+                    isActive
+                      ? "border-[var(--signal-border-accent-muted)] bg-[var(--signal-bg-accent-muted)] ring-2 ring-[var(--signal-border-accent-muted)]"
+                      : "hover:border-[var(--signal-border-accent-muted)]"
+                  }`}
+                >
+                  {/* Active indicator */}
+                  {isActive && (
+                    <div className="absolute -top-1.5 -right-1.5">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--signal-bg-accent-emphasis)] text-white shadow-sm">
+                        <CheckCircleFillIcon className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Environment info */}
+                  <div className="flex items-start gap-3 mb-4">
+                    <div
+                      className={`mt-0.5 h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow-sm bg-[${env.color}]`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
+                        {env.name}
+                      </p>
+                      <p className="mt-0.5 font-mono text-xs text-[var(--signal-fg-secondary)]">
+                        {env.slug}
+                      </p>
                     </div>
                   </div>
-                )}
 
-                {/* Environment info */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div
-                    className={`mt-0.5 h-4 w-4 shrink-0 rounded-full ring-2 ring-white shadow-sm bg-[${env.color}]`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--signal-fg-primary)]">
-                      {env.name}
-                    </p>
-                    <p className="mt-0.5 font-mono text-xs text-[var(--signal-fg-secondary)]">
-                      {env.slug}
-                    </p>
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-xs text-[var(--signal-fg-secondary)] mb-3">
+                    <div className="flex items-center gap-1">
+                      <KeyIcon className="h-3.5 w-3.5" />
+                      <span>API keys</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FlagIcon className="h-3.5 w-3.5" />
+                      <span>Flag states</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Stats */}
-                <div className="flex items-center gap-4 text-xs text-[var(--signal-fg-secondary)] mb-3">
-                  <div className="flex items-center gap-1">
-                    <KeyIcon className="h-3.5 w-3.5" />
-                    <span>API keys</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <FlagIcon className="h-3.5 w-3.5" />
-                    <span>Flag states</span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t border-[var(--signal-border-default)]">
-                  {!isActive && (
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-3 border-t border-[var(--signal-border-default)]">
+                    {!isActive && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        onClick={() => quickSelect(env)}
+                      >
+                        <GlobeIcon className="mr-1.5 h-3.5 w-3.5" />
+                        Switch
+                      </Button>
+                    )}
                     <Button
-                      variant="secondary"
+                      variant="ghost"
                       size="sm"
-                      className="flex-1 text-xs"
-                      onClick={() => quickSelect(env)}
+                      onClick={() => openEditDialog(env)}
+                      title="Edit environment"
                     >
-                      <GlobeIcon className="mr-1.5 h-3.5 w-3.5" />
-                      Switch
+                      <PencilIcon className="h-3.5 w-3.5" />
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditDialog(env)}
-                    title="Edit environment"
-                  >
-                    <PencilIcon className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openDeleteDialog(env)}
-                    className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
-                    title="Delete environment"
-                  >
-                    <TrashIcon className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDeleteDialog(env)}
+                      className="text-[var(--signal-fg-tertiary)] hover:text-red-500 hover:bg-[var(--signal-bg-danger-muted)]"
+                      title="Delete environment"
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <Pagination total={total} />
+        </>
       )}
 
       {/* Create Dialog */}

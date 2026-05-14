@@ -119,9 +119,9 @@ func domainUserToSCIM(u *domain.User) scimUser {
 // ListUsers implements GET /v1/scim/Users
 func (h *SCIMHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
-	members, err := h.store.ListOrgMembers(r.Context(), orgID)
+	members, err := h.store.ListOrgMembers(r.Context(), orgID, 0, 0)
 	if err != nil {
-		scimErr(w, http.StatusInternalServerError, "failed to list members")
+		scimErr(w, http.StatusInternalServerError, "Member listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -173,16 +173,16 @@ func (h *SCIMHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
 	if _, err := h.store.GetOrgMember(r.Context(), orgID, userID); err != nil {
-		scimErr(w, http.StatusNotFound, "user not found")
+		scimErr(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 		return
 	}
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			scimErr(w, http.StatusNotFound, "user not found")
+			scimErr(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 		} else {
-			scimErr(w, http.StatusInternalServerError, "failed to get user")
+			scimErr(w, http.StatusInternalServerError, "User retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		}
 		return
 	}
@@ -204,8 +204,8 @@ func (h *SCIMHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
 	var req scimCreateUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		scimErr(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		scimErr(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -214,7 +214,7 @@ func (h *SCIMHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		email = req.Emails[0].Value
 	}
 	if email == "" {
-		scimErr(w, http.StatusBadRequest, "userName or emails required")
+		scimErr(w, http.StatusBadRequest, "User provisioning blocked — userName or at least one email is required. Provide user identification.")
 		return
 	}
 
@@ -245,10 +245,10 @@ func (h *SCIMHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.store.CreateUser(r.Context(), user); err != nil {
 		if errors.Is(err, domain.ErrConflict) {
-			scimErr(w, http.StatusConflict, "user already exists")
+			scimErr(w, http.StatusConflict, "Creation blocked — a user with this email already exists. The user may already be provisioned.")
 		} else {
 			logger.Error("SCIM create user failed", "error", err, "email", email)
-			scimErr(w, http.StatusInternalServerError, "failed to create user")
+			scimErr(w, http.StatusInternalServerError, "User creation failed — an unexpected error occurred on the server. Try again or contact support.")
 		}
 		return
 	}
@@ -272,23 +272,23 @@ func (h *SCIMHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
 	if _, err := h.store.GetOrgMember(r.Context(), orgID, userID); err != nil {
-		scimErr(w, http.StatusNotFound, "user not found")
+		scimErr(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 		return
 	}
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			scimErr(w, http.StatusNotFound, "user not found")
+			scimErr(w, http.StatusNotFound, "User lookup failed — no user matches the provided identifier. Verify the user ID or email.")
 		} else {
-			scimErr(w, http.StatusInternalServerError, "failed to get user")
+			scimErr(w, http.StatusInternalServerError, "User retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		}
 		return
 	}
 
 	var req scimCreateUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		scimErr(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		scimErr(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -317,7 +317,7 @@ func (h *SCIMHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	member, err := h.store.GetOrgMember(r.Context(), orgID, userID)
 	if err != nil {
-		scimErr(w, http.StatusNotFound, "user not found in organization")
+		scimErr(w, http.StatusNotFound, "Membership lookup failed — the user is not a member of this organization. Verify the user ID and organization.")
 		return
 	}
 	_ = h.store.RemoveOrgMember(r.Context(), member.ID)

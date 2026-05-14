@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/featuresignals/server/internal/api/middleware"
@@ -27,7 +26,7 @@ func (h *FeedbackHandler) Submit(w http.ResponseWriter, r *http.Request) {
 
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 
@@ -38,15 +37,13 @@ func (h *FeedbackHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		Page      string `json:"page"`
 	}
 
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Message == "" {
-		httputil.Error(w, http.StatusUnprocessableEntity, "message is required")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Submission blocked — the message field is missing. Provide feedback text in your request.")
 		return
 	}
 
@@ -61,7 +58,7 @@ func (h *FeedbackHandler) Submit(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.InsertFeedback(r.Context(), fb); err != nil {
 		logger.Error("failed to insert feedback", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

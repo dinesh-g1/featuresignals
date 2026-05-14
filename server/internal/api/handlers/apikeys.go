@@ -62,11 +62,11 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateAPIKeyRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "name is required")
+		httputil.Error(w, http.StatusBadRequest, "Creation blocked — the name field is missing. Include the required name in your request body.")
 		return
 	}
 
@@ -140,7 +140,7 @@ func (h *APIKeyHandler) Rotate(w http.ResponseWriter, r *http.Request) {
 
 	var req rotateRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -202,7 +202,8 @@ func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	keys, err := h.store.ListAPIKeys(r.Context(), env.ID)
+	p := dto.ParsePagination(r)
+	keys, err := h.store.ListAPIKeys(r.Context(), env.ID, p.Limit, p.Offset)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to list API keys")
 		return
@@ -211,10 +212,9 @@ func (h *APIKeyHandler) List(w http.ResponseWriter, r *http.Request) {
 		keys = []domain.APIKey{}
 	}
 	all := dto.APIKeySliceFromDomain(keys)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
+	total, _ := h.store.CountAPIKeysByEnv(r.Context(), env.ID)
 	links := domain.LinksForAPIKeysCollection(env.ID)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset, links...))
 }
 
 func (h *APIKeyHandler) Revoke(w http.ResponseWriter, r *http.Request) {

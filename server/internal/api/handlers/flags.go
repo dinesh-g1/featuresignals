@@ -79,7 +79,7 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateFlagRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -124,9 +124,9 @@ func (h *FlagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if err := h.store.CreateFlag(r.Context(), flag); err != nil {
 		h.l(r).Warn("flag create failed", "project_id", projectID, "key", req.Key, "err", err)
 		if errors.Is(err, domain.ErrConflict) {
-			httputil.Error(w, http.StatusConflict, "flag key already exists in this project")
+			httputil.Error(w, http.StatusConflict, "Creation blocked — a feature with this key already exists in this project. Use a unique key or update the existing feature.")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "failed to create flag")
+			httputil.Error(w, http.StatusInternalServerError, "Feature creation failed — an unexpected error occurred on the server. Try again or contact support if the issue persists.")
 		}
 		return
 	}
@@ -183,29 +183,35 @@ func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	logger := h.l(r)
+	p := dto.ParsePagination(r)
+
 	var (
 		flags []domain.Flag
+		total int
 		err   error
 	)
 	labelSelector := r.URL.Query().Get("label_selector")
 	if labelSelector != "" {
 		orgID := middleware.GetOrgID(r.Context())
-		flags, err = h.store.ListFlagsWithFilter(r.Context(), orgID, projectID, labelSelector)
+		flags, err = h.store.ListFlagsWithFilter(r.Context(), orgID, projectID, labelSelector, p.Limit, p.Offset)
+		total, _ = h.store.CountFlagsWithFilter(r.Context(), orgID, projectID, labelSelector)
 		if err != nil {
 			h.l(r).Error("failed to list flags with filter", "error", err, "project_id", projectID, "label_selector", labelSelector)
-			httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+			httputil.Error(w, http.StatusInternalServerError, "Feature listing failed — an unexpected error occurred on the server. Try again or contact support.")
 			return
 		}
 	} else {
 		sortField, sortDir := dto.ParseSort(r, "flags")
 		if sortField != "created_at" || sortDir != "DESC" {
-			flags, err = h.store.ListFlagsSorted(r.Context(), projectID, sortField, sortDir)
+			flags, err = h.store.ListFlagsSorted(r.Context(), projectID, sortField, sortDir, p.Limit, p.Offset)
 		} else {
-			flags, err = h.store.ListFlags(r.Context(), projectID)
+			flags, err = h.store.ListFlags(r.Context(), projectID, p.Limit, p.Offset)
 		}
+		total, _ = h.store.CountFlagsByProject(r.Context(), projectID)
 		if err != nil {
-			h.l(r).Error("failed to list flags", "error", err, "project_id", projectID)
-			httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+			h.l(r).Error("Feature listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "project_id", projectID)
+			httputil.Error(w, http.StatusInternalServerError, "Feature listing failed — an unexpected error occurred on the server. Try again or contact support.")
 			return
 		}
 	}
@@ -214,10 +220,9 @@ func (h *FlagHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	all := dto.FlagSliceFromDomain(flags)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
 	links := domain.LinksForFlagsCollection(projectID)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+	logger.Info("flags listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset, links...))
 }
 
 func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -230,9 +235,9 @@ func (h *FlagHandler) Get(w http.ResponseWriter, r *http.Request) {
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+			httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		}
 		return
 	}
@@ -256,16 +261,16 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+			httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		}
 		return
 	}
 
 	var req CreateFlagRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -308,7 +313,7 @@ func (h *FlagHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
 		h.l(r).Error("flag update failed", "error", err, "flag_id", flag.ID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -344,16 +349,16 @@ func (h *FlagHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		} else {
-			httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+			httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		}
 		return
 	}
 
 	if err := h.store.DeleteFlag(r.Context(), flag.ID); err != nil {
 		h.l(r).Error("flag delete failed", "error", err, "flag_id", flag.ID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to delete flag")
+		httputil.Error(w, http.StatusInternalServerError, "Retirement failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -402,19 +407,19 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		return
 	}
 
 	var req UpdateFlagStateRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Enabled != nil {
 		if !middleware.CheckEnvPermission(r.Context(), h.store, orgID, userID, envID, "can_toggle") {
-			httputil.Error(w, http.StatusForbidden, "you do not have permission to toggle flags in this environment")
+			httputil.Error(w, http.StatusForbidden, "Action blocked — you do not have permission to modify features in this environment. Contact your administrator for access.")
 			return
 		}
 	}
@@ -457,7 +462,7 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 		} else {
 			t, err := time.Parse(time.RFC3339, *req.ScheduledEnableAt)
 			if err != nil {
-				httputil.Error(w, http.StatusBadRequest, "invalid scheduled_enable_at format (use RFC3339)")
+				httputil.Error(w, http.StatusBadRequest, "Schedule blocked — the scheduled activation time has an invalid format. Use RFC 3339 format (e.g., 2026-06-01T00:00:00Z).")
 				return
 			}
 			state.ScheduledEnableAt = &t
@@ -469,7 +474,7 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 		} else {
 			t, err := time.Parse(time.RFC3339, *req.ScheduledDisableAt)
 			if err != nil {
-				httputil.Error(w, http.StatusBadRequest, "invalid scheduled_disable_at format (use RFC3339)")
+				httputil.Error(w, http.StatusBadRequest, "Schedule blocked — the scheduled pause time has an invalid format. Use RFC 3339 format (e.g., 2026-06-01T00:00:00Z).")
 				return
 			}
 			state.ScheduledDisableAt = &t
@@ -479,7 +484,7 @@ func (h *FlagHandler) UpdateState(w http.ResponseWriter, r *http.Request) {
 	beforeState, _ := json.Marshal(existing)
 
 	if err := h.store.UpsertFlagState(r.Context(), state); err != nil {
-		httputil.Error(w, http.StatusInternalServerError, "failed to update flag state")
+		httputil.Error(w, http.StatusInternalServerError, "Feature state update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -516,21 +521,21 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		return
 	}
 
 	var req PromoteRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.SourceEnvID == "" || req.TargetEnvID == "" {
-		httputil.Error(w, http.StatusBadRequest, "source_env_id and target_env_id are required")
+		httputil.Error(w, http.StatusBadRequest, "Promotion blocked — both source and target environment IDs are required. Specify both environments to proceed.")
 		return
 	}
 	if req.SourceEnvID == req.TargetEnvID {
-		httputil.Error(w, http.StatusBadRequest, "source and target environments must differ")
+		httputil.Error(w, http.StatusBadRequest, "Promotion blocked — the source and target environments must be different. Choose distinct environments.")
 		return
 	}
 
@@ -543,7 +548,7 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 
 	source, err := h.store.GetFlagState(r.Context(), flag.ID, req.SourceEnvID)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "source flag state not found")
+		httputil.Error(w, http.StatusNotFound, "Feature promotion blocked — the source feature state was not found. Verify the source environment is correct.")
 		return
 	}
 
@@ -569,7 +574,7 @@ func (h *FlagHandler) Promote(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.UpsertFlagState(r.Context(), target); err != nil {
 		h.l(r).Error("promote failed", "error", err, "flag_id", flag.ID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to promote flag state")
+		httputil.Error(w, http.StatusInternalServerError, "Feature promotion failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -606,7 +611,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		return
 	}
 
@@ -620,7 +625,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !middleware.CheckEnvPermission(r.Context(), h.store, orgID, userID, req.EnvID, "can_toggle") {
-		httputil.Error(w, http.StatusForbidden, "you do not have permission to toggle flags in this environment")
+		httputil.Error(w, http.StatusForbidden, "Action blocked — you do not have permission to modify features in this environment. Contact your administrator for access.")
 		return
 	}
 
@@ -634,7 +639,7 @@ func (h *FlagHandler) Kill(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.UpsertFlagState(r.Context(), state); err != nil {
 		h.l(r).Error("kill switch failed", "error", err, "flag_id", flag.ID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to disable flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature pause failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -694,9 +699,9 @@ func (h *FlagHandler) CompareEnvironments(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	flags, err := h.store.ListFlags(r.Context(), projectID)
+	flags, err := h.store.ListFlags(r.Context(), projectID, 0, 0)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+		httputil.Error(w, http.StatusInternalServerError, "Feature listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -784,7 +789,7 @@ func (h *FlagHandler) SyncEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	var req SyncEnvironmentsRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.SourceEnvID == "" || req.TargetEnvID == "" || len(req.FlagKeys) == 0 {
@@ -862,7 +867,7 @@ func (h *FlagHandler) GetState(w http.ResponseWriter, r *http.Request) {
 
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
-		httputil.Error(w, http.StatusNotFound, "flag not found")
+		httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 		return
 	}
 
@@ -885,20 +890,22 @@ func (h *FlagHandler) ListFlagStates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	envID := chi.URLParam(r, "envID")
+	p := dto.ParsePagination(r)
 
-	states, err := h.store.ListFlagStatesByEnv(r.Context(), envID)
+	states, err := h.store.ListFlagStatesByEnv(r.Context(), envID, p.Limit, p.Offset)
 	if err != nil {
 		h.l(r).Error("failed to list flag states", "error", err, "env_id", envID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list flag states")
 		return
 	}
 
+	total, _ := h.store.CountFlagStatesByEnv(r.Context(), envID)
 	out := make([]dto.FlagStateResponse, 0, len(states))
 	for i := range states {
 		out = append(out, *dto.FlagStateFromDomain(&states[i]))
 	}
 
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(out, len(out), len(out), 0))
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(out, total, p.Limit, p.Offset))
 }
 
 // Archive soft-deletes a flag by setting its status to "archived".
@@ -914,16 +921,16 @@ func (h *FlagHandler) Archive(w http.ResponseWriter, r *http.Request) {
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 			return
 		}
 		h.l(r).Error("failed to get flag for archive", "error", err, "project_id", projectID, "flag_key", flagKey)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
 	if flag.Status == domain.StatusArchived {
-		httputil.Error(w, http.StatusConflict, "flag is already archived")
+		httputil.Error(w, http.StatusConflict, "Feature already retired — this feature has already been retired. No further action is needed.")
 		return
 	}
 
@@ -931,8 +938,8 @@ func (h *FlagHandler) Archive(w http.ResponseWriter, r *http.Request) {
 	flag.Status = domain.StatusArchived
 
 	if err := h.store.UpdateFlag(r.Context(), flag); err != nil {
-		h.l(r).Error("failed to archive flag", "error", err, "flag_key", flagKey)
-		httputil.Error(w, http.StatusInternalServerError, "failed to archive flag")
+		h.l(r).Error("Retirement failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "flag_key", flagKey)
+		httputil.Error(w, http.StatusInternalServerError, "Retirement failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -961,16 +968,16 @@ func (h *FlagHandler) Restore(w http.ResponseWriter, r *http.Request) {
 	flag, err := h.store.GetFlag(r.Context(), projectID, flagKey)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "flag not found")
+			httputil.Error(w, http.StatusNotFound, "Feature lookup failed — no feature matches the provided key. Verify the feature key and project ID are correct.")
 			return
 		}
 		h.l(r).Error("failed to get flag for restore", "error", err, "project_id", projectID, "flag_key", flagKey)
-		httputil.Error(w, http.StatusInternalServerError, "failed to get flag")
+		httputil.Error(w, http.StatusInternalServerError, "Feature retrieval failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
 	if flag.Status != domain.StatusArchived {
-		httputil.Error(w, http.StatusConflict, "flag is not archived")
+		httputil.Error(w, http.StatusConflict, "Feature not retired — this feature is still active or paused. Retire it first before attempting to restore.")
 		return
 	}
 
@@ -1003,11 +1010,15 @@ func (h *FlagHandler) ListArchived(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	projectID := chi.URLParam(r, "projectID")
+	p := dto.ParsePagination(r)
+	logger := h.l(r)
 
-	flags, err := h.store.ListFlags(r.Context(), projectID)
+	// Fetch all flags for the project (archived filter is in-app until a dedicated query exists).
+	// Pass limit=0 to fetch all since we filter archived in-memory.
+	flags, err := h.store.ListFlags(r.Context(), projectID, 0, 0)
 	if err != nil {
-		h.l(r).Error("failed to list flags for archived filter", "error", err, "project_id", projectID)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list flags")
+		logger.Error("failed to list flags for archived filter", "error", err, "project_id", projectID)
+		httputil.Error(w, http.StatusInternalServerError, "Feature listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -1024,9 +1035,9 @@ func (h *FlagHandler) ListArchived(w http.ResponseWriter, r *http.Request) {
 		archived = []domain.Flag{}
 	}
 
-	all := dto.FlagSliceFromDomain(archived)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
+	// Apply pagination in-memory (necessary until archived filtering moves to store).
+	page, total := dto.Paginate(archived, p)
 	links := domain.LinksForFlagsCollection(projectID)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+	logger.Info("archived flags listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(dto.FlagSliceFromDomain(page), total, p.Limit, p.Offset, links...))
 }

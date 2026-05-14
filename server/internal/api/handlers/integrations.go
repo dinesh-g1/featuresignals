@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -29,18 +30,20 @@ func NewIntegrationHandler(store domain.IntegrationStore, logger *slog.Logger) *
 func (h *IntegrationHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	if orgID == "" {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 
-	integrations, err := h.store.ListIntegrations(r.Context(), orgID)
+	p := dto.ParsePagination(r)
+	integrations, err := h.store.ListIntegrations(r.Context(), orgID, p.Limit, p.Offset)
 	if err != nil {
-		h.logger.Error("failed to list integrations", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		h.logger.Error("Integration listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "org_id", orgID)
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
-	httputil.JSON(w, http.StatusOK, integrations)
+	total, _ := h.store.CountIntegrations(r.Context(), orgID)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(integrations, total, p.Limit, p.Offset))
 }
 
 // Create creates a new integration.
@@ -48,13 +51,13 @@ func (h *IntegrationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("handler", "integration_create")
 	orgID := middleware.GetOrgID(r.Context())
 	if orgID == "" {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 
 	var req domain.CreateIntegrationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	req.OrgID = orgID
@@ -64,19 +67,19 @@ func (h *IntegrationHandler) Create(w http.ResponseWriter, r *http.Request) {
 		domain.ProviderJira: true, domain.ProviderDatadog: true, domain.ProviderGrafana: true,
 	}
 	if !validProviders[req.Provider] {
-		httputil.Error(w, http.StatusUnprocessableEntity, "invalid provider, must be one of: slack, github, pagerduty, jira, datadog, grafana")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Integration creation blocked — the provider is invalid. Use one of: slack, github, pagerduty, jira, datadog, or grafana.")
 		return
 	}
 
 	if !json.Valid(req.Config) {
-		httputil.Error(w, http.StatusUnprocessableEntity, "config must be valid JSON")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Validation blocked — the config field must contain valid JSON. Check your JSON syntax.")
 		return
 	}
 
 	integration, err := h.store.CreateIntegration(r.Context(), req)
 	if err != nil {
 		logger.Error("failed to create integration", "error", err, "org_id", orgID, "provider", req.Provider)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -92,11 +95,11 @@ func (h *IntegrationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	integration, err := h.store.GetIntegration(r.Context(), orgID, id)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "integration not found")
+			httputil.Error(w, http.StatusNotFound, "Integration lookup failed — no integration matches the provided ID. Verify the integration ID is correct.")
 			return
 		}
 		h.logger.Error("failed to get integration", "error", err, "integration_id", id)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -110,24 +113,24 @@ func (h *IntegrationHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "integrationID")
 
 	var req domain.UpdateIntegrationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Config != nil && !json.Valid(*req.Config) {
-		httputil.Error(w, http.StatusUnprocessableEntity, "config must be valid JSON")
+		httputil.Error(w, http.StatusUnprocessableEntity, "Validation blocked — the config field must contain valid JSON. Check your JSON syntax.")
 		return
 	}
 
 	integration, err := h.store.UpdateIntegration(r.Context(), orgID, id, req)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "integration not found")
+			httputil.Error(w, http.StatusNotFound, "Integration lookup failed — no integration matches the provided ID. Verify the integration ID is correct.")
 			return
 		}
 		logger.Error("failed to update integration", "error", err, "integration_id", id)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -143,11 +146,11 @@ func (h *IntegrationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.DeleteIntegration(r.Context(), orgID, id); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "integration not found")
+			httputil.Error(w, http.StatusNotFound, "Integration lookup failed — no integration matches the provided ID. Verify the integration ID is correct.")
 			return
 		}
-		logger.Error("failed to delete integration", "error", err, "integration_id", id)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		logger.Error("Integration deletion failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "integration_id", id)
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -163,7 +166,7 @@ func (h *IntegrationHandler) Test(w http.ResponseWriter, r *http.Request) {
 	delivery, err := h.store.TestIntegration(r.Context(), id)
 	if err != nil {
 		logger.Error("failed to test integration", "error", err, "integration_id", id)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 
@@ -184,7 +187,7 @@ func (h *IntegrationHandler) Deliveries(w http.ResponseWriter, r *http.Request) 
 	deliveries, err := h.store.ListDeliveries(r.Context(), id, limit)
 	if err != nil {
 		h.logger.Error("failed to list deliveries", "error", err, "integration_id", id)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

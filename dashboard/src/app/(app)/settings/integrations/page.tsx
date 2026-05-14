@@ -527,7 +527,7 @@ export default function IntegrationsPage() {
         </h1>
         <p className="text-sm text-[var(--signal-fg-secondary)] mt-1 max-w-2xl leading-relaxed">
           Connect FeatureSignals with your existing toolchain — import from
-          other providers, manage flags as code, or deploy edge nodes for
+          other providers, manage flags as code, or ship edge nodes for
           sub-millisecond evaluation.
         </p>
       </div>

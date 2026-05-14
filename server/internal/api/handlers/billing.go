@@ -86,7 +86,7 @@ func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) 
 
 	user, err := h.store.GetUserByID(r.Context(), userID)
 	if err != nil {
-		log.Error("failed to get user", "error", err, "user_id", userID)
+		log.Error("User retrieval failed — an unexpected error occurred on the server. Try again or contact support.", "error", err, "user_id", userID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to load user")
 		return
 	}
@@ -324,7 +324,7 @@ func (h *BillingHandler) HandleStripeWebhook(w http.ResponseWriter, r *http.Requ
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<16))
 	if err != nil {
 		h.logger.Error("failed to read stripe webhook body", "error", err)
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -681,7 +681,7 @@ func (h *BillingHandler) UpdateGateway(w http.ResponseWriter, r *http.Request) {
 		Gateway string `json:"gateway"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -761,8 +761,8 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 		resp.Status = "none"
 	}
 
-	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
-	projects, _ := h.store.ListProjects(r.Context(), orgID)
+	members, _ := h.store.ListOrgMembers(r.Context(), orgID, 10000, 0)
+	projects, _ := h.store.ListProjects(r.Context(), orgID, 10000, 0)
 	resp.SeatsUsed = len(members)
 	resp.ProjectsUsed = len(projects)
 
@@ -781,12 +781,12 @@ func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, _ := h.store.ListOrgMembers(r.Context(), orgID)
-	projects, _ := h.store.ListProjects(r.Context(), orgID)
+	members, _ := h.store.ListOrgMembers(r.Context(), orgID, 10000, 0)
+	projects, _ := h.store.ListProjects(r.Context(), orgID, 10000, 0)
 
 	totalEnvs := 0
 	for _, p := range projects {
-		envs, _ := h.store.ListEnvironments(r.Context(), p.ID)
+		envs, _ := h.store.ListEnvironments(r.Context(), p.ID, 10000, 0)
 		totalEnvs += len(envs)
 	}
 

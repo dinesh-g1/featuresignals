@@ -52,7 +52,7 @@ func (h *SegmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateSegmentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Key == "" || req.Name == "" {
@@ -110,15 +110,18 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	logger := httputil.LoggerFromContext(r.Context())
 	projectID := chi.URLParam(r, "projectID")
+	p := dto.ParsePagination(r)
 
 	var (
 		segments []domain.Segment
+		total    int
 		err      error
 	)
 	labelSelector := r.URL.Query().Get("label_selector")
 	if labelSelector != "" {
 		orgID := middleware.GetOrgID(r.Context())
-		segments, err = h.store.ListSegmentsWithFilter(r.Context(), orgID, projectID, labelSelector)
+		segments, err = h.store.ListSegmentsWithFilter(r.Context(), orgID, projectID, labelSelector, p.Limit, p.Offset)
+		total, _ = h.store.CountSegmentsWithFilter(r.Context(), orgID, projectID, labelSelector)
 		if err != nil {
 			logger.Error("failed to list segments with filter", "error", err, "project_id", projectID, "label_selector", labelSelector)
 			httputil.Error(w, http.StatusInternalServerError, "failed to list segments")
@@ -127,10 +130,11 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	} else {
 		sortField, sortDir := dto.ParseSort(r, "segments")
 		if sortField != "created_at" || sortDir != "DESC" {
-			segments, err = h.store.ListSegmentsSorted(r.Context(), projectID, sortField, sortDir)
+			segments, err = h.store.ListSegmentsSorted(r.Context(), projectID, sortField, sortDir, p.Limit, p.Offset)
 		} else {
-			segments, err = h.store.ListSegments(r.Context(), projectID)
+			segments, err = h.store.ListSegments(r.Context(), projectID, p.Limit, p.Offset)
 		}
+		total, _ = h.store.CountSegmentsByProject(r.Context(), projectID)
 		if err != nil {
 			logger.Error("failed to list segments", "error", err, "project_id", projectID)
 			httputil.Error(w, http.StatusInternalServerError, "failed to list segments")
@@ -141,10 +145,9 @@ func (h *SegmentHandler) List(w http.ResponseWriter, r *http.Request) {
 		segments = []domain.Segment{}
 	}
 	all := dto.SegmentSliceFromDomain(segments)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
 	links := domain.LinksForSegmentsCollection(projectID)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+	logger.Info("segments listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset, links...))
 }
 
 func (h *SegmentHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +189,7 @@ func (h *SegmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateSegmentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 

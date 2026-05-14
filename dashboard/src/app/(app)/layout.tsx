@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { path } from "@/lib/paths";
 import { NavList } from "@/components/nav-list";
@@ -22,7 +22,7 @@ import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog"
 import { useAppStore } from "@/stores/app-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { Logo } from "@/components/logo";
-import { useAxe } from '@/lib/axe';
+import { useAxe } from "@/lib/axe";
 
 function UpgradeRequiredListener() {
   const router = useRouter();
@@ -102,6 +102,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGuard>
+      {/* Skip to main content — WCAG 2.1 AA (C5) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--signal-bg-accent-emphasis)] focus:text-white focus:rounded-md"
+      >
+        Skip to main content
+      </a>
+
       <TrialBanner />
       <UpgradeBanner />
       <VerificationBanner />
@@ -118,6 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <main
             id="main-content"
+            tabIndex={-1}
             className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6"
           >
             <EnvColorBar />
@@ -125,7 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="mb-4">
               <Breadcrumb />
             </div>
-            {children}
+            <Suspense fallback={<div className="p-6" />}>{children}</Suspense>
           </main>
 
           <DashboardFooter />

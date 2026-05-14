@@ -404,7 +404,7 @@ export default function AgentDetailPage() {
                 Scopes
               </CardTitle>
               <CardDescription>
-                Tools and resources this agent is authorized to access.
+                Tools and resources this agent is approved to access.
               </CardDescription>
             </CardHeader>
             <CardContent>

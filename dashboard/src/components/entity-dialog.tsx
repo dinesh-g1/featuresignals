@@ -98,7 +98,7 @@ export function CreateEnvironmentDialog({
         <DialogHeader>
           <DialogTitle>Create Environment</DialogTitle>
           <div className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
-            Add a new deployment environment for managing flag states
+            Add a new shipping environment for managing feature states
             independently.
           </div>
         </DialogHeader>

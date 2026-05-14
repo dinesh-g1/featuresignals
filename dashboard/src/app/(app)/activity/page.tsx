@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAudit } from "@/hooks/use-data";
 import { useAppStore } from "@/stores/app-store";
 import {
@@ -12,6 +13,7 @@ import {
   Select,
   type SelectOption,
 } from "@/components/ui";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Table,
   TableHeader,
@@ -34,10 +36,11 @@ import { api } from "@/lib/api";
 type ExportFormat = "csv" | "json";
 
 export default function OrgActivityPage() {
+  const searchParams = useSearchParams();
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const offset = parseInt(searchParams.get("offset") || "0");
   const [search, setSearch] = useState("");
-  const [offset, setOffset] = useState(0);
   const [monthFilter, setMonthFilter] = useState("");
-  const limit = 50;
 
   // Month selector options: last 12 months
   const monthOptions = (() => {
@@ -73,9 +76,17 @@ export default function OrgActivityPage() {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  // Fetch org-wide audit (no projectId)
-  const { data: entries = [] } = useAudit(limit, offset, null);
+  // Fetch org-wide audit (no projectId) — fetch all, then client-side paginate
+  const { data: entries = [] } = useAudit(10000, 0, null);
   const token = useAppStore((s) => s.token);
+  const total = entries.length;
+
+  // Client-side pagination slice
+  const paginatedEntries = useMemo(() => {
+    const start = offset;
+    const end = offset + limit;
+    return entries.slice(start, end > entries.length ? entries.length : end);
+  }, [entries, limit, offset]);
 
   // Build unique filter options from entries
   const actorOptions = useMemo<SelectOption[]>(() => {
@@ -104,9 +115,9 @@ export default function OrgActivityPage() {
     ];
   }, [entries]);
 
-  // Apply search + filters
+  // Apply search + filters (on paginated slice)
   const filtered = useMemo(() => {
-    return entries.filter((e) => {
+    return paginatedEntries.filter((e) => {
       const matchesSearch =
         !search ||
         e.action?.toLowerCase().includes(search.toLowerCase()) ||
@@ -125,7 +136,14 @@ export default function OrgActivityPage() {
         matchesMonth
       );
     });
-  }, [entries, search, filterActor, filterAction, filterResource, monthFilter]);
+  }, [
+    paginatedEntries,
+    search,
+    filterActor,
+    filterAction,
+    filterResource,
+    monthFilter,
+  ]);
 
   // Chain hash verification
   const verifyIntegrity = useCallback(() => {
@@ -174,234 +192,230 @@ export default function OrgActivityPage() {
 
   const hasActiveFilters = filterActor || filterAction || filterResource;
 
-  return (
+  const activitySkeleton = (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <PageHeader
-          title="Activities"
-          description="Organization-wide activity log — track every change across all projects"
-          docsUrl={DOCS_LINKS.audit}
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={verifyIntegrity}
-            disabled={verifying || entries.length === 0}
-          >
-            {verifying ? (
-              <>
-                <ShieldIcon className="mr-1.5 h-4 w-4 animate-pulse" />
-                Verifying...
-              </>
-            ) : (
-              <>
-                <ShieldIcon className="mr-1.5 h-4 w-4" />
-                Verify Integrity
-              </>
-            )}
-          </Button>
-          <div className="relative">
+      <div className="h-8 w-32 animate-pulse rounded bg-[var(--signal-border-default)]" />
+      <div className="h-10 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
+      <div className="space-y-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="h-12 animate-pulse rounded-lg bg-[var(--signal-border-default)]"
+          />
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <Suspense fallback={activitySkeleton}>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <PageHeader
+            title="Activities"
+            description="Organization-wide activity log — track every change across all projects"
+            docsUrl={DOCS_LINKS.audit}
+          />
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              disabled={exporting !== null || entries.length === 0}
+              onClick={verifyIntegrity}
+              disabled={verifying || entries.length === 0}
             >
-              <DownloadIcon className="mr-1.5 h-4 w-4" />
-              {exporting ? "Exporting..." : "Export"}
+              {verifying ? (
+                <>
+                  <ShieldIcon className="mr-1.5 h-4 w-4 animate-pulse" />
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <ShieldIcon className="mr-1.5 h-4 w-4" />
+                  Verify Integrity
+                </>
+              )}
             </Button>
-            {showExportMenu && entries.length > 0 && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowExportMenu(false)}
-                />
-                <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-[var(--signal-border-default)] bg-white py-1 shadow-lg">
-                  <button
-                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
-                    onClick={() => {
-                      setShowExportMenu(false);
-                      handleExport("csv");
-                    }}
-                    disabled={exporting !== null}
-                  >
-                    Export CSV
-                  </button>
-                  <button
-                    className="w-full px-3 py-1.5 text-left text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
-                    onClick={() => {
-                      setShowExportMenu(false);
-                      handleExport("json");
-                    }}
-                    disabled={exporting !== null}
-                  >
-                    Export JSON
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="relative">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={exporting !== null || entries.length === 0}
+              >
+                <DownloadIcon className="mr-1.5 h-4 w-4" />
+                {exporting ? "Exporting..." : "Export"}
+              </Button>
+              {showExportMenu && entries.length > 0 && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-lg border border-[var(--signal-border-default)] bg-white py-1 shadow-lg">
+                    <button
+                      className="w-full px-3 py-1.5 text-left text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        handleExport("csv");
+                      }}
+                      disabled={exporting !== null}
+                    >
+                      Export CSV
+                    </button>
+                    <button
+                      className="w-full px-3 py-1.5 text-left text-sm text-[var(--signal-fg-primary)] hover:bg-[var(--signal-bg-secondary)]"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        handleExport("json");
+                      }}
+                      disabled={exporting !== null}
+                    >
+                      Export JSON
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Integrity check result */}
-      {integrityResult && (
-        <div
-          className={`rounded-lg px-4 py-3 text-sm font-medium ${
-            integrityResult.ok
-              ? "border border-green-200 bg-green-50 text-green-700"
-              : "border border-red-200 bg-[var(--signal-bg-danger-muted)] text-red-700"
-          }`}
-        >
-          {integrityResult.ok
-            ? `\u2713 Activity log is intact \u2014 ${integrityResult.count} entries verified`
-            : "\u2717 Integrity check failed"}
-        </div>
-      )}
-
-      {/* Month selector */}
-      <div className="flex items-center gap-3">
-        <select
-          value={monthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-          className="rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] px-3 py-2 text-sm text-[var(--signal-fg-primary)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--signal-border-accent-muted)]"
-        >
-          {monthOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
-        <Input
-          type="text"
-          placeholder="Search by action or resource type..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Filter dropdowns */}
-      <div className="flex flex-wrap gap-2 sm:gap-3">
-        <Select
-          value={filterActor}
-          onValueChange={setFilterActor}
-          options={actorOptions}
-          placeholder="All Users"
-          className="min-w-[140px] w-auto"
-          size="sm"
-        />
-        <Select
-          value={filterAction}
-          onValueChange={setFilterAction}
-          options={actionOptions}
-          placeholder="All Actions"
-          className="min-w-[140px] w-auto"
-          size="sm"
-        />
-        <Select
-          value={filterResource}
-          onValueChange={setFilterResource}
-          options={resourceOptions}
-          placeholder="All Resources"
-          className="min-w-[140px] w-auto"
-          size="sm"
-        />
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setFilterActor("");
-              setFilterAction("");
-              setFilterResource("");
-            }}
-            className="text-xs"
+        {/* Integrity check result */}
+        {integrityResult && (
+          <div
+            className={`rounded-lg px-4 py-3 text-sm font-medium ${
+              integrityResult.ok
+                ? "border border-green-200 bg-green-50 text-green-700"
+                : "border border-red-200 bg-[var(--signal-bg-danger-muted)] text-red-700"
+            }`}
           >
-            Clear filters
-          </Button>
+            {integrityResult.ok
+              ? `\u2713 Activity log is intact \u2014 ${integrityResult.count} entries verified`
+              : "\u2717 Integrity check failed"}
+          </div>
         )}
-      </div>
 
-      <Card className="hover:shadow-lg hover:border-[var(--signal-border-emphasis)]">
-        <div className="divide-y divide-slate-100">
-          {filtered.length === 0 ? (
-            <Blankslate
-              icon={AuditLogIcon}
-              title={
-                entries.length === 0 ? "No activity yet" : "No matching entries"
-              }
-              description={
-                entries.length === 0
-                  ? "Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
-                  : "Try adjusting your search or filters to find what you're looking for."
-              }
-              learnMoreUrl={DOCS_LINKS.audit}
-              learnMoreLabel="About activity logging"
-              variant="bordered"
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Resource</TableHead>
-                  <TableHead>Actor</TableHead>
-                  <TableHead className="text-right">When</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>
-                      <Badge variant="primary">{entry.action}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {entry.resource_type}
-                    </TableCell>
-                    <TableCell className="text-xs text-[var(--signal-fg-secondary)]">
-                      {entry.actor_type || "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-[var(--signal-fg-tertiary)]">
-                      {timeAgo(entry.created_at)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+        {/* Month selector */}
+        <div className="flex items-center gap-3">
+          <select
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] px-3 py-2 text-sm text-[var(--signal-fg-primary)] focus:border-[var(--signal-fg-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--signal-border-accent-muted)]"
+          >
+            {monthOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--signal-fg-tertiary)]" />
+          <Input
+            type="text"
+            placeholder="Search by action or resource type..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Filter dropdowns */}
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Select
+            value={filterActor}
+            onValueChange={setFilterActor}
+            options={actorOptions}
+            placeholder="All Users"
+            className="min-w-[140px] w-auto"
+            size="sm"
+          />
+          <Select
+            value={filterAction}
+            onValueChange={setFilterAction}
+            options={actionOptions}
+            placeholder="All Actions"
+            className="min-w-[140px] w-auto"
+            size="sm"
+          />
+          <Select
+            value={filterResource}
+            onValueChange={setFilterResource}
+            options={resourceOptions}
+            placeholder="All Resources"
+            className="min-w-[140px] w-auto"
+            size="sm"
+          />
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterActor("");
+                setFilterAction("");
+                setFilterResource("");
+              }}
+              className="text-xs"
+            >
+              Clear filters
+            </Button>
           )}
         </div>
-      </Card>
 
-      {entries.length > 0 && (
-        <div className="flex items-center justify-between">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setOffset(Math.max(0, offset - limit))}
-            disabled={offset === 0}
-          >
-            Previous
-          </Button>
-          <span className="text-xs text-[var(--signal-fg-secondary)]">
-            Showing {filtered.length === 0 ? 0 : offset + 1} -{" "}
-            {offset + filtered.length} of {entries.length}
-          </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setOffset(offset + limit)}
-            disabled={entries.length < limit}
-          >
-            Next
-          </Button>
-        </div>
-      )}
-    </div>
+        <Card className="hover:shadow-lg hover:border-[var(--signal-border-emphasis)]">
+          <div className="divide-y divide-slate-100">
+            {filtered.length === 0 ? (
+              <Blankslate
+                icon={AuditLogIcon}
+                title={
+                  entries.length === 0
+                    ? "No activity yet"
+                    : "No matching entries"
+                }
+                description={
+                  entries.length === 0
+                    ? "Every action — flag creation, state changes, team updates — is logged here automatically for compliance and visibility."
+                    : "Try adjusting your search or filters to find what you're looking for."
+                }
+                learnMoreUrl={DOCS_LINKS.audit}
+                learnMoreLabel="About activity logging"
+                variant="bordered"
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Resource</TableHead>
+                    <TableHead>Actor</TableHead>
+                    <TableHead className="text-right">When</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>
+                        <Badge variant="primary">{entry.action}</Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {entry.resource_type}
+                      </TableCell>
+                      <TableCell className="text-xs text-[var(--signal-fg-secondary)]">
+                        {entry.actor_type || "—"}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-[var(--signal-fg-tertiary)]">
+                        {timeAgo(entry.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </Card>
+
+        {total > 0 && <Pagination total={total} />}
+      </div>
+    </Suspense>
   );
 }

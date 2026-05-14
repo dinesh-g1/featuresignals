@@ -45,7 +45,7 @@ func (h *AuditExportHandler) Export(w http.ResponseWriter, r *http.Request) {
 	entries, err := h.store.ListAuditEntriesForExport(r.Context(), orgID, from, to)
 	if err != nil {
 		logger.Error("failed to export audit entries", "error", err, "org_id", orgID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 

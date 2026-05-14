@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiGet, apiPatch, apiDelete } from "@/lib/api";
@@ -8,10 +8,13 @@ import type { ABMBehavior } from "@/lib/abm-types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorDisplay } from "@/components/ui/error-display";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Card,
   CardContent,
@@ -19,19 +22,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Trash2, FileQuestion, RefreshCw } from "lucide-react";
+import { usePageStates } from "@/hooks/use-page-states";
 
 // ─── Status Badge ──────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   const variants: Record<
     string,
-    { label: string; variant: "success" | "default" | "warning" | "danger" }
+    {
+      label: string;
+      variant: "success" | "default" | "warning" | "danger" | "info";
+    }
   > = {
     active: { label: "LIVE", variant: "success" },
-    draft: { label: "Draft", variant: "default" },
-    paused: { label: "Paused", variant: "warning" },
-    retired: { label: "Retired", variant: "default" },
+    draft: { label: "SCHEDULED", variant: "info" },
+    paused: { label: "PAUSED", variant: "warning" },
+    retired: { label: "RETIRED", variant: "default" },
   };
   const v = variants[status] ?? { label: status, variant: "default" as const };
   return <Badge variant={v.variant}>{v.label}</Badge>;
@@ -40,15 +47,20 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function BehaviorDetailPage() {
-  const params = useParams<{ behaviorKey: string }>();
+  const { projectId, behaviorKey } = useParams() as {
+    projectId: string;
+    behaviorKey: string;
+  };
   const router = useRouter();
-  const behaviorKey = params.behaviorKey;
 
   const [behavior, setBehavior] = useState<ABMBehavior | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Editable fields
   const [name, setName] = useState("");
@@ -57,10 +69,56 @@ export default function BehaviorDetailPage() {
   const [status, setStatus] = useState("draft");
   const [rolloutPercentage, setRolloutPercentage] = useState(100);
 
+  // C6: Track initial values for dirty detection
+  const initialValues = useRef({
+    name: "",
+    description: "",
+    agentType: "",
+    status: "draft",
+    rolloutPercentage: 100,
+  });
+
+  const isDirty =
+    name !== initialValues.current.name ||
+    description !== initialValues.current.description ||
+    agentType !== initialValues.current.agentType ||
+    status !== initialValues.current.status ||
+    rolloutPercentage !== initialValues.current.rolloutPercentage;
+
+  // C6: beforeunload guard when form is dirty
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  const {
+    isStale,
+    OfflineBanner,
+    StaleBanner,
+    ForbiddenState,
+    RateLimitedState,
+    resetErrors,
+    classifyError,
+    markFresh,
+  } = usePageStates({
+    onRefresh: () => fetchBehavior(),
+    hasData: behavior !== null,
+    forbiddenTitle: "Access Denied",
+    forbiddenDescription:
+      "You don't have permission to view this agent behavior. Contact your administrator if you need access.",
+  });
+
   const fetchBehavior = useCallback(async () => {
     if (!behaviorKey) return;
     setIsLoading(true);
     setError(null);
+    setIsNotFound(false);
+    resetErrors();
     try {
       const data = await apiGet<ABMBehavior>(
         `/v1/abm/behaviors/${behaviorKey}`,
@@ -71,12 +129,33 @@ export default function BehaviorDetailPage() {
       setAgentType(data.agent_type ?? "");
       setStatus(data.status);
       setRolloutPercentage(data.rollout_percentage);
+      // C6: snapshot initial values for dirty detection
+      initialValues.current = {
+        name: data.name,
+        description: data.description ?? "",
+        agentType: data.agent_type ?? "",
+        status: data.status,
+        rolloutPercentage: data.rollout_percentage,
+      };
+      markFresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load behavior");
+      classifyError(err);
+      const msg = err instanceof Error ? err.message : "";
+      // Detect 404 to show Not Found instead of Error state
+      if (
+        msg.includes("404") ||
+        msg.includes("not found") ||
+        msg.includes("Not Found")
+      ) {
+        setIsNotFound(true);
+        setBehavior(null);
+      } else {
+        setError(msg || "Failed to load behavior");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [behaviorKey]);
+  }, [behaviorKey, resetErrors, classifyError, markFresh]);
 
   useEffect(() => {
     fetchBehavior();
@@ -98,6 +177,14 @@ export default function BehaviorDetailPage() {
       );
       setBehavior(updated);
       setSaveMessage("Behavior updated successfully.");
+      // C6: reset dirty tracking after successful save
+      initialValues.current = {
+        name,
+        description,
+        agentType,
+        status,
+        rolloutPercentage,
+      };
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
       setSaveMessage(
@@ -108,11 +195,14 @@ export default function BehaviorDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this behavior? This action cannot be undone.")) return;
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
       await apiDelete(`/v1/abm/behaviors/${behaviorKey}`);
-      router.push("/abm");
+      router.push(`/projects/${projectId}/abm`);
     } catch {
       setSaveMessage("Failed to delete behavior.");
     }
@@ -138,33 +228,48 @@ export default function BehaviorDetailPage() {
     );
   }
 
-  // ─── Not Found ──────────────────────────────────────────────────────
-  if (!behavior && !isLoading && !error) {
+  // ─── Forbidden State ─────────────────────────────────────────────────
+  if (ForbiddenState) return ForbiddenState;
+
+  // ─── Rate-Limited State ──────────────────────────────────────────────
+  if (RateLimitedState) return RateLimitedState;
+
+  // ─── Not Found — explicit 404 detection ──────────────────────────────
+  if ((!behavior && !isLoading && !error) || isNotFound) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
-        <h2 className="text-xl font-semibold mb-2">Behavior Not Found</h2>
-        <p className="text-muted-foreground mb-4">
-          This agent behavior may have been deleted or moved.
-        </p>
-        <Link href="/abm">
-          <Button variant="secondary">
+      <div className="space-y-6 p-6">
+        <Link href={`/projects/${projectId}/abm`}>
+          <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Behaviors
           </Button>
         </Link>
+        <EmptyState
+          icon={FileQuestion}
+          title="Behavior Not Found"
+          description="This agent behavior may have been deleted or moved."
+          action={
+            <Link href={`/projects/${projectId}/abm`}>
+              <Button variant="secondary">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Behaviors
+              </Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
 
   // ─── Error ───────────────────────────────────────────────────────────
-  if (error) {
+  if (error && !behavior) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
-        <p className="text-destructive mb-4">{error}</p>
-        <Button onClick={fetchBehavior} variant="secondary">
-          Retry
-        </Button>
-      </div>
+      <ErrorDisplay
+        title="Could Not Load Behavior"
+        message={error}
+        fullPage
+        onRetry={fetchBehavior}
+      />
     );
   }
 
@@ -173,20 +278,37 @@ export default function BehaviorDetailPage() {
   // ─── Detail View ─────────────────────────────────────────────────────
   return (
     <div className="space-y-6 p-6">
+      {OfflineBanner}
+      {StaleBanner}
+
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/abm">
+        <Link href={`/projects/${projectId}/abm`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">{behavior.name}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--signal-fg-primary)]">
+            {behavior.name}
+          </h1>
+          <p className="text-sm text-[var(--signal-fg-secondary)]">
             Behavior key: <code className="text-sm">{behavior.key}</code>
           </p>
         </div>
-        <StatusBadge status={status} />
+        <div className="flex items-center gap-2">
+          {isStale && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={fetchBehavior}
+              aria-label="Refresh behavior"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
+          <StatusBadge status={status} />
+        </div>
       </div>
 
       {/* Configuration Card */}
@@ -238,10 +360,10 @@ export default function BehaviorDetailPage() {
                 value={status}
                 onValueChange={setStatus}
                 options={[
-                  { value: "draft", label: "Draft" },
+                  { value: "draft", label: "SCHEDULED" },
                   { value: "active", label: "LIVE" },
-                  { value: "paused", label: "Paused" },
-                  { value: "retired", label: "Retired" },
+                  { value: "paused", label: "PAUSED" },
+                  { value: "retired", label: "RETIRED" },
                 ]}
                 placeholder="Select status"
               />
@@ -320,9 +442,19 @@ export default function BehaviorDetailPage() {
               Delete Behavior
             </Button>
             <div className="flex items-center gap-2">
+              {isDirty && (
+                <span className="text-xs font-medium text-[var(--signal-fg-warning)]">
+                  You have unsaved changes
+                </span>
+              )}
               {saveMessage && (
                 <span
-                  className={`text-sm ${saveMessage.includes("success") ? "text-green-600 dark:text-green-400" : "text-destructive"}`}
+                  className={`text-sm ${
+                    saveMessage.includes("success") ||
+                    saveMessage.includes("updated")
+                      ? "text-signal-success"
+                      : "text-signal-danger"
+                  }`}
                 >
                   {saveMessage}
                 </span>
@@ -346,6 +478,16 @@ export default function BehaviorDetailPage() {
           <div>Updated: {new Date(behavior.updated_at).toLocaleString()}</div>
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Retire Behavior"
+        description="Are you sure you want to retire this behavior? This action cannot be undone and will affect all agents using this behavior."
+        confirmLabel="Retire"
+        variant="danger"
+        loading={isDeleting}
+      />
     </div>
   );
 }

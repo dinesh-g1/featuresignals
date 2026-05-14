@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -31,4 +32,33 @@ type ApprovalRequest struct {
 	ReviewedAt  *time.Time      `json:"reviewed_at,omitempty" db:"reviewed_at"`
 	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time       `json:"updated_at" db:"updated_at"`
+}
+
+// ProcessDecision applies a review decision (approve/reject) to the
+// approval request. It validates that the action is valid, checks that
+// the reviewer is not the requestor, and sets the appropriate status.
+// Returns an error if the action is invalid or the reviewer is the requestor.
+func (ar *ApprovalRequest) ProcessDecision(action, note, reviewerID string) error {
+	if ar.Status != ApprovalPending {
+		return fmt.Errorf("approval request is no longer pending")
+	}
+	if ar.RequestorID == reviewerID {
+		return fmt.Errorf("cannot review your own request")
+	}
+	if action != "approve" && action != "reject" {
+		return NewValidationError("action", "must be 'approve' or 'reject'")
+	}
+
+	now := time.Now()
+	ar.ReviewerID = &reviewerID
+	ar.ReviewNote = note
+	ar.ReviewedAt = &now
+
+	switch action {
+	case "approve":
+		ar.Status = ApprovalApproved
+	case "reject":
+		ar.Status = ApprovalRejected
+	}
+	return nil
 }

@@ -174,16 +174,16 @@ export function FlagHistory({
         projectId,
         flagKey,
         rollbackTarget,
-        rollbackReason || `Rollback to version ${rollbackTarget}`,
+        rollbackReason || `Revert to version ${rollbackTarget}`,
       );
-      toast(`FlagIcon rolled back to version ${rollbackTarget}`, "success");
+      toast(`FlagIcon reverted to version ${rollbackTarget}`, "success");
       setRollbackTarget(null);
       setRollbackReason("");
       onRollback?.(rollbackTarget);
       fetchVersions(0, false);
     } catch (err) {
       toast(
-        err instanceof Error ? err.message : "Failed to rollback flag",
+        err instanceof Error ? err.message : "Failed to revert feature",
         "error",
       );
     } finally {
@@ -305,7 +305,7 @@ export function FlagHistory({
                         className="hidden gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100 sm:flex"
                       >
                         <RotateCcwIcon className="h-3 w-3" />
-                        Rollback
+                        Revert
                       </Button>
                     )}
                   </div>
@@ -340,7 +340,7 @@ export function FlagHistory({
                         className="w-full gap-1 text-xs"
                       >
                         <RotateCcwIcon className="h-3 w-3" />
-                        Rollback to v{v.version}
+                        Revert to v{v.version}
                       </Button>
                     </div>
                   )}
@@ -375,7 +375,7 @@ export function FlagHistory({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertIcon className="h-5 w-5 text-amber-500" />
-              Confirm Rollback
+              Confirm Revert
             </DialogTitle>
             <DialogDescription>
               This will revert the flag to version {rollbackTarget}. A new
@@ -385,10 +385,10 @@ export function FlagHistory({
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="rollback-reason">Reason (optional)</Label>
+              <Label htmlFor="revert-reason">Reason (optional)</Label>
               <Textarea
-                id="rollback-reason"
-                placeholder="Why are you rolling back?"
+                id="revert-reason"
+                placeholder="Why are you reverting?"
                 value={rollbackReason}
                 onChange={(e) => setRollbackReason(e.target.value)}
                 className="mt-1"
@@ -403,7 +403,7 @@ export function FlagHistory({
                     This will create a new version entry
                   </p>
                   <p className="mt-1 text-xs text-amber-700">
-                    The rollback is recorded in the audit trail and can be
+                    The revert is recorded in the audit trail and can be
                     reviewed later.
                   </p>
                 </div>
@@ -430,12 +430,12 @@ export function FlagHistory({
               {rollingBack ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  Rolling back...
+                  Reverting...
                 </>
               ) : (
                 <>
                   <RotateCcwIcon className="h-4 w-4" />
-                  Rollback to v{rollbackTarget}
+                  Revert to v{rollbackTarget}
                 </>
               )}
             </Button>

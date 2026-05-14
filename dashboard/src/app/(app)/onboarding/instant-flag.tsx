@@ -115,7 +115,7 @@ export function InstantFlagToggle({
         });
       } catch (err: unknown) {
         setEvalError(
-          err instanceof Error ? err.message : "Failed to toggle flag",
+          err instanceof Error ? err.message : "Failed to activate/pause feature",
         );
       } finally {
         setToggling(false);
@@ -412,7 +412,7 @@ export function WhatJustHappened({
               <code className="bg-[var(--signal-bg-secondary)] px-1 py-0.5 rounded text-[var(--signal-fg-secondary)] font-mono text-[11px]">
                 false
               </code>
-              . No deployment needed. The flag can be toggled at any time.
+              . No shipping needed. The flag can be toggled at any time.
             </p>
           </div>
         </div>

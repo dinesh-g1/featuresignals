@@ -33,9 +33,10 @@ type Instruments struct {
 	PolicyEvalDuration ometric.Float64Histogram
 
 	// ── ABM (Agent Behavior Mesh) ─────────────────────────
-	ABMResolve         ometric.Int64Counter
-	ABMResolveDuration ometric.Float64Histogram
-	ABMTrack           ometric.Int64Counter
+	ABMResolve              ometric.Int64Counter
+	ABMResolveDuration      ometric.Float64Histogram
+	ABMTrack                ometric.Int64Counter
+	ABMTrackAsyncWriteFailed ometric.Int64Counter
 
 	// ── Eval Events ───────────────────────────────────────
 	EvalEventsEmitted ometric.Int64Counter
@@ -109,6 +110,9 @@ func NewInstruments() *Instruments {
 	abmTrack, _ := meter.Int64Counter("abm.track.count",
 		ometric.WithDescription("Number of ABM track events received"),
 	)
+	abmTrackAsyncWriteFailed, _ := meter.Int64Counter("abm.track.async_write.failed",
+		ometric.WithDescription("Number of ABM track events that failed async background write"),
+	)
 
 	// ── Eval Events ───────────────────────────────────────
 	evalEventsEmitted, _ := meter.Int64Counter("eval_events.emitted",
@@ -144,9 +148,10 @@ func NewInstruments() *Instruments {
 		PolicyEvaluated:    policyEvaluated,
 		PolicyEvalDuration: policyEvalDuration,
 
-		ABMResolve:         abmResolve,
-		ABMResolveDuration: abmResolveDuration,
-		ABMTrack:           abmTrack,
+		ABMResolve:              abmResolve,
+		ABMResolveDuration:      abmResolveDuration,
+		ABMTrack:                abmTrack,
+		ABMTrackAsyncWriteFailed: abmTrackAsyncWriteFailed,
 
 		EvalEventsEmitted: evalEventsEmitted,
 		EvalEventsDropped: evalEventsDropped,
@@ -218,6 +223,13 @@ func (i *Instruments) RecordABMResolve(ctx context.Context, reason string, durat
 // RecordABMTrack records an ABM track event.
 func (i *Instruments) RecordABMTrack(ctx context.Context, behaviorKey string) {
 	i.ABMTrack.Add(ctx, 1, ometric.WithAttributes(
+		attribute.String("behavior_key", behaviorKey),
+	))
+}
+
+// RecordABMTrackAsyncWriteFailed records a failed async ABM track event write.
+func (i *Instruments) RecordABMTrackAsyncWriteFailed(ctx context.Context, behaviorKey string) {
+	i.ABMTrackAsyncWriteFailed.Add(ctx, 1, ometric.WithAttributes(
 		attribute.String("behavior_key", behaviorKey),
 	))
 }

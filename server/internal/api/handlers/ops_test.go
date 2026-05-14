@@ -195,6 +195,19 @@ func (m *opsMockStore) GetUserByID(_ context.Context, id string) (*domain.User, 
 	return nil, domain.ErrNotFound
 }
 
+func (m *opsMockStore) GetUsersByIDs(_ context.Context, ids []string) ([]domain.User, error) {
+	var result []domain.User
+	for _, id := range ids {
+		if u, ok := m.users[id]; ok {
+			result = append(result, *u)
+		}
+	}
+	if result == nil {
+		return []domain.User{}, nil
+	}
+	return result, nil
+}
+
 func (m *opsMockStore) GetUserByEmail(_ context.Context, email string) (*domain.User, error) {
 	for _, u := range m.users {
 		if u.Email == email {

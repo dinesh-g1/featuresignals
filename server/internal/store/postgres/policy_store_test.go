@@ -114,7 +114,7 @@ func TestPolicyStore_List(t *testing.T) {
 		}
 	})
 
-	all, err := store.ListPolicies(ctx, org.ID)
+	all, err := store.ListPolicies(ctx, org.ID, 50, 0)
 	if err != nil {
 		t.Fatalf("list policies: %v", err)
 	}

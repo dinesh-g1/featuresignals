@@ -461,12 +461,12 @@ func NewRouter(
 
 					// TODO: Delegate to a dedicated DashboardHandler when available.
 					// For now, return a basic summary using store queries.
-					flags, err := store.ListFlags(r.Context(), projectID)
+					flags, err := store.ListFlags(r.Context(), projectID, 0, 0)
 					if err != nil {
 						httputil.Error(w, http.StatusInternalServerError, "failed to load dashboard")
 						return
 					}
-					envs, err := store.ListEnvironments(r.Context(), projectID)
+					envs, err := store.ListEnvironments(r.Context(), projectID, 0, 0)
 					if err != nil {
 						httputil.Error(w, http.StatusInternalServerError, "failed to load dashboard")
 						return
@@ -831,7 +831,7 @@ func NewRouter(
 	// monitoring. The ops dashboard HTML page is served at /ops.
 
 	opsH := handlers.NewOpsHandler(store, lifecycle)
-	opsDashboardH := handlers.NewOpsDashboardHandler(store, cfg, logger)
+	opsDashboardH := handlers.NewOpsDashboardHandler(cfg, logger)
 	opsAuthH := handlers.NewOpsAuthHandler(store, jwtMgr, logger)
 
 	// ── Ops Portal Auth (public) ────────────────────────────────────

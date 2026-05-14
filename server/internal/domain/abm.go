@@ -195,14 +195,158 @@ type ABMTargetingRule struct {
 	Priority int `json:"priority"`
 }
 
+// Match evaluates this targeting rule against a resolution request.
+// For the initial implementation, we support simple attribute matching
+// (agent_type equality). Full CEL support will come with the governance layer.
+func (r *ABMTargetingRule) Match(req ABMResolutionRequest) bool {
+	if r.Condition == "" {
+		return false
+	}
+
+	// Simple targeting: check if the agent_type attribute matches.
+	if req.Attributes != nil {
+		if val, ok := req.Attributes["agent_type"]; ok {
+			if s, ok := val.(string); ok && s == req.AgentType {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// SetDefaults populates default values for required fields that weren't
+// explicitly set by the caller.
+func (b *ABMBehavior) SetDefaults() {
+	if b.DefaultVariant == "" {
+		b.DefaultVariant = "default"
+	}
+	if b.Status == "" {
+		b.Status = "draft"
+	}
+	if b.RolloutPercentage == 0 {
+		b.RolloutPercentage = 100
+	}
+	if b.Variants == nil {
+		b.Variants = []ABMVariant{}
+	}
+	if b.TargetingRules == nil {
+		b.TargetingRules = []ABMTargetingRule{}
+	}
+}
+
+// MergeUpdate applies a partial update request onto the existing behavior.
+// Only non-zero fields from the request are applied.
+func (b *ABMBehavior) MergeUpdate(req *ABMBehavior) {
+	if req.Name != "" {
+		b.Name = req.Name
+	}
+	if req.Description != "" {
+		b.Description = req.Description
+	}
+	if req.AgentType != "" {
+		b.AgentType = req.AgentType
+	}
+	if req.Variants != nil {
+		b.Variants = req.Variants
+	}
+	if req.DefaultVariant != "" {
+		b.DefaultVariant = req.DefaultVariant
+	}
+	if req.TargetingRules != nil {
+		b.TargetingRules = req.TargetingRules
+	}
+	if req.RolloutPercentage != 0 {
+		b.RolloutPercentage = req.RolloutPercentage
+	}
+	if req.Status != "" {
+		b.Status = req.Status
+	}
+}
+
+// EvaluateBehavior applies targeting rules and rollout percentage to
+// determine which variant should be served. This is the core ABM
+// resolution logic — the agent equivalent of flag evaluation.
+func (b *ABMBehavior) EvaluateBehavior(req ABMResolutionRequest) ABMResolutionResponse {
+	resp := ABMResolutionResponse{
+		BehaviorKey: req.BehaviorKey,
+		Variant:     b.DefaultVariant,
+		Reason:      "default",
+		ResolvedAt:  time.Now().UTC(),
+		IsSticky:    true,
+		TTLSeconds:  300,
+	}
+
+	// If behavior is not active, return default variant.
+	if b.Status != "active" {
+		resp.Reason = "behavior_inactive"
+		return resp
+	}
+
+	// Apply targeting rules in priority order (lowest priority first = evaluated first).
+	for i := range b.TargetingRules {
+		rule := &b.TargetingRules[i]
+		if rule.Match(req) {
+			resp.Variant = rule.Variant
+			resp.Reason = "targeting_match"
+			break
+		}
+	}
+
+	// Apply rollout percentage if no targeting rule matched yet.
+	if resp.Reason == "default" && b.RolloutPercentage > 0 && req.UserID != "" {
+		if rolloutMatch(req.UserID, b.RolloutPercentage) {
+			// Pick the first non-default variant for the rollout.
+			for _, v := range b.Variants {
+				if v.Key != b.DefaultVariant && v.Weight > 0 {
+					resp.Variant = v.Key
+					resp.Reason = "percentage_rollout"
+					break
+				}
+			}
+		}
+	}
+
+	// Attach variant configuration.
+	for _, v := range b.Variants {
+		if v.Key == resp.Variant {
+			resp.Config = v.Config
+			break
+		}
+	}
+
+	return resp
+}
+
+// rolloutMatch deterministically hashes a userID to decide if they
+// should receive the rollout variant. Uses FNV-1a for speed.
+func rolloutMatch(userID string, percentage int) bool {
+	if percentage <= 0 {
+		return false
+	}
+	if percentage >= 100 {
+		return true
+	}
+
+	// FNV-1a hash for consistent percentage-based rollout.
+	var hash uint64 = 14695981039346656037 // FNV offset basis
+	for i := 0; i < len(userID); i++ {
+		hash ^= uint64(userID[i])
+		hash *= 1099511628211 // FNV prime
+	}
+	return int(hash%100) < percentage
+}
+
 // ─── ABM Store interfaces ──────────────────────────────────────────────────
 
 // ABMBehaviorStore provides full CRUD for ABM behaviors.
 type ABMBehaviorStore interface {
 	CreateBehavior(ctx context.Context, behavior *ABMBehavior) error
 	GetBehavior(ctx context.Context, orgID, behaviorKey string) (*ABMBehavior, error)
-	ListBehaviors(ctx context.Context, orgID string) ([]ABMBehavior, error)
-	ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string) ([]ABMBehavior, error)
+	ListBehaviors(ctx context.Context, orgID string, limit, offset int) ([]ABMBehavior, error)
+	ListBehaviorsByAgentType(ctx context.Context, orgID, agentType string, limit, offset int) ([]ABMBehavior, error)
+	CountBehaviors(ctx context.Context, orgID string) (int, error)
+	CountBehaviorsByAgentType(ctx context.Context, orgID, agentType string) (int, error)
 	UpdateBehavior(ctx context.Context, behavior *ABMBehavior) error
 	DeleteBehavior(ctx context.Context, orgID, behaviorKey string) error
 }

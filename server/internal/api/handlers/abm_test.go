@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 // ─── Mock ABM Store ────────────────────────────────────────────────────────
 
 type mockABMStore struct {
+	mu              sync.Mutex
 	behaviors       map[string]*domain.ABMBehavior // key = orgID + ":" + behaviorKey
 	events          []domain.ABMTrackEvent
 	getErr          error
@@ -69,7 +71,7 @@ func (m *mockABMStore) GetBehavior(_ context.Context, orgID, behaviorKey string)
 	return b, nil
 }
 
-func (m *mockABMStore) ListBehaviors(_ context.Context, orgID string) ([]domain.ABMBehavior, error) {
+func (m *mockABMStore) ListBehaviors(_ context.Context, orgID string, limit, offset int) ([]domain.ABMBehavior, error) {
 	if m.listErr != nil {
 		return nil, m.listErr
 	}
@@ -85,7 +87,7 @@ func (m *mockABMStore) ListBehaviors(_ context.Context, orgID string) ([]domain.
 	return list, nil
 }
 
-func (m *mockABMStore) ListBehaviorsByAgentType(_ context.Context, orgID, agentType string) ([]domain.ABMBehavior, error) {
+func (m *mockABMStore) ListBehaviorsByAgentType(_ context.Context, orgID, agentType string, limit, offset int) ([]domain.ABMBehavior, error) {
 	if m.listErr != nil {
 		return nil, m.listErr
 	}
@@ -124,6 +126,30 @@ func (m *mockABMStore) DeleteBehavior(_ context.Context, orgID, behaviorKey stri
 	}
 	delete(m.behaviors, key)
 	return nil
+}
+
+func (m *mockABMStore) CountBehaviors(_ context.Context, orgID string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for _, b := range m.behaviors {
+		if b.OrgID == orgID {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (m *mockABMStore) CountBehaviorsByAgentType(_ context.Context, orgID, agentType string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for _, b := range m.behaviors {
+		if b.OrgID == orgID && b.AgentType == agentType {
+			count++
+		}
+	}
+	return count, nil
 }
 
 func (m *mockABMStore) InsertTrackEvent(_ context.Context, event *domain.ABMTrackEvent) error {

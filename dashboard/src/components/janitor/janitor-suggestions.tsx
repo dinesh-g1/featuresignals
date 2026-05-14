@@ -217,8 +217,8 @@ function EmptySuggestions() {
       <EmptyState
         icon={SparklesIcon}
         emoji="✨"
-        title="No cleanup suggestions right now"
-        description="Great job keeping things tidy! The Janitor will notify you when flags are ready for cleanup."
+        title="No sweep suggestions right now"
+        description="Great job keeping things tidy! The Janitor will notify you when flags are ready for sweep."
       />
     </div>
   );
@@ -287,7 +287,7 @@ export function JanitorSuggestions({
         <p className="text-sm font-medium text-[var(--signal-fg-primary)]">
           <span className="text-[var(--signal-fg-accent)]">●</span>{" "}
           {suggestions.length} suggestion
-          {suggestions.length > 1 ? "s" : ""} for cleanup
+          {suggestions.length > 1 ? "s" : ""} for sweep
         </p>
         <p className="text-xs text-[var(--signal-fg-tertiary)]">
           Augmentation mode — review each suggestion before acting

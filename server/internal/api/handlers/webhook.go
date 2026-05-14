@@ -44,7 +44,7 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateWebhookRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" || req.URL == "" {
@@ -88,8 +88,9 @@ func (h *WebhookHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *WebhookHandler) List(w http.ResponseWriter, r *http.Request) {
 	logger := httputil.LoggerFromContext(r.Context())
 	orgID := middleware.GetOrgID(r.Context())
+	p := dto.ParsePagination(r)
 
-	webhooks, err := h.store.ListWebhooks(r.Context(), orgID)
+	webhooks, err := h.store.ListWebhooks(r.Context(), orgID, p.Limit, p.Offset)
 	if err != nil {
 		logger.Error("failed to list webhooks", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list webhooks")
@@ -100,9 +101,9 @@ func (h *WebhookHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	all := dto.WebhookSliceFromDomain(webhooks)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	total, _ := h.store.CountWebhooks(r.Context(), orgID)
+	logger.Info("webhooks listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset))
 }
 
 func (h *WebhookHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +123,7 @@ func (h *WebhookHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateWebhookRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -192,7 +193,8 @@ func (h *WebhookHandler) ListDeliveries(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	deliveries, err := h.store.ListWebhookDeliveries(r.Context(), wh.ID, 50)
+	p := dto.ParsePagination(r)
+	deliveries, err := h.store.ListWebhookDeliveries(r.Context(), wh.ID, p.Limit)
 	if err != nil {
 		logger.Error("failed to list webhook deliveries", "error", err, "webhook_id", wh.ID)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list deliveries")
@@ -202,7 +204,7 @@ func (h *WebhookHandler) ListDeliveries(w http.ResponseWriter, r *http.Request) 
 		deliveries = []domain.WebhookDelivery{}
 	}
 	all := dto.WebhookDeliverySliceFromDomain(deliveries)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset))
+	total, _ := h.store.CountWebhookDeliveries(r.Context(), wh.ID)
+	logger.Info("webhook deliveries listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset))
 }

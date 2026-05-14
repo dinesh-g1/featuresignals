@@ -25,13 +25,13 @@ func (h *PreferencesHandler) GetHints(w http.ResponseWriter, r *http.Request) {
 	logger := httputil.LoggerFromContext(r.Context())
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 	hints, err := h.store.GetDismissedHints(r.Context(), claims.UserID)
 	if err != nil {
 		logger.Error("failed to get dismissed hints", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{"hints": hints})
@@ -45,7 +45,7 @@ func (h *PreferencesHandler) DismissHint(w http.ResponseWriter, r *http.Request)
 	logger := httputil.LoggerFromContext(r.Context())
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 	var req dismissHintRequest
@@ -55,7 +55,7 @@ func (h *PreferencesHandler) DismissHint(w http.ResponseWriter, r *http.Request)
 	}
 	if err := h.store.DismissHint(r.Context(), claims.UserID, req.HintID); err != nil {
 		logger.Error("failed to dismiss hint", "error", err, "hint_id", req.HintID)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -70,7 +70,7 @@ func (h *PreferencesHandler) UpdateEmailPreferences(w http.ResponseWriter, r *ht
 	logger := httputil.LoggerFromContext(r.Context())
 	claims := middleware.GetClaims(r.Context())
 	if claims == nil {
-		httputil.Error(w, http.StatusUnauthorized, "unauthorized")
+		httputil.Error(w, http.StatusUnauthorized, "Authentication required — you must be logged in to access this resource. Sign in and try again.")
 		return
 	}
 	var req emailPreferencesRequest
@@ -90,7 +90,7 @@ func (h *PreferencesHandler) UpdateEmailPreferences(w http.ResponseWriter, r *ht
 
 	if err := h.store.UpdateUserEmailPreferences(r.Context(), claims.UserID, req.Consent, req.Preference); err != nil {
 		logger.Error("failed to update email preferences", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -59,7 +59,8 @@ type UpdateIntegrationRequest struct {
 type IntegrationStore interface {
 	CreateIntegration(ctx context.Context, req CreateIntegrationRequest) (*Integration, error)
 	GetIntegration(ctx context.Context, orgID, id string) (*Integration, error)
-	ListIntegrations(ctx context.Context, orgID string) ([]Integration, error)
+	ListIntegrations(ctx context.Context, orgID string, limit, offset int) ([]Integration, error)
+	CountIntegrations(ctx context.Context, orgID string) (int, error)
 	UpdateIntegration(ctx context.Context, orgID, id string, req UpdateIntegrationRequest) (*Integration, error)
 	DeleteIntegration(ctx context.Context, orgID, id string) error
 	TestIntegration(ctx context.Context, id string) (*IntegrationDelivery, error)

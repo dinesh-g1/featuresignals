@@ -44,11 +44,11 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateProjectRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "name is required")
+		httputil.Error(w, http.StatusBadRequest, "Creation blocked — the name field is missing. Include the required name in your request body.")
 		return
 	}
 	if !validateStringLength(req.Name, 255) {
@@ -79,19 +79,19 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
-	projects, err := h.store.ListProjects(r.Context(), orgID)
+	p := dto.ParsePagination(r)
+	projects, err := h.store.ListProjects(r.Context(), orgID, p.Limit, p.Offset)
 	if err != nil {
-		httputil.Error(w, http.StatusInternalServerError, "failed to list projects")
+		httputil.Error(w, http.StatusInternalServerError, "Project listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 	if projects == nil {
 		projects = []domain.Project{}
 	}
 	all := dto.ProjectSliceFromDomain(projects)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
+	total, _ := h.store.CountProjects(r.Context(), orgID)
 	links := domain.LinksForProjectsCollection()
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset, links...))
 }
 
 func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -143,11 +143,11 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateProjectRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "name is required")
+		httputil.Error(w, http.StatusBadRequest, "Creation blocked — the name field is missing. Include the required name in your request body.")
 		return
 	}
 	if !validateStringLength(req.Name, 255) {
@@ -212,11 +212,11 @@ func (h *EnvironmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateEnvironmentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "name is required")
+		httputil.Error(w, http.StatusBadRequest, "Creation blocked — the name field is missing. Include the required name in your request body.")
 		return
 	}
 	if req.Slug == "" {
@@ -249,7 +249,8 @@ func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	projectID := chi.URLParam(r, "projectID")
-	envs, err := h.store.ListEnvironments(r.Context(), projectID)
+	p := dto.ParsePagination(r)
+	envs, err := h.store.ListEnvironments(r.Context(), projectID, p.Limit, p.Offset)
 	if err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "failed to list environments")
 		return
@@ -258,10 +259,9 @@ func (h *EnvironmentHandler) List(w http.ResponseWriter, r *http.Request) {
 		envs = []domain.Environment{}
 	}
 	all := dto.EnvironmentSliceFromDomain(envs)
-	p := dto.ParsePagination(r)
-	page, total := dto.Paginate(all, p)
+	total, _ := h.store.CountEnvironmentsByProject(r.Context(), projectID)
 	links := domain.LinksForEnvironmentsCollection(projectID)
-	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(page, total, p.Limit, p.Offset, links...))
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(all, total, p.Limit, p.Offset, links...))
 }
 
 func (h *EnvironmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -381,7 +381,7 @@ func (h *EnvironmentHandler) Clone(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clone flag states from source environment
-	flagStates, err := h.store.ListFlagStatesByEnv(r.Context(), sourceEnvID)
+	flagStates, err := h.store.ListFlagStatesByEnv(r.Context(), sourceEnvID, 0, 0)
 	if err == nil {
 		for _, fs := range flagStates {
 			fs.EnvID = newEnv.ID
@@ -431,11 +431,11 @@ func (h *EnvironmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateEnvironmentRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 	if req.Name == "" {
-		httputil.Error(w, http.StatusBadRequest, "name is required")
+		httputil.Error(w, http.StatusBadRequest, "Creation blocked — the name field is missing. Include the required name in your request body.")
 		return
 	}
 	if !validateStringLength(req.Name, 100) {

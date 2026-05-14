@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/api/middleware"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
@@ -128,7 +128,7 @@ type JanitorHandler struct {
 	creditStore      domain.CreditStore
 	analysisRegistry *codeanalysis.ProviderRegistry
 	complianceStore  store.ComplianceStore
-	eventBus         *sse.ScanEventBus
+	eventBus         domain.ScanEventBus
 	tokenEncryptor   *janitor.TokenEncryptor
 	minConfidence    float64
 	logger           *slog.Logger
@@ -141,7 +141,7 @@ func NewJanitorHandler(
 	creditStore domain.CreditStore,
 	analysisRegistry *codeanalysis.ProviderRegistry,
 	complianceStore store.ComplianceStore,
-	eventBus *sse.ScanEventBus,
+	eventBus domain.ScanEventBus,
 	tokenEncryptor *janitor.TokenEncryptor,
 	minConfidence float64,
 	logger *slog.Logger,
@@ -186,14 +186,14 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	if lastTime, ok := h.lastScanTimes[orgID]; ok {
 		if time.Since(lastTime) < 5*time.Minute {
 			w.Header().Set("Retry-After", "300")
-			httputil.Error(w, http.StatusTooManyRequests, "scan rate limit exceeded. Max 1 scan per 5 minutes.")
+			httputil.Error(w, http.StatusTooManyRequests, "Survey blocked — rate limit exceeded. Maximum 1 survey per 5 minutes. Wait and try again.")
 			return
 		}
 	}
 
 	var req ScanRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -206,14 +206,14 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all repositories for this org
-	repos, err := h.janitorStore.ListRepositories(r.Context(), orgID)
+	repos, err := h.janitorStore.ListRepositories(r.Context(), orgID, 0, 0)
 	if err != nil {
-		logger.Error("failed to list repositories", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list repositories")
+		logger.Error("Repository listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Repository listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 	if len(repos) == 0 {
-		httputil.Error(w, http.StatusBadRequest, "no repositories connected. Connect a repository first.")
+		httputil.Error(w, http.StatusBadRequest, "Survey blocked — no repositories are connected. Connect a repository before running a survey.")
 		return
 	}
 
@@ -228,7 +228,7 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	bal, balErr := h.creditStore.GetCreditBalance(r.Context(), orgID, "ai_janitor")
 	if balErr != nil {
 		logger.Error("failed to check credit balance", "error", balErr)
-		httputil.Error(w, http.StatusInternalServerError, "failed to verify credits")
+		httputil.Error(w, http.StatusInternalServerError, "Credit verification failed — an unexpected error occurred. Try again or contact support.")
 		return
 	}
 	if bal.Balance < estimatedCredits {
@@ -240,15 +240,15 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get ALL flags for all projects in this org
-	projects, err := h.store.(domain.ProjectReader).ListProjects(r.Context(), orgID)
+	projects, err := h.store.(domain.ProjectReader).ListProjects(r.Context(), orgID, 0, 0)
 	if err != nil {
-		logger.Error("failed to list projects", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list projects")
+		logger.Error("Project listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Project listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 	allFlags := []domain.Flag{}
 	for _, project := range projects {
-		flags, err := h.store.ListFlags(r.Context(), project.ID)
+		flags, err := h.store.ListFlags(r.Context(), project.ID, 0, 0)
 		if err != nil {
 			logger.Warn("failed to list flags for project", "project_id", project.ID, "error", err)
 			continue
@@ -280,14 +280,14 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.janitorStore.CreateScan(r.Context(), scan); err != nil {
 		logger.Error("failed to create scan", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to initiate scan")
+		httputil.Error(w, http.StatusInternalServerError, "failed to initiate survey")
 		return
 	}
 
 	// Kick off scan processing in the background
 	go h.runScan(context.Background(), scan.ID, orgID, config, repos, allFlags, logger)
 
-	logger.Info("scan initiated", "scan_id", scan.ID, "total_flags", len(allFlags), "total_repos", len(repos))
+	logger.Info("survey initiated", "scan_id", scan.ID, "total_flags", len(allFlags), "total_repos", len(repos))
 
 	httputil.JSON(w, http.StatusAccepted, ScanResponse{
 		ScanID:    scan.ID,
@@ -474,16 +474,16 @@ func (h *JanitorHandler) CancelScan(w http.ResponseWriter, r *http.Request) {
 	scan, err := h.janitorStore.GetScan(r.Context(), scanID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "scan not found")
+			httputil.Error(w, http.StatusNotFound, "survey not found")
 			return
 		}
 		logger.Error("failed to get scan", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to cancel scan")
+		httputil.Error(w, http.StatusInternalServerError, "Survey cancellation failed — an unexpected error occurred. Try again or contact support.")
 		return
 	}
 
 	if scan.Status == "completed" || scan.Status == "cancelled" {
-		httputil.Error(w, http.StatusBadRequest, "scan is already "+scan.Status)
+		httputil.Error(w, http.StatusBadRequest, "survey is already "+scan.Status)
 		return
 	}
 
@@ -491,7 +491,7 @@ func (h *JanitorHandler) CancelScan(w http.ResponseWriter, r *http.Request) {
 		"status": "cancelled",
 	}); err != nil {
 		logger.Error("failed to cancel scan", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to cancel scan")
+		httputil.Error(w, http.StatusInternalServerError, "Survey cancellation failed — an unexpected error occurred. Try again or contact support.")
 		return
 	}
 
@@ -499,7 +499,7 @@ func (h *JanitorHandler) CancelScan(w http.ResponseWriter, r *http.Request) {
 		"scan_id": scanID,
 	})
 
-	logger.Info("scan cancelled")
+	logger.Info("survey cancelled")
 	httputil.JSON(w, http.StatusOK, map[string]string{"status": "cancelled"})
 }
 
@@ -512,11 +512,11 @@ func (h *JanitorHandler) GetScanStatus(w http.ResponseWriter, r *http.Request) {
 	scan, err := h.janitorStore.GetScan(r.Context(), scanID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			httputil.Error(w, http.StatusNotFound, "scan not found")
+			httputil.Error(w, http.StatusNotFound, "survey not found")
 			return
 		}
 		logger.Error("failed to get scan", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to retrieve scan status")
+		httputil.Error(w, http.StatusInternalServerError, "Survey status retrieval failed — an unexpected error occurred. Try again or contact support.")
 		return
 	}
 
@@ -587,6 +587,7 @@ func (h *JanitorHandler) ListStaleFlags(w http.ResponseWriter, r *http.Request) 
 	orgID := middleware.GetOrgID(r.Context())
 	logger := h.logger.With("org_id", orgID)
 	logger.Debug("listing stale flags")
+	p := dto.ParsePagination(r)
 
 	var dismissed *bool
 	filter := r.URL.Query().Get("filter")
@@ -598,7 +599,7 @@ func (h *JanitorHandler) ListStaleFlags(w http.ResponseWriter, r *http.Request) 
 		dismissed = &f
 	}
 
-	flags, err := h.janitorStore.ListStaleFlags(r.Context(), orgID, dismissed, 100)
+	flags, err := h.janitorStore.ListStaleFlags(r.Context(), orgID, dismissed, p.Limit, p.Offset)
 	if err != nil {
 		logger.Error("failed to list stale flags", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list stale flags")
@@ -606,6 +607,16 @@ func (h *JanitorHandler) ListStaleFlags(w http.ResponseWriter, r *http.Request) 
 	}
 
 	responses := make([]StaleFlagResponse, 0, len(flags))
+
+	// Batch-fetch all PRs for this org to avoid N+1.
+	allPRs, listErr := h.janitorStore.ListJanitorPRs(r.Context(), orgID, "", 0, 0)
+	prByFlagKey := make(map[string]*store.JanitorPR, len(allPRs))
+	if listErr == nil {
+		for i := range allPRs {
+			prByFlagKey[allPRs[i].FlagKey] = &allPRs[i]
+		}
+	}
+
 	for _, f := range flags {
 		resp := StaleFlagResponse{
 			Key:            f.FlagKey,
@@ -621,25 +632,18 @@ func (h *JanitorHandler) ListStaleFlags(w http.ResponseWriter, r *http.Request) 
 			LLMProvider:    f.LLMProvider,
 		}
 
-		// Look up associated PR for this flag
-		prs, listErr := h.janitorStore.ListJanitorPRs(r.Context(), orgID, "")
-		if listErr == nil {
-			for _, pr := range prs {
-				if pr.FlagKey == f.FlagKey {
-					resp.PRUrl = pr.PRURL
-					resp.PRStatus = pr.Status
-					break
-				}
-			}
+		// Look up associated PR for this flag from batch result
+		if pr, ok := prByFlagKey[f.FlagKey]; ok {
+			resp.PRUrl = pr.PRURL
+			resp.PRStatus = pr.Status
 		}
 
 		responses = append(responses, resp)
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"data":  responses,
-		"total": len(responses),
-	})
+	total, _ := h.janitorStore.CountStaleFlags(r.Context(), orgID, dismissed)
+	logger.Info("stale flags listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(responses, total, p.Limit, p.Offset))
 }
 
 func (h *JanitorHandler) DismissFlag(w http.ResponseWriter, r *http.Request) {
@@ -648,13 +652,13 @@ func (h *JanitorHandler) DismissFlag(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("org_id", orgID, "flag_key", flagKey)
 
 	var req DismissRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := httputil.DecodeJSON(r, &req); err != nil {
 		req.Reason = ""
 	}
 
 	if err := h.janitorStore.DismissStaleFlag(r.Context(), orgID, flagKey, req.Reason); err != nil {
-		logger.Error("failed to dismiss flag", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to dismiss flag")
+		logger.Error("Dismissal failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Dismissal failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -668,18 +672,18 @@ func (h *JanitorHandler) GeneratePR(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("org_id", orgID, "flag_key", flagKey)
 
 	var req GeneratePRRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.RepositoryID == "" {
-		httputil.Error(w, http.StatusBadRequest, "repository_id is required")
+		httputil.Error(w, http.StatusBadRequest, "PR generation blocked — the repository_id field is missing. Specify the target repository.")
 		return
 	}
 
 	// Find the stale flag record
-	flags, err := h.janitorStore.ListStaleFlags(r.Context(), orgID, nil, 100)
+	flags, err := h.janitorStore.ListStaleFlags(r.Context(), orgID, nil, 100, 0)
 	if err != nil {
 		logger.Error("failed to list stale flags", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to generate PR")
@@ -914,7 +918,7 @@ func (h *JanitorHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 
 	// Count non-dismissed stale flags
 	f := false
-	flags, err := h.janitorStore.ListStaleFlags(r.Context(), orgID, &f, 1000)
+	flags, err := h.janitorStore.ListStaleFlags(r.Context(), orgID, &f, 1000, 0)
 	if err != nil {
 		logger.Error("failed to list stale flags for stats", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to get stats")
@@ -929,7 +933,7 @@ func (h *JanitorHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Count open and merged PRs
-	prs, _ := h.janitorStore.ListJanitorPRs(r.Context(), orgID, "")
+	prs, _ := h.janitorStore.ListJanitorPRs(r.Context(), orgID, "", 0, 0)
 	openPRs := 0
 	mergedPRs := 0
 	for _, pr := range prs {
@@ -942,7 +946,7 @@ func (h *JanitorHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get last scan timestamp
-	scans, _ := h.janitorStore.ListScans(r.Context(), orgID, 1)
+	scans, _ := h.janitorStore.ListScans(r.Context(), orgID, 1, 0)
 	lastScan := ""
 	if len(scans) > 0 {
 		lastScan = scans[0].CreatedAt.Format(time.RFC3339)
@@ -987,8 +991,8 @@ func (h *JanitorHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	logger := h.logger.With("org_id", orgID)
 
 	var req UpdateConfigRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
@@ -1021,8 +1025,8 @@ func (h *JanitorHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.janitorStore.UpsertJanitorConfig(r.Context(), cfg); err != nil {
-		logger.Error("failed to update config", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to update config")
+		logger.Error("Configuration update failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Configuration update failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -1033,11 +1037,12 @@ func (h *JanitorHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 func (h *JanitorHandler) ListRepositories(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	logger := h.logger.With("org_id", orgID)
+	p := dto.ParsePagination(r)
 
-	repos, err := h.janitorStore.ListRepositories(r.Context(), orgID)
+	repos, err := h.janitorStore.ListRepositories(r.Context(), orgID, p.Limit, p.Offset)
 	if err != nil {
-		logger.Error("failed to list repositories", "error", err)
-		httputil.Error(w, http.StatusInternalServerError, "failed to list repositories")
+		logger.Error("Repository listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
+		httputil.Error(w, http.StatusInternalServerError, "Repository listing failed — an unexpected error occurred on the server. Try again or contact support.")
 		return
 	}
 
@@ -1058,10 +1063,9 @@ func (h *JanitorHandler) ListRepositories(w http.ResponseWriter, r *http.Request
 		responses = append(responses, resp)
 	}
 
-	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"data":  responses,
-		"total": len(responses),
-	})
+	total, _ := h.janitorStore.CountRepositories(r.Context(), orgID)
+	logger.Info("repositories listed", "limit", p.Limit, "offset", p.Offset, "total", total)
+	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(responses, total, p.Limit, p.Offset))
 }
 
 func (h *JanitorHandler) ConnectRepository(w http.ResponseWriter, r *http.Request) {
@@ -1069,17 +1073,17 @@ func (h *JanitorHandler) ConnectRepository(w http.ResponseWriter, r *http.Reques
 	logger := h.logger.With("org_id", orgID)
 
 	var req ConnectRepositoryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := httputil.DecodeJSON(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "Request decoding failed — the JSON body is malformed or contains unknown fields. Check your request syntax and try again.")
 		return
 	}
 
 	if req.Provider == "" {
-		httputil.Error(w, http.StatusBadRequest, "provider is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the provider field is missing. Specify the migration source provider.")
 		return
 	}
 	if req.Token == "" {
-		httputil.Error(w, http.StatusBadRequest, "token is required")
+		httputil.Error(w, http.StatusBadRequest, "Connection blocked — the token field is missing. Provide an access token for the repository provider.")
 		return
 	}
 
@@ -1120,7 +1124,7 @@ func (h *JanitorHandler) ConnectRepository(w http.ResponseWriter, r *http.Reques
 	// List repositories accessible with this token
 	remoteRepos, err := provider.ListRepositories(r.Context())
 	if err != nil {
-		logger.Error("failed to list repositories", "error", err)
+		logger.Error("Repository listing failed — an unexpected error occurred on the server. Try again or contact support.", "error", err)
 		httputil.Error(w, http.StatusInternalServerError, "failed to list repositories with this token")
 		return
 	}

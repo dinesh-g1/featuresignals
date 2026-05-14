@@ -13,7 +13,7 @@ import (
 
 type notifierMockStore struct{}
 
-func (m *notifierMockStore) ListWebhooks(ctx context.Context, orgID string) ([]domain.Webhook, error) {
+func (m *notifierMockStore) ListWebhooks(ctx context.Context, orgID string, limit, offset int) ([]domain.Webhook, error) {
 	return nil, nil
 }
 func (m *notifierMockStore) CreateWebhookDelivery(ctx context.Context, d *domain.WebhookDelivery) error {
