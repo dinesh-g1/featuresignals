@@ -68,3 +68,30 @@ export interface AgentHeartbeatResponse {
   agent_id: string;
   last_heartbeat: string;
 }
+
+// MaturityEvaluationResult is returned by POST /v1/agents/{id}/evaluate-maturity.
+export interface MaturityEvaluationResult {
+  changed: boolean;
+  new_level: MaturityLevel;
+  previous_level: MaturityLevel;
+  direction: "promoted" | "demoted" | "unchanged";
+  reason: string;
+  evaluated_at: string;
+}
+
+// ProgressionRequirement tracks a single requirement for advancing to the next level.
+export interface ProgressionRequirement {
+  label: string;
+  current: string;
+  required: string;
+  met: boolean;
+}
+
+// MaturityLevelMeta provides display metadata for a maturity level.
+export interface MaturityLevelMeta {
+  level: MaturityLevel;
+  name: string;
+  description: string;
+  color: string;
+  nextLevel: MaturityLevel | null;
+}

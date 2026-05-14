@@ -345,6 +345,101 @@ func (h *AgentRegistryHandler) ListMaturities(w http.ResponseWriter, r *http.Req
 	httputil.JSON(w, http.StatusOK, dto.NewPaginatedResponse(maturities, total, p.Limit, p.Offset))
 }
 
+// EvaluateMaturity handles POST /v1/agents/{agentID}/evaluate-maturity.
+// It runs the progression and demotion state machines against the agent's
+// current stats and updates the maturity level if a change is warranted.
+func (h *AgentRegistryHandler) EvaluateMaturity(w http.ResponseWriter, r *http.Request) {
+	logger := h.logger.With("handler", "agent_registry_evaluate_maturity")
+	orgID := middleware.GetOrgID(r.Context())
+	agentID := chi.URLParam(r, "agentID")
+
+	// Verify the agent exists and belongs to this org.
+	agent, err := h.store.GetAgent(r.Context(), orgID, agentID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusNotFound, "Agent lookup failed — no agent matches the provided ID. Verify the agent ID is correct.")
+			return
+		}
+		logger.Error("failed to verify agent for maturity evaluation", "error", err, "agent_id", agentID)
+		httputil.Error(w, http.StatusInternalServerError, "Maturity evaluation failed — an unexpected error occurred on the server. Try again or contact support.")
+		return
+	}
+
+	// Load the agent's current maturity record. Use an empty context key for
+	// the global maturity entry.
+	maturity, err := h.store.GetMaturity(r.Context(), agentID, "")
+	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+		logger.Error("failed to load maturity for evaluation", "error", err, "agent_id", agentID)
+		httputil.Error(w, http.StatusInternalServerError, "Maturity evaluation failed — an unexpected error occurred on the server. Try again or contact support.")
+		return
+	}
+
+	// If no maturity record exists yet, create a default one from the agent's
+	// embedded maturity field.
+	currentLevel := domain.MaturityL1Shadow
+	stats := domain.MaturityStats{}
+	if maturity != nil {
+		currentLevel = maturity.CurrentLevel
+		if currentLevel == 0 {
+			currentLevel = domain.MaturityL1Shadow
+		}
+		stats = maturity.Stats
+	} else if agent.Maturity.CurrentLevel != 0 {
+		currentLevel = agent.Maturity.CurrentLevel
+		stats = agent.Maturity.Stats
+	}
+
+	// Run progression and demotion evaluations.
+	progResult := domain.EvaluateProgression(stats, currentLevel)
+	demResult := domain.EvaluateDemotion(stats, currentLevel)
+
+	// Determine the effective change. Progression takes priority over demotion
+	// if both are triggered (unlikely, but defined).
+	var result domain.MaturityEvaluationResult
+	if progResult.Changed {
+		result = progResult
+	} else if demResult.Changed {
+		result = demResult
+	} else {
+		// Neither triggered — return the progression result (which has the
+		// unmet-criteria reason).
+		result = progResult
+	}
+
+	// If a change is warranted, persist the new maturity level.
+	if result.Changed {
+		newMaturity := &domain.AgentMaturity{
+			ID:           agentID + "_maturity",
+			CurrentLevel: result.NewLevel,
+			PerContext:   map[string]domain.MaturityLevel{"": result.NewLevel},
+			Stats:        stats,
+		}
+		if maturity != nil {
+			newMaturity.ID = maturity.ID
+		}
+
+		if err := h.store.UpsertMaturity(r.Context(), agentID, newMaturity); err != nil {
+			logger.Error("failed to persist maturity change", "error", err, "agent_id", agentID,
+				"direction", result.Direction, "from", result.PreviousLevel, "to", result.NewLevel)
+			httputil.Error(w, http.StatusInternalServerError, "Maturity evaluation failed — unable to persist the level change. Try again or contact support.")
+			return
+		}
+
+		logger.Info("agent maturity level changed",
+			"agent_id", agentID,
+			"direction", result.Direction,
+			"previous_level", int(result.PreviousLevel),
+			"new_level", int(result.NewLevel),
+			"reason", result.Reason,
+		)
+		if h.instr != nil {
+			h.instr.RecordAgentRegistryCreated(r.Context(), "maturity_"+result.Direction)
+		}
+	}
+
+	httputil.JSON(w, http.StatusOK, result)
+}
+
 // Ensure AgentRegistryHandler implements HasRoutes for testability.
 var _ interface{ Create(http.ResponseWriter, *http.Request) } = (*AgentRegistryHandler)(nil)
 

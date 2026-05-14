@@ -7,14 +7,15 @@ import (
 )
 
 type APIKeyResponse struct {
-	ID         string         `json:"id"`
-	KeyPrefix  string         `json:"key_prefix"`
-	Name       string         `json:"name"`
+	ID         string            `json:"id"`
+	KeyPrefix  string            `json:"key_prefix"`
+	Name       string            `json:"name"`
 	Type       domain.APIKeyType `json:"type"`
-	CreatedAt  time.Time      `json:"created_at"`
-	LastUsedAt *time.Time     `json:"last_used_at,omitempty"`
-	ExpiresAt  *time.Time     `json:"expires_at,omitempty"`
-	RevokedAt  *time.Time     `json:"revoked_at,omitempty"`
+	Scopes     []string          `json:"scopes,omitempty"`
+	CreatedAt  time.Time         `json:"created_at"`
+	LastUsedAt *time.Time        `json:"last_used_at,omitempty"`
+	ExpiresAt  *time.Time        `json:"expires_at,omitempty"`
+	RevokedAt  *time.Time        `json:"revoked_at,omitempty"`
 }
 
 func APIKeyFromDomain(k *domain.APIKey) *APIKeyResponse {
@@ -26,6 +27,7 @@ func APIKeyFromDomain(k *domain.APIKey) *APIKeyResponse {
 		KeyPrefix:  k.KeyPrefix,
 		Name:       k.Name,
 		Type:       k.Type,
+		Scopes:     k.Scopes,
 		CreatedAt:  k.CreatedAt,
 		LastUsedAt: k.LastUsedAt,
 		ExpiresAt:  k.ExpiresAt,

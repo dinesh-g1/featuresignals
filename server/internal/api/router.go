@@ -352,16 +352,22 @@ func NewRouter(
 			r.Use(jwtAuth)
 			r.Use(middleware.RateLimit(ctx, 60))
 
-			r.Post("/billing/checkout", billingH.CreateCheckout)
 			r.Get("/billing/subscription", billingH.GetSubscription)
 			r.Get("/billing/usage", billingH.GetUsage)
-			r.Post("/billing/cancel", billingH.CancelSubscription)
-			r.Post("/billing/portal", billingH.GetBillingPortalURL)
-			r.Put("/billing/gateway", billingH.UpdateGateway)
 			r.Get("/billing/credits", billingH.GetCredits)
 			r.Get("/billing/credits/balance", billingH.GetCreditBalance)
 			r.Get("/billing/credits/history", billingH.GetCreditHistory)
-			r.Post("/billing/credits/purchase", billingH.PurchaseCredits)
+
+			// Billing write ops require billing:admin scope
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireScope(domain.ScopeBillingAdmin))
+				r.Post("/billing/checkout", billingH.CreateCheckout)
+				r.Post("/billing/cancel", billingH.CancelSubscription)
+				r.Post("/billing/portal", billingH.GetBillingPortalURL)
+				r.Put("/billing/gateway", billingH.UpdateGateway)
+				r.Post("/billing/credits/purchase", billingH.PurchaseCredits)
+			})
+
 			r.Get("/onboarding", onboardingH.GetState)
 			r.Patch("/onboarding", onboardingH.UpdateState)
 		})
@@ -621,18 +627,24 @@ func NewRouter(
 				r.Put("/projects/{projectID}/environments/{envID}", envH.Update)
 				r.Post("/projects/{projectID}/environments/{envID}/clone", envH.Clone)
 
-				// Flags
-				r.Post("/projects/{projectID}/flags", flagH.Create)
-				r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
-				r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
-				r.Post("/projects/{projectID}/flags/{flagKey}/archive", flagH.Archive)
-				r.Post("/projects/{projectID}/flags/{flagKey}/restore", flagH.Restore)
+				// Flags — write operations require flag:write scope; toggle ops require flag:toggle
+					r.Group(func(r chi.Router) {
+						r.Use(middleware.RequireScope(domain.ScopeFlagWrite))
+						r.Post("/projects/{projectID}/flags", flagH.Create)
+						r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
+						r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
+						r.Post("/projects/{projectID}/flags/{flagKey}/archive", flagH.Archive)
+						r.Post("/projects/{projectID}/flags/{flagKey}/restore", flagH.Restore)
+					})
 
-				// Flag states & lifecycle operations
-				r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
-				r.Post("/projects/{projectID}/flags/{flagKey}/promote", flagH.Promote)
-				r.Post("/projects/{projectID}/flags/{flagKey}/kill", flagH.Kill)
-				r.Post("/projects/{projectID}/flags/sync-environments", flagH.SyncEnvironments)
+					// Flag states & lifecycle operations — require flag:toggle scope
+					r.Group(func(r chi.Router) {
+						r.Use(middleware.RequireScope(domain.ScopeFlagToggle))
+						r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
+						r.Post("/projects/{projectID}/flags/{flagKey}/promote", flagH.Promote)
+						r.Post("/projects/{projectID}/flags/{flagKey}/kill", flagH.Kill)
+						r.Post("/projects/{projectID}/flags/sync-environments", flagH.SyncEnvironments)
+					})
 
 				// Insights — entity inspection in evaluation context
 				r.Post("/projects/{projectID}/environments/{envID}/inspect-entity", insightsH.InspectEntity)
@@ -648,6 +660,7 @@ func NewRouter(
 					r.Patch("/agents/{agentID}", agentRegistryH.Update)
 					r.Delete("/agents/{agentID}", agentRegistryH.Delete)
 					r.Post("/agents/{agentID}/heartbeat", agentRegistryH.UpdateHeartbeat)
+					r.Post("/agents/{agentID}/evaluate-maturity", agentRegistryH.EvaluateMaturity)
 
 					// Governance Policies — Write
 					r.Post("/policies", policyH.Create)
@@ -683,16 +696,22 @@ func NewRouter(
 				r.Delete("/projects/{projectID}", projectH.Delete)
 				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
 
-				// API Key management
-				r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
-				r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
-				r.Post("/api-keys/{keyID}/rotate", apiKeyH.Rotate)
+				// API Key management — requires apikey:write scope
+					r.Group(func(r chi.Router) {
+						r.Use(middleware.RequireScope(domain.ScopeAPIKeyWrite))
+						r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
+						r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
+						r.Post("/api-keys/{keyID}/rotate", apiKeyH.Rotate)
+					})
 
-				// Team / Member management
-				r.Post("/members/invite", teamH.Invite)
-				r.Put("/members/{memberID}", teamH.UpdateRole)
-				r.Delete("/members/{memberID}", teamH.Remove)
-				r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
+				// Team / Member management — write ops require team:write scope
+					r.Group(func(r chi.Router) {
+						r.Use(middleware.RequireScope(domain.ScopeTeamWrite))
+						r.Post("/members/invite", teamH.Invite)
+						r.Put("/members/{memberID}", teamH.UpdateRole)
+						r.Delete("/members/{memberID}", teamH.Remove)
+						r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
+					})
 
 				// Metrics — evaluation & impression analytics
 				r.Get("/metrics/evaluations", metricsH.Summary)

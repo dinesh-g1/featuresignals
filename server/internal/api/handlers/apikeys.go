@@ -48,9 +48,10 @@ func generateAPIKey(keyType domain.APIKeyType) (string, string, string) {
 }
 
 type CreateAPIKeyRequest struct {
-	Name          string `json:"name"`
-	Type          string `json:"type"` // "server" or "client"
-	ExpiresInDays *int   `json:"expires_in_days,omitempty"`
+	Name          string   `json:"name"`
+	Type          string   `json:"type"` // "server" or "client"
+	ExpiresInDays *int     `json:"expires_in_days,omitempty"`
+	Scopes        []string `json:"scopes,omitempty"` // must be subset of user's role scopes
 }
 
 func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +79,11 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 	rawKey, keyHash, keyPrefix := generateAPIKey(keyType)
 
 	orgID := middleware.GetOrgID(r.Context())
+	role := middleware.GetRole(r.Context())
+
+	// Validate and normalize scopes — must be subset of user's role scopes.
+	scopes := validateAndNormalizeScopes(req.Scopes, role)
+
 	apiKey := &domain.APIKey{
 		EnvID:     envID,
 		OrgID:     orgID,
@@ -85,6 +91,7 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		KeyPrefix: keyPrefix,
 		Name:      req.Name,
 		Type:      keyType,
+		Scopes:    scopes,
 	}
 	if req.ExpiresInDays != nil && *req.ExpiresInDays > 0 {
 		exp := time.Now().Add(time.Duration(*req.ExpiresInDays) * 24 * time.Hour)
@@ -103,6 +110,7 @@ func (h *APIKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		"key_prefix": apiKey.KeyPrefix,
 		"name":       apiKey.Name,
 		"type":       apiKey.Type,
+		"scopes":     apiKey.Scopes,
 		"env_id":     apiKey.EnvID,
 		"created_at": apiKey.CreatedAt,
 	}
@@ -257,4 +265,29 @@ func (h *APIKeyHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// validateAndNormalizeScopes ensures the requested scopes are a subset of the
+// user's role scopes. If no scopes are requested, returns nil (inherits role scopes).
+// Invalid scopes are silently dropped; unknown scopes are rejected.
+func validateAndNormalizeScopes(requested []string, role string) []string {
+	if len(requested) == 0 {
+		return nil
+	}
+
+	// Build allowlist from role scopes.
+	allowed := make(map[domain.Scope]bool)
+	for _, s := range domain.RoleScopes[role] {
+		allowed[s] = true
+	}
+
+	result := make([]string, 0, len(requested))
+	for _, s := range requested {
+		scope := domain.Scope(s)
+		if allowed[scope] {
+			result = append(result, s)
+		}
+		// Unknown/invalid scopes are silently dropped — never add scopes the role doesn't have.
+	}
+	return result
 }

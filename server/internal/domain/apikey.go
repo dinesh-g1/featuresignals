@@ -23,6 +23,7 @@ type APIKey struct {
 	KeyPrefix  string     `json:"key_prefix" db:"key_prefix"`
 	Name       string     `json:"name" db:"name"`
 	Type       APIKeyType `json:"type" db:"type"`
+	Scopes     []string   `json:"scopes,omitempty" db:"scopes"`
 	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
 	LastUsedAt     *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
 	RevokedAt      *time.Time `json:"revoked_at,omitempty" db:"revoked_at"`
