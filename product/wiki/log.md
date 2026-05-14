@@ -1,3 +1,30 @@
+## [2026-05-14 20:20] infrastructure | ClickHouse simplification — drop PG eval_events, no-op store, fresh install strategy
+
+### Context
+MIP-ENFORCED v1.2.1 task: Simplify ClickHouse setup with no dual-write and no migration. FeatureSignals has zero customers, so there is no data to migrate. Drop the PostgreSQL eval_events table, convert the PG eval event store to no-ops, and update CLICKHOUSE_SCHEMA.md §7 to reflect a fresh install deployment strategy.
+
+### Changes
+- **Migration 000110_drop_eval_events** — drops `eval_events` table from PostgreSQL (up: `DROP TABLE IF EXISTS`, down: full table + index recreation from 000106)
+- **store/postgres/eval_event_store.go** — replaced all 6 methods with no-op implementations (InsertEvalEvent, InsertEvalEventBatch, CountEvaluations, CountEvaluationsByVariant, GetEvaluationLatency, GetEvaluationVolume). All return empty/zero data with comments referencing CLICKHOUSE_SCHEMA.md.
+- **store/postgres/eval_event_store_test.go** — deleted (integration tests required the PG table)
+- **store/postgres/store_test.go** — removed `eval_events` from cleanup table list
+- **CLICKHOUSE_SCHEMA.md** — §7 replaced with "Deployment Strategy (Fresh Install — Zero Customers)"; §5.1 diagram removed PostgreSQL fallback branch; §5.3 CLICKHOUSE_ENABLED description updated; §9.1 Phase 2 comment removed
+
+### Files changed
+- `server/internal/migrate/migrations/000110_drop_eval_events.up.sql`
+- `server/internal/migrate/migrations/000110_drop_eval_events.down.sql`
+- `server/internal/store/postgres/eval_event_store.go`
+- `server/internal/store/postgres/eval_event_store_test.go` (deleted)
+- `server/internal/store/postgres/store_test.go`
+- `product/wiki/private/CLICKHOUSE_SCHEMA.md`
+- `product/wiki/log.md`
+
+### Verification
+- `go build ./...` — PASS
+- `go vet ./...` — PASS
+- `go test ./internal/api/handlers/...` — PASS (17.9s)
+- Handler tests use mock stores, unaffected by PG store no-op change
+
 ## [2026-05-23 01:00] governance | P0 Gap Analysis Finalized — all 22 items addressed, 0 GAP
 
 ### Context

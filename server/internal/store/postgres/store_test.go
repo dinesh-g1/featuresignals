@@ -95,10 +95,9 @@ func cleanup(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 	for _, table := range []string{
-		"abm_track_events",
-		"abm_behaviors",
-		"eval_events",
-		"agent_maturity",
+			"abm_track_events",
+			"abm_behaviors",
+			"agent_maturity",
 		"agents",
 		"governance_policies",
 		"audit_logs", "env_permissions", "flag_states", "api_keys",
