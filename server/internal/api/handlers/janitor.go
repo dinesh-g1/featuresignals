@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -182,11 +184,17 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 	logger := h.logger.With("org_id", orgID)
 
-	// Rate limit: 1 scan per 5 minutes per org
+	// Rate limit: configurable cooldown between scans per org.
+	// Default: 30 seconds for development, 5 minutes for production.
+	scanCooldown := 30 * time.Second
+	if os.Getenv("ENVIRONMENT") == "production" {
+		scanCooldown = 5 * time.Minute
+	}
 	if lastTime, ok := h.lastScanTimes[orgID]; ok {
-		if time.Since(lastTime) < 5*time.Minute {
-			w.Header().Set("Retry-After", "300")
-			httputil.Error(w, http.StatusTooManyRequests, "Survey blocked — rate limit exceeded. Maximum 1 survey per 5 minutes. Wait and try again.")
+		if time.Since(lastTime) < scanCooldown {
+			retrySec := int(scanCooldown.Seconds())
+			w.Header().Set("Retry-After", strconv.Itoa(retrySec))
+			httputil.Error(w, http.StatusTooManyRequests, fmt.Sprintf("Survey blocked — rate limit exceeded. Maximum 1 survey per %d seconds. Wait and try again.", retrySec))
 			return
 		}
 	}
