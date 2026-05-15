@@ -593,3 +593,88 @@ export interface ApprovalResponse {
   decided_at?: string;
   created_at: string;
 }
+
+// ── IncidentFlag Types ─────────────────────────────────────────────
+
+export interface ActiveAlert {
+  flag_key: string;
+  alert_type: string;
+  severity: "critical" | "warning" | "info";
+  message: string;
+  detected_at: string;
+}
+
+export interface RecentCorrelation {
+  correlation_id: string;
+  flag_key: string;
+  correlation_score: number;
+  correlated_at: string;
+  was_remediated: boolean;
+}
+
+export interface MonitorResponse {
+  overall_health: "healthy" | "degraded" | "critical";
+  flags_under_monitoring: number;
+  active_alerts: ActiveAlert[];
+  recent_correlations: RecentCorrelation[];
+}
+
+export interface CorrelatedChange {
+  flag_key: string;
+  change_type: string;
+  changed_at: string;
+  correlation_score: number;
+  was_reverted: boolean;
+}
+
+export interface CorrelateResponse {
+  id: string;
+  incident_window: {
+    started_at: string;
+    ended_at?: string;
+  };
+  correlated_changes: CorrelatedChange[];
+  total_flags_changed: number;
+  highest_correlation: number;
+}
+
+export interface RemediateResponse {
+  remediation_id: string;
+  flag_key: string;
+  action: "pause" | "rollback" | "kill";
+  status: string;
+  applied_at: string;
+  previous_state: Record<string, unknown>;
+}
+
+// ── Impact Analyzer Types ──────────────────────────────────────────
+
+export interface ImpactReportResponse {
+  report_id: string;
+  flag_key: string;
+  business_impact: "positive" | "negative" | "neutral";
+  cost_attribution: number;
+  metrics_summary: {
+    total_evaluations: number;
+    avg_latency_us: number;
+    error_rate: number;
+  };
+  recommendations: string[];
+  generated_at: string;
+}
+
+export interface TopInsight {
+  insight: string;
+  confidence: number;
+}
+
+export interface OrgLearningsResponse {
+  total_flags_analyzed: number;
+  cleanup_candidates: number;
+  stale_flags: number;
+  flags_without_owners: number;
+  avg_risk_score: number;
+  avg_time_to_full_rollout_hours: number;
+  top_insights: TopInsight[];
+  generated_at: string;
+}

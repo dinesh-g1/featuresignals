@@ -18,6 +18,7 @@ import type {
   Code2FlagReference,
   Code2FlagSpec,
   CompareTargetsResult,
+  CorrelateResponse,
   CreateApprovalPayload,
   EnvComparisonResponse,
   TargetInput,
@@ -29,9 +30,13 @@ import type {
   Flag,
   FlagInsight,
   FlagState,
+  ImpactReportResponse,
   InspectTargetResult,
   LoginResponse,
+  MonitorResponse,
+  OrgLearningsResponse,
   RefreshResponse,
+  RemediateResponse,
   OnboardingState,
   OrgMember,
   EnvPermission,
@@ -1353,6 +1358,67 @@ export const api = {
         token,
       }),
   },
+
+  // ── IncidentFlag ─────────────────────────────────────────────
+
+  incident: {
+    /** Get active monitoring status */
+    getMonitor: (token: string, projectId: string) =>
+      request<MonitorResponse>(
+        `/v1/incidentflag/monitor?project_id=${projectId}`,
+        { token },
+      ),
+
+    /** Correlate incident with flag changes */
+    correlate: (
+      token: string,
+      body: {
+        incident_started_at: string;
+        incident_ended_at?: string;
+        services_affected?: string[];
+        env_id?: string;
+      },
+    ) =>
+      request<CorrelateResponse>(`/v1/incidentflag/correlate`, {
+        method: "POST",
+        body,
+        token,
+      }),
+
+    /** Auto-remediate (pause / rollback / kill) */
+    remediate: (
+      token: string,
+      body: {
+        flag_key: string;
+        env_id: string;
+        action: "pause" | "rollback" | "kill";
+        correlation_id?: string;
+        reason?: string;
+      },
+    ) =>
+      request<RemediateResponse>(`/v1/incidentflag/remediate`, {
+        method: "POST",
+        body,
+        token,
+      }),
+  },
+
+  // ── Impact Analyzer ──────────────────────────────────────────
+
+  impact: {
+    /** Get impact report for a specific flag */
+    getReport: (token: string, flagKey: string) =>
+      request<ImpactReportResponse>(`/v1/impact/report/${flagKey}`, {
+        token,
+      }),
+
+    /** Get organization-wide learning summary */
+    getLearnings: (token: string, projectId: string) =>
+      request<OrgLearningsResponse>(
+        `/v1/impact/learnings?project_id=${projectId}`,
+        { token },
+      ),
+  },
 };
 
 // ── Code2Flag Types (re-exported from types.ts) ─────────────
@@ -1362,6 +1428,25 @@ export type {
   Code2FlagImplementation,
   Code2FlagReference,
   Code2FlagSpec,
+} from "./types";
+
+// ── IncidentFlag Types ───────────────────────────────────────
+
+export type {
+  ActiveAlert,
+  RecentCorrelation,
+  MonitorResponse,
+  CorrelatedChange,
+  CorrelateResponse,
+  RemediateResponse,
+} from "./types";
+
+// ── Impact Analyzer Types ────────────────────────────────────
+
+export type {
+  ImpactReportResponse,
+  TopInsight,
+  OrgLearningsResponse,
 } from "./types";
 
 // ── AI Janitor Types ──────────────────────────────────────────

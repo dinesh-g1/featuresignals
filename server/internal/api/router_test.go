@@ -443,33 +443,35 @@ func newTestRouter(t *testing.T) http.Handler {
 	t.Cleanup(cancel)
 
 	return api.NewRouter(
-		ctx,
-		store,
-		jwtMgr,
-		evalCache,
-		engine,
-		sseServer,
-		logger,
-		metricsCollector,
-		otelInstruments,
-		nil, // governancePipeline (not needed for router tests)
-		api.BillingConfig{Registry: payment.NewRegistry()},
-		noopOTPEmail{},
-		"http://localhost:8080",
-		"http://localhost:3000",
-		statusH,
-		"cloud",
-		false,
-		true,
-		nil,
-		nil,
-		nil,
-		nil,
-		"",
-		nil,
-		nil,
-		nil,
-	)
+			ctx,
+			store,
+			jwtMgr,
+			evalCache,
+			engine,
+			sseServer,
+			logger,
+			metricsCollector,
+			otelInstruments,
+			nil, // governancePipeline (not needed for router tests)
+			api.BillingConfig{Registry: payment.NewRegistry()},
+			noopOTPEmail{},
+			"http://localhost:8080",
+			"http://localhost:3000",
+			statusH,
+			"cloud",
+			false,
+			true,
+			nil,
+			nil,
+			nil,
+			nil,
+			"",
+			nil,
+			nil,
+			nil,
+			nil, // incHandler
+			nil, // impHandler
+		)
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────

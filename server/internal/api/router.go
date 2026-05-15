@@ -73,6 +73,8 @@ func NewRouter(
 		janitorH *handlers.JanitorHandler,
 		c2fHandler *handlers.Code2FlagHandler,
 		pflHandler *handlers.PreflightHandler,
+		incHandler *handlers.IncidentHandler,
+		impHandler *handlers.ImpactHandler,
 	) http.Handler {
 	r := chi.NewRouter()
 
@@ -900,6 +902,42 @@ func NewRouter(
 				r.Get("/assess/{assessmentID}", pflHandler.GetAssessment)
 				r.Post("/approval", pflHandler.RequestApproval)
 				r.Get("/approval/{approvalID}", pflHandler.GetApproval)
+			})
+		})
+	}
+
+	// ═══════════════════════════════════════════════════════════════════
+	// IncidentFlag — Incident Correlation & Auto-Remediation (Stage 3)
+	// ═══════════════════════════════════════════════════════════════════
+	//
+	// IncidentFlag correlates production incidents with flag changes and
+	// provides automated remediation (pause/rollback/kill). Admin +
+	// developer access.
+	if incHandler != nil {
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Use(middleware.RequireRole(writers...))
+			r.Route("/v1/incidentflag", func(r chi.Router) {
+				r.Get("/monitor", incHandler.GetMonitor)
+				r.Post("/correlate", incHandler.Correlate)
+				r.Post("/remediate", incHandler.Remediate)
+			})
+		})
+	}
+
+	// ═══════════════════════════════════════════════════════════════════
+	// Impact Analyzer — Impact Reports & Org Learning (Stage 3)
+	// ═══════════════════════════════════════════════════════════════════
+	//
+	// Impact Analyzer provides post-rollout impact measurement, cost
+	// attribution, and organizational learning. Admin + developer access.
+	if impHandler != nil {
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Use(middleware.RequireRole(writers...))
+			r.Route("/v1/impact", func(r chi.Router) {
+				r.Get("/report/{flagKey}", impHandler.GetImpactReport)
+				r.Get("/learnings", impHandler.GetOrgLearnings)
 			})
 		})
 	}

@@ -1,3 +1,96 @@
+## [2026-05-24 03:00] implementation | IncidentFlag + Impact Analyzer — Dashboard Pages, API Client, Navigation
+
+### Context
+MIP-ENFORCED v1.2.0 task: Create the IncidentFlag and Impact Analyzer dashboard pages with full state handling, API client methods, TypeScript types, and navigation links. Follows the existing Preflight page pattern with all 5 states (loading, empty, error, success, not found).
+
+### Files created (2 files)
+- `dashboard/src/app/(app)/projects/[projectId]/incidents/page.tsx` — IncidentFlag monitoring dashboard: health banner, stat cards, active alerts, recent correlations, correlate form, remediation dialog
+- `dashboard/src/app/(app)/projects/[projectId]/impact/page.tsx` — Impact Analyzer dashboard: org learnings, stat cards, insights grid, flag impact reports table with filtering
+
+### Files modified (3 files)
+- `dashboard/src/lib/api.ts` — Added `incident` (getMonitor, correlate, remediate) and `impact` (getReport, getLearnings) API methods; added type imports and re-exports
+- `dashboard/src/lib/types.ts` — Added 10 new interfaces: MonitorResponse, ActiveAlert, RecentCorrelation, CorrelateResponse, CorrelatedChange, RemediateResponse, ImpactReportResponse, TopInsight, OrgLearningsResponse
+- `dashboard/src/components/nav-list.tsx` — Added Incidents (ShieldCheckIcon) and Impact (TrendingUpIcon) to Power Tools nav group
+
+### Architecture
+- Pages follow MIP v1.2.0 pattern: Suspense wrapper → Inner component with 5 states
+- All styling uses `var(--signal-*)` design tokens — zero hardcoded hex colors
+- Dark mode support via `dark:` prefix throughout
+- Accessibility: aria-labels, role attributes, semantic HTML, keyboard-navigable
+- Mobile-first responsive: single-column → multi-column grids
+- StatCard components for metrics, Card components for sections, Badge for status
+- Correlate form with datetime-local inputs, remediation dialog with pause/rollback/kill actions
+- Impact page loads flags then fetches per-flag reports sequentially
+
+### Verification
+- `npx tsc --noEmit` — PASS (0 errors)
+- `npm run lint` — PASS (0 errors, 0 warnings)
+
+## [2026-05-24 02:45] implementation | IncidentFlag + Impact Analyzer — Handlers, DTOs, Router, Main Wiring
+
+### Context
+MIP-ENFORCED v1.2.0 task: Create handlers, DTOs, router registration, and main.go wiring for both Stage 3 IncidentFlag and Impact Analyzer products. This completes the backend API layer for both products (L3 of Definition of Done).
+
+### Files created (6 files)
+- `server/internal/api/dto/incident.go` — MonitorResponse, CorrelateRequest/Response, RemediateRequest/Response DTOs
+- `server/internal/api/dto/impact.go` — ImpactReportResponse, OrgLearningsResponse DTOs
+- `server/internal/api/handlers/incident.go` — IncidentHandler: GetMonitor, Correlate, Remediate (3 endpoints, each ≤40 lines)
+- `server/internal/api/handlers/impact.go` — ImpactHandler: GetImpactReport, GetOrgLearnings (2 endpoints)
+- `server/internal/api/handlers/incident_test.go` — 13 tests: monitor (3), correlate (3), remediate (7)
+- `server/internal/api/handlers/impact_test.go` — 8 tests: report (4), learnings (3), edge case (1)
+
+### Files modified (3 files)
+- `server/internal/api/router.go` — Added incHandler + impHandler params; registered /v1/incidentflag/* and /v1/impact/* routes
+- `server/internal/api/router_test.go` — Updated newTestRouter with nil params for new handlers
+- `server/cmd/server/main.go` — Wired incStore, impStore, incHandler, impHandler
+
+### Architecture
+- Handlers follow ISP: narrowest interfaces per handler (IncidentReader/Writer, ImpactReader/Writer, FlagReader, EnvironmentReader, AuditWriter, Code2FlagReader)
+- Mock stores follow existing patterns in code2flag_test.go and preflight_test.go
+- All handlers ≤40 lines (rule enforcement)
+- Audit entries written as tamper-evident BeforeState snapshots
+- On-the-fly report/learning generation when no persisted record exists (graceful fallback)
+
+### Verification
+- `go build ./...` — passes
+- `go vet ./...` — passes
+- `go test ./internal/api/handlers/... -race -count=1 -run "Incident|Impact"` — 21 tests PASS
+- `go test ./internal/api/... -race -count=1` — All existing tests PASS
+- `go test ./internal/store/postgres/... -race -count=1 -run "Incident|Impact"` — 23 tests PASS
+
+## [2026-05-24 02:15] implementation | IncidentFlag + Impact Analyzer — Domain Types, Store, Migrations
+
+### Context
+MIP-ENFORCED v1.2.0 task: Create domain types, store implementations, and migrations for both Stage 3 IncidentFlag and Impact Analyzer products in one sweep. IncidentFlag (Steps OBSERVE→DECIDE): incident correlation + auto-remediation. Impact Analyzer (Steps ANALYZE→LEARN): impact reports, cost attributions, org learnings.
+
+### Files created (8 files)
+- `server/internal/domain/incident.go` — IncidentCorrelation, AutoRemediation types, constants, IncidentReader/IncidentWriter interfaces
+- `server/internal/domain/impact.go` — ImpactReport, CostAttribution, OrgLearning types, constants, ImpactReader/ImpactWriter interfaces
+- `server/internal/migrate/migrations/000113_incident_impact_tables.up.sql` — 5 tables: incident_correlations, auto_remediations, impact_reports, cost_attributions, org_learnings; all with FK indexes, partial indexes, tenant isolation
+- `server/internal/migrate/migrations/000113_incident_impact_tables.down.sql` — Reverse order DROP
+- `server/internal/store/postgres/incident_store.go` — IncidentStore implementing IncidentReader + IncidentWriter; column allowlists, parameterized queries, wrapNotFound/wrapConflict
+- `server/internal/store/postgres/impact_store.go` — ImpactStore implementing ImpactReader + ImpactWriter; same patterns
+- `server/internal/store/postgres/incident_store_test.go` — 12 tests: CRUD, list/count, not found, tenant isolation, env FK, update column allowlist, correlation FK
+- `server/internal/store/postgres/impact_store_test.go` — 11 tests: CRUD, list/count, get latest, not found, tenant isolation, default currency, org learning list
+
+### Files modified (1 file)
+- `server/internal/store/postgres/store_test.go` — Added 5 new tables to cleanup() function
+
+### Architecture
+- Standalone stores (like PreflightStore, Code2FlagStore) — not embedded in main Store aggregate
+- All 5 tables use UUID PKs, org_id for tenant isolation, created_at/updated_at
+- Indexes for org-scoped queries, partial indexes for nullable FK columns, covering indexes for GetLatest patterns
+- Column allowlists prevent SQL injection in dynamic UPDATE operations
+
+### PRS Requirement IDs
+- FS-S3-INC-* (IncidentFlag — OBSERVE→DECIDE)
+- FS-S3-IA-* (Impact Analyzer — ANALYZE→LEARN)
+
+### Verification
+- `go build ./...` — passes
+- `go vet ./...` — passes
+- `go test ./internal/store/postgres/... -race -count=1 -run "Incident|Impact"` — 23 tests PASS (12 incident + 11 impact)
+
 ## [2026-05-24 01:30] implementation | Preflight Dashboard Pages + Backend List Endpoint — Stage 3 Preflight complete
 
 ### Context

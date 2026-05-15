@@ -597,11 +597,19 @@ func main() {
 	pflStore := postgres.NewPreflightStore(pool, logger)
 	pflHandler := handlers.NewPreflightHandler(pflStore, pflStore, store, store, c2fStore, logger)
 
+	// ── IncidentFlag ───────────────────────────────────────────
+	incStore := postgres.NewIncidentStore(pool, logger)
+	incHandler := handlers.NewIncidentHandler(incStore, incStore, store, store, store, logger)
+
+	// ── Impact Analyzer ────────────────────────────────────────
+	impStore := postgres.NewImpactStore(pool, logger)
+	impHandler := handlers.NewImpactHandler(impStore, impStore, store, c2fStore, logger)
+
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, governancePipeline, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler, pflHandler)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler, pflHandler, incHandler, impHandler)
 
 	// Server
 	srv := &http.Server{

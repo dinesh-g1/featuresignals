@@ -24,6 +24,7 @@ import {
   HeartIcon,
   CheckListIcon,
   SearchIcon,
+  ShieldCheckIcon,
   SparklesIcon,
   ChevronDownIcon,
   TeamIcon,
@@ -115,6 +116,8 @@ const insights: NavItemDef[] = [
 const powerTools: NavItemDef[] = [
   { href: path("/discover"), label: "Discover", icon: SearchIcon },
   { href: path("/preflight"), label: "Preflight", icon: RocketIcon },
+  { href: path("/incidents"), label: "Incidents", icon: ShieldCheckIcon },
+  { href: path("/impact"), label: "Impact", icon: TrendingUpIcon },
   { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
   { href: path("/agents"), label: "Agents", icon: BrainIcon },
   { href: path("/abm"), label: "Agent Behaviors", icon: BotIcon },
