@@ -160,8 +160,8 @@ func (h *Code2FlagHandler) CreateSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.FlagKey == "" || req.RepoName == "" {
-		httputil.Error(w, http.StatusBadRequest, "flag_key and repo_name are required")
+	if req.FlagKey == "" || req.RepoName == "" || req.ProjectID == "" {
+		httputil.Error(w, http.StatusBadRequest, "flag_key, repo_name, and project_id are required")
 		return
 	}
 
@@ -190,7 +190,7 @@ func (h *Code2FlagHandler) CreateSpec(w http.ResponseWriter, r *http.Request) {
 	gf := &domain.GeneratedFlag{
 		ID:               uuid.NewString(),
 		OrgID:            orgID,
-		ProjectID:        "", // populated when flag is created in a specific project
+		ProjectID:        req.ProjectID,
 		Key:              req.FlagKey,
 		Name:             flagName,
 		Description:      fmt.Sprintf("Auto-generated flag from %d scan results", len(refs)),
@@ -231,13 +231,13 @@ func (h *Code2FlagHandler) CreateImplementation(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if req.FlagKey == "" || req.RepoName == "" || req.Language == "" || req.FilePath == "" {
-		httputil.Error(w, http.StatusBadRequest, "flag_key, repo_name, language, and file_path are required")
+	if req.FlagKey == "" || req.RepoName == "" || req.ProjectID == "" || req.Language == "" || req.FilePath == "" {
+		httputil.Error(w, http.StatusBadRequest, "flag_key, repo_name, project_id, language, and file_path are required")
 		return
 	}
 
 	// Find the generated flag by key (list and filter in-memory)
-	gfs, err := h.reader.ListGeneratedFlags(r.Context(), orgID, "", 200, 0)
+	gfs, err := h.reader.ListGeneratedFlags(r.Context(), orgID, req.ProjectID, 200, 0)
 	if err != nil {
 		logger.Error("failed to list generated flags", "error", err, "org_id", orgID)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")

@@ -237,7 +237,8 @@ func (h *ImpactHandler) generateBasicReport(flagKey string, flag *domain.Flag) *
 // generateBasicLearning creates a minimal org learning when none exists.
 func (h *ImpactHandler) generateBasicLearning(orgID string) *dto.OrgLearningsResponse {
 	// Count total flags in the org to populate basic metrics
-	totalFlags, err := h.flagReader.CountFlagsWithFilter(nil, orgID, "", "")
+	ctx := context.Background()
+	totalFlags, err := h.flagReader.CountFlagsWithFilter(ctx, orgID, "", "")
 	if err != nil || totalFlags == 0 {
 		return &dto.OrgLearningsResponse{
 			TotalFlagsAnalyzed:       0,

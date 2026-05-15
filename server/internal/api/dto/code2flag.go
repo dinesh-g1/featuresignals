@@ -30,6 +30,7 @@ type ListReferencesResponse struct {
 type CreateSpecRequest struct {
 	FlagKey    string   `json:"flag_key"`
 	RepoName   string   `json:"repo_name"`
+	ProjectID  string   `json:"project_id"`
 	References []string `json:"references,omitempty"`
 }
 
@@ -49,6 +50,7 @@ type CreateSpecResponse struct {
 type CreateImplementRequest struct {
 	FlagKey    string `json:"flag_key"`
 	RepoName   string `json:"repo_name"`
+	ProjectID  string `json:"project_id"`
 	Language   string `json:"language"`
 	FilePath   string `json:"file_path"`
 	LineNumber int    `json:"line_number"`

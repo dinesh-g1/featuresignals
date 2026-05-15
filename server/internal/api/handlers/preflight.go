@@ -156,9 +156,7 @@ func (h *PreflightHandler) Assess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now().UTC()
-	assessmentID := uuid.NewString()
 	report := &domain.PreflightReport{
-		ID:               assessmentID,
 		OrgID:            orgID,
 		FlagKey:          req.FlagKey,
 		FlagID:           flag.ID,
@@ -178,7 +176,7 @@ func (h *PreflightHandler) Assess(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := dto.AssessResponse{
-		AssessmentID:     assessmentID,
+		AssessmentID:     report.ID,
 		FlagKey:          req.FlagKey,
 		RiskScore:        riskScore,
 		ImpactSummary:    impactSummary,

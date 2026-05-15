@@ -27,7 +27,7 @@ type ActiveAlert struct {
 
 // CorrelationSummary is a compact representation of a recent incident correlation.
 type CorrelationSummary struct {
-	ID                 string  `json:"id"`
+	ID                 string  `json:"correlation_id"`
 	IncidentStartedAt  string  `json:"incident_started_at"`
 	TotalFlagsChanged  int     `json:"total_flags_changed"`
 	HighestCorrelation float64 `json:"highest_correlation"`

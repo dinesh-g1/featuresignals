@@ -530,7 +530,7 @@ func TestCode2FlagHandler_CreateSpec_Success(t *testing.T) {
 
 	sr := store.seedScanResult(orgID, projID, domain.ScanResultStatusUnreviewed, "myapp/web", 0.92)
 
-	body := fmt.Sprintf(`{"flag_key":"dark-mode","repo_name":"myapp/web","references":["%s"]}`, sr.ID)
+	body := fmt.Sprintf(`{"flag_key":"dark-mode","repo_name":"myapp/web","project_id":"proj-1","references":["%s"]}`, sr.ID)
 	r := httptest.NewRequest("POST", "/v1/code2flag/spec", strings.NewReader(body))
 	r = requestWithOrgID(r, orgID)
 	r.Header.Set("Content-Type", "application/json")
@@ -607,7 +607,7 @@ func TestCode2FlagHandler_CreateImplementation_Success(t *testing.T) {
 
 	store.seedGeneratedFlag(orgID, "dark-mode", "boolean", domain.GeneratedFlagStatusProposed)
 
-	body := `{"flag_key":"dark-mode","repo_name":"myapp/web","language":"typescript","file_path":"src/features.ts","line_number":42}`
+	body := `{"flag_key":"dark-mode","repo_name":"myapp/web","project_id":"proj-1","language":"typescript","file_path":"src/features.ts","line_number":42}`
 	r := httptest.NewRequest("POST", "/v1/code2flag/implement", strings.NewReader(body))
 	r = requestWithOrgID(r, orgID)
 	r.Header.Set("Content-Type", "application/json")
