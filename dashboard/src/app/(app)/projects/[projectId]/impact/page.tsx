@@ -397,7 +397,10 @@ function ImpactInner() {
                             : "—"}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-[var(--signal-fg-secondary)] max-w-[300px] truncate">
-                          {report && report.recommendations.length > 0
+                          {report &&
+                          report.recommendations &&
+                          Array.isArray(report.recommendations) &&
+                          report.recommendations.length > 0
                             ? report.recommendations[0]
                             : "—"}
                         </TableCell>

@@ -108,15 +108,7 @@ function HealthDot({ health }: { health?: "healthy" | "stale" | "unused" }) {
   const config = HEALTH_CONFIG[health];
   return (
     <span
-      className="inline-block h-2 w-2 rounded-full"
-      style={{
-        backgroundColor:
-          config.color === "bg-emerald-500"
-            ? "#10b981"
-            : config.color === "bg-amber-500"
-              ? "#f59e0b"
-              : "#ef4444",
-      }}
+      className={cn("inline-block h-2 w-2 rounded-full", config.color)}
       title={config.label}
       aria-label={config.label}
     />

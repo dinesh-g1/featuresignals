@@ -95,6 +95,10 @@ func (h *ImpactHandler) GetImpactReport(w http.ResponseWriter, r *http.Request) 
 	if report != nil {
 		// Return the existing report
 		costBreakdown := h.fetchCostBreakdown(r.Context(), orgID, flagKey)
+		recs := report.Recommendations
+		if len(recs) == 0 || string(recs) == "null" {
+			recs = json.RawMessage("[]")
+		}
 
 		httputil.JSON(w, http.StatusOK, dto.ImpactReportResponse{
 			FlagKey:         report.FlagKey,
@@ -102,7 +106,7 @@ func (h *ImpactHandler) GetImpactReport(w http.ResponseWriter, r *http.Request) 
 			MetricsSnapshot: report.MetricsSnapshot,
 			BusinessImpact:  report.BusinessImpact,
 			CostAttribution: report.CostAttribution,
-			Recommendations: report.Recommendations,
+			Recommendations: recs,
 			GeneratedAt:     report.GeneratedAt.Format(time.RFC3339),
 			CostBreakdown:   costBreakdown,
 		})
@@ -135,11 +139,13 @@ func (h *ImpactHandler) GetImpactReport(w http.ResponseWriter, r *http.Request) 
 		// Non-fatal: still return the generated report
 	}
 
+	emptyRecs := json.RawMessage("[]")
 	httputil.JSON(w, http.StatusOK, dto.ImpactReportResponse{
 		FlagKey:         flagKey,
 		Report:          json.RawMessage(reportJSON),
 		BusinessImpact:  "neutral",
 		CostAttribution: basicReport.CostAttribution,
+		Recommendations:  emptyRecs,
 		GeneratedAt:     now.Format(time.RFC3339),
 		CostBreakdown:   costBreakdown,
 	})
