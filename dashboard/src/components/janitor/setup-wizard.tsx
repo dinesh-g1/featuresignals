@@ -224,6 +224,26 @@ export function SetupWizard({ onRepoConnected, onCancel }: SetupWizardProps) {
                 {providers.find((p) => p.id === provider)?.tokenHint}
               </p>
 
+              <div className="text-left mb-4 p-3 rounded-lg bg-[var(--signal-bg-accent-muted)] border border-[var(--signal-border-accent-muted)]">
+                <p className="text-xs font-medium text-[var(--signal-fg-primary)] mb-1">
+                  🔑 How to get your token
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-secondary)] leading-relaxed">
+                  Go to{" "}
+                  <a
+                    href="https://github.com/settings/tokens"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--signal-fg-accent)] underline"
+                  >
+                    GitHub Settings → Developer settings → Personal access
+                    tokens
+                  </a>{" "}
+                  → Generate new token (classic). Select <strong>repo</strong>{" "}
+                  and <strong>admin:repo_hooks</strong> scopes.
+                </p>
+              </div>
+
               <div className="space-y-4">
                 <div className="text-left">
                   <label className="block text-xs font-medium text-[var(--signal-fg-secondary)] mb-1">

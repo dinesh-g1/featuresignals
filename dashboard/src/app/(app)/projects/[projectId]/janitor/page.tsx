@@ -23,6 +23,7 @@ import { DocsLink } from "@/components/docs-link";
 import {
   SearchIcon,
   GitPullRequestIcon,
+  GitForkIcon,
   RefreshIcon,
   CheckCircleFillIcon,
   AlertIcon,
@@ -65,7 +66,6 @@ function JanitorInner() {
       .then((data) => {
         if (cancelled) return;
         setRepos(data.data || []);
-        setShowWizard((data.data || []).length === 0);
         setReposLoading(false);
       })
       .catch(() => {
@@ -279,13 +279,130 @@ function JanitorInner() {
         </CardContent>
       </Card>
 
-      {/* Setup Wizard for first-time users */}
-      {showWizard && repos.length === 0 && (
-        <SetupWizard
-          onRepoConnected={handleRepoConnected}
-          onCancel={() => setShowWizard(false)}
-        />
-      )}
+      {/* ── Repository Connections ──────────────────────────── */}
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-[var(--signal-fg-primary)]">
+                Repository Connections
+              </h3>
+              <p className="text-xs text-[var(--signal-fg-secondary)] mt-0.5">
+                Connect your Git repositories so the Janitor can survey your
+                codebase.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowWizard(true)}
+            >
+              <GitForkIcon className="h-4 w-4" />
+              Connect Repository
+            </Button>
+          </div>
+
+          {/* Setup Wizard */}
+          {showWizard && (
+            <div className="mb-4">
+              <SetupWizard
+                onRepoConnected={handleRepoConnected}
+                onCancel={() => setShowWizard(false)}
+              />
+            </div>
+          )}
+
+          {/* Connected repos list */}
+          {reposLoading ? (
+            <div className="space-y-2">
+              {[1].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse flex items-center gap-3 rounded-lg border border-[var(--signal-border-default)] p-3"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-[var(--signal-bg-secondary)]" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-4 w-40 rounded bg-[var(--signal-bg-secondary)]" />
+                    <div className="h-3 w-24 rounded bg-[var(--signal-bg-secondary)]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : repos.length === 0 && !showWizard ? (
+            <div className="rounded-lg border border-dashed border-[var(--signal-border-default)] p-6 text-center">
+              <GitForkIcon className="h-8 w-8 mx-auto text-[var(--signal-fg-tertiary)] mb-2" />
+              <p className="text-sm font-medium text-[var(--signal-fg-secondary)]">
+                No repositories connected
+              </p>
+              <p className="text-xs text-[var(--signal-fg-tertiary)] mt-1">
+                Connect a GitHub, GitLab, or Bitbucket repository to start
+                surveying for feature flags.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {repos.map((repo) => (
+                <div
+                  key={repo.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-[var(--signal-border-default)] p-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--signal-bg-accent-muted)]">
+                      <GitForkIcon className="h-4 w-4 text-[var(--signal-fg-accent)]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[var(--signal-fg-primary)] truncate">
+                        {repo.full_name || repo.name}
+                      </p>
+                      <p className="text-xs text-[var(--signal-fg-tertiary)]">
+                        {repo.provider === "github" ? "GitHub" : repo.provider}
+                        {repo.default_branch ? ` · ${repo.default_branch}` : ""}
+                        {repo.private ? " · Private" : " · Public"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {repo.connected ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        Connected
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        Disconnected
+                      </span>
+                    )}
+                    {repo.last_scanned && (
+                      <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
+                        Last scan:{" "}
+                        {new Date(repo.last_scanned).toLocaleDateString()}
+                      </span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={async () => {
+                        if (!token) return;
+                        try {
+                          await api.disconnectRepository(token, repo.id);
+                          setRepos((prev) =>
+                            prev.filter((r) => r.id !== repo.id),
+                          );
+                        } catch {
+                          /* ignore */
+                        }
+                      }}
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* LLM Status */}
       <div className="flex items-center justify-between">
@@ -301,65 +418,63 @@ function JanitorInner() {
       </div>
 
       {/* Status banner */}
-      {!showWizard && (
-        <div
-          className={cn(
-            "rounded-xl border p-4 flex items-center justify-between",
-            stats?.stale_flags && stats.stale_flags > 0
-              ? "border-amber-200 bg-amber-50"
-              : "border-[var(--signal-border-success-muted)] bg-emerald-50",
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "flex h-2.5 w-2.5",
-                stats?.stale_flags && stats.stale_flags > 0
-                  ? "text-amber-500"
-                  : "text-emerald-500",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full opacity-75",
-                  stats?.stale_flags && stats.stale_flags > 0
-                    ? "bg-amber-400"
-                    : "bg-emerald-400",
-                )}
-              />
-              <span
-                className={cn(
-                  "relative inline-flex h-2.5 w-2.5 rounded-full",
-                  stats?.stale_flags && stats.stale_flags > 0
-                    ? "bg-amber-500"
-                    : "bg-emerald-500",
-                )}
-              />
-            </span>
-            <span
-              className={cn(
-                "text-sm font-medium",
-                stats?.stale_flags && stats.stale_flags > 0
-                  ? "text-amber-800"
-                  : "text-[var(--signal-fg-success)]",
-              )}
-            >
-              {stats?.stale_flags && stats.stale_flags > 0
-                ? `${stats.stale_flags} stale flag${stats.stale_flags > 1 ? "s" : ""} detected`
-                : "All clean — no stale flags detected"}
-            </span>
-            {stats?.last_scan && (
-              <span className="text-xs text-[var(--signal-fg-tertiary)] ml-2">
-                Last survey: {new Date(stats.last_scan).toLocaleDateString()}
-              </span>
+      <div
+        className={cn(
+          "rounded-xl border p-4 flex items-center justify-between",
+          stats?.stale_flags && stats.stale_flags > 0
+            ? "border-amber-200 bg-amber-50"
+            : "border-[var(--signal-border-success-muted)] bg-emerald-50",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "flex h-2.5 w-2.5",
+              stats?.stale_flags && stats.stale_flags > 0
+                ? "text-amber-500"
+                : "text-emerald-500",
             )}
-          </div>
-          <DocsLink
-            href="/docs/advanced/ai-janitor-quickstart"
-            label="Quickstart →"
-          />
+          >
+            <span
+              className={cn(
+                "absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full opacity-75",
+                stats?.stale_flags && stats.stale_flags > 0
+                  ? "bg-amber-400"
+                  : "bg-emerald-400",
+              )}
+            />
+            <span
+              className={cn(
+                "relative inline-flex h-2.5 w-2.5 rounded-full",
+                stats?.stale_flags && stats.stale_flags > 0
+                  ? "bg-amber-500"
+                  : "bg-emerald-500",
+              )}
+            />
+          </span>
+          <span
+            className={cn(
+              "text-sm font-medium",
+              stats?.stale_flags && stats.stale_flags > 0
+                ? "text-amber-800"
+                : "text-[var(--signal-fg-success)]",
+            )}
+          >
+            {stats?.stale_flags && stats.stale_flags > 0
+              ? `${stats.stale_flags} stale flag${stats.stale_flags > 1 ? "s" : ""} detected`
+              : "All clean — no stale flags detected"}
+          </span>
+          {stats?.last_scan && (
+            <span className="text-xs text-[var(--signal-fg-tertiary)] ml-2">
+              Last survey: {new Date(stats.last_scan).toLocaleDateString()}
+            </span>
+          )}
         </div>
-      )}
+        <DocsLink
+          href="/docs/advanced/ai-janitor-quickstart"
+          label="Quickstart →"
+        />
+      </div>
 
       {/* Error state */}
       {flagsError && (
