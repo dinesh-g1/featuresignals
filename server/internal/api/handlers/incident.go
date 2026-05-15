@@ -103,12 +103,30 @@ func (h *IncidentHandler) GetMonitor(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Build correlation summaries
+	// Build correlation summaries and active alerts
 	recentCorrs := make([]dto.CorrelationSummary, 0, len(corrs))
-	activeAlerts := 0
+	activeAlerts := make([]dto.ActiveAlert, 0)
+	now := time.Now().UTC()
 	for _, c := range corrs {
 		if c.IncidentEndedAt == nil {
-			activeAlerts++
+			// Build an active alert for unresolved correlations
+			alertType := "evaluation_anomaly"
+			severity := "warning"
+			if c.HighestCorrelation > 0.8 {
+				severity = "critical"
+			}
+			var correlatedChanges []map[string]interface{}
+			if err := json.Unmarshal(c.CorrelatedChanges, &correlatedChanges); err == nil && len(correlatedChanges) > 0 {
+				if flagKey, ok := correlatedChanges[0]["flag_key"].(string); ok {
+					activeAlerts = append(activeAlerts, dto.ActiveAlert{
+						FlagKey:    flagKey,
+						AlertType:  alertType,
+						Severity:   severity,
+						Message:    fmt.Sprintf("Correlated with incident (score: %.0f%%)", c.HighestCorrelation*100),
+						DetectedAt: c.CreatedAt.Format(time.RFC3339),
+					})
+				}
+			}
 		}
 		recentCorrs = append(recentCorrs, dto.CorrelationSummary{
 			ID:                 c.ID,
@@ -118,12 +136,13 @@ func (h *IncidentHandler) GetMonitor(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:          c.CreatedAt.Format(time.RFC3339),
 		})
 	}
+	_ = now // used for future alert timestamp logic
 
 	// Determine overall health
 	health := "healthy"
-	if activeAlerts > 3 {
+	if len(activeAlerts) > 3 {
 		health = "critical"
-	} else if activeAlerts > 0 {
+	} else if len(activeAlerts) > 0 {
 		health = "warning"
 	}
 

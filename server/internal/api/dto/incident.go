@@ -10,10 +10,19 @@ import "encoding/json"
 
 // MonitorResponse is the monitoring status returned by GET /v1/incidentflag/monitor.
 type MonitorResponse struct {
-	ActiveAlerts        int                   `json:"active_alerts"`
+	ActiveAlerts        []ActiveAlert         `json:"active_alerts"`
 	RecentCorrelations  []CorrelationSummary  `json:"recent_correlations"`
 	FlagsUnderMonitoring int                  `json:"flags_under_monitoring"`
 	OverallHealth       string                `json:"overall_health"` // healthy, warning, critical
+}
+
+// ActiveAlert represents an active monitoring alert for a flag.
+type ActiveAlert struct {
+	FlagKey    string `json:"flag_key"`
+	AlertType  string `json:"alert_type"`
+	Severity   string `json:"severity"`
+	Message    string `json:"message"`
+	DetectedAt string `json:"detected_at"`
 }
 
 // CorrelationSummary is a compact representation of a recent incident correlation.

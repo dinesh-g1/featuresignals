@@ -62,10 +62,10 @@ func (h *ImpactHandler) GetImpactReport(w http.ResponseWriter, r *http.Request) 
 	logger := h.logger.With("method", "GetImpactReport")
 	orgID := middleware.GetOrgID(r.Context())
 	flagKey := chi.URLParam(r, "flagKey")
+	projectID := r.URL.Query().Get("project_id")
 
-	// Look up the flag to validate it belongs to this org.
-	// We need to list flags to find it since flagReader.GetFlag requires projectID.
-	flags, err := h.flagReader.ListFlagsWithFilter(r.Context(), orgID, "", "", 1000, 0)
+	// Look up the flag by scanning all projects for this org.
+	flags, err := h.flagReader.ListFlagsWithFilter(r.Context(), orgID, projectID, "", 1000, 0)
 	if err != nil {
 		logger.Error("failed to list flags", "error", err, "org_id", orgID)
 		httputil.Error(w, http.StatusInternalServerError, "internal error")

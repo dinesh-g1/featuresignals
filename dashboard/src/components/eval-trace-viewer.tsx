@@ -69,14 +69,14 @@ const stepIcons: Record<
 function ResultDot({ result }: { result: EvalTraceStep["result"] }) {
   if (result === "matched") {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white">
         <CheckIcon className="h-3 w-3" />
       </span>
     );
   }
   if (result === "not_matched") {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-300 text-white">
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-400 text-white">
         <XIcon className="h-3 w-3" />
       </span>
     );

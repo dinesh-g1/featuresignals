@@ -259,8 +259,8 @@ func TestIncidentHandler_GetMonitor_Success(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
-	if resp.ActiveAlerts != 1 {
-		t.Errorf("expected 1 active alert, got %d", resp.ActiveAlerts)
+	if len(resp.ActiveAlerts) != 1 {
+		t.Errorf("expected 1 active alert, got %d", len(resp.ActiveAlerts))
 	}
 	if resp.FlagsUnderMonitoring != 1 {
 		t.Errorf("expected 1 flag under monitoring, got %d", resp.FlagsUnderMonitoring)

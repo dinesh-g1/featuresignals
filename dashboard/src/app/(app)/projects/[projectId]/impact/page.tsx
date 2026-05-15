@@ -117,7 +117,11 @@ function ImpactInner() {
       // Fetch reports sequentially to avoid rate limiting
       for (const key of flagKeys) {
         try {
-          const report = await api.impact.getReport(token, key);
+          const report = await api.impact.getReport(
+            token,
+            key,
+            projectId ?? undefined,
+          );
           newReports.set(key, report);
         } catch {
           // Silently skip flags without reports
@@ -127,7 +131,7 @@ function ImpactInner() {
       setReports(newReports);
       setReportsLoading(false);
     },
-    [token],
+    [token, projectId],
   );
 
   useEffect(() => {

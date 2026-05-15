@@ -1407,10 +1407,15 @@ export const api = {
 
   impact: {
     /** Get impact report for a specific flag */
-    getReport: (token: string, flagKey: string) =>
-      request<ImpactReportResponse>(`/v1/impact/report/${flagKey}`, {
-        token,
-      }),
+    getReport: (token: string, flagKey: string, projectId?: string) => {
+      const qs = projectId ? `?project_id=${projectId}` : "";
+      return request<ImpactReportResponse>(
+        `/v1/impact/report/${flagKey}${qs}`,
+        {
+          token,
+        },
+      );
+    },
 
     /** Get organization-wide learning summary */
     getLearnings: (token: string, projectId: string) =>
