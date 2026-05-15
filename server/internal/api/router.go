@@ -70,9 +70,10 @@ func NewRouter(
 	internalChecker dto.InternalChecker,
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
-	janitorH *handlers.JanitorHandler,
-	c2fHandler *handlers.Code2FlagHandler,
-) http.Handler {
+		janitorH *handlers.JanitorHandler,
+		c2fHandler *handlers.Code2FlagHandler,
+		pflHandler *handlers.PreflightHandler,
+	) http.Handler {
 	r := chi.NewRouter()
 
 	// Extract config from internalChecker (passed as dto.InternalChecker interface)
@@ -878,6 +879,27 @@ func NewRouter(
 				r.Post("/spec", c2fHandler.CreateSpec)
 				r.Post("/implement", c2fHandler.CreateImplementation)
 				r.Get("/cleanup", c2fHandler.ListCleanupCandidates)
+			})
+		})
+	}
+
+	// ═══════════════════════════════════════════════════════════════════
+	// Preflight — Pre-Change Assessment & Approval (Stage 3)
+	// ═══════════════════════════════════════════════════════════════════
+	//
+	// Preflight runs pre-change impact assessments, generates progressive
+	// rollout plans, and manages change approval workflows. Admin +
+	// developer access.
+	if pflHandler != nil {
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Use(middleware.RequireRole(writers...))
+			r.Route("/v1/preflight", func(r chi.Router) {
+				r.Get("/assess", pflHandler.ListAssessments)
+				r.Post("/assess", pflHandler.Assess)
+				r.Get("/assess/{assessmentID}", pflHandler.GetAssessment)
+				r.Post("/approval", pflHandler.RequestApproval)
+				r.Get("/approval/{approvalID}", pflHandler.GetApproval)
 			})
 		})
 	}

@@ -1,3 +1,26 @@
+## [2026-05-24 01:30] implementation | Preflight Dashboard Pages + Backend List Endpoint — Stage 3 Preflight complete
+
+### Context
+MIP-ENFORCED v1.2.0 task: Create Preflight dashboard pages (pre-change command center) and fill backend gap — list endpoint for assessments. Preflight backend handlers existed for Assess, GetAssessment, RequestApproval, GetApproval but lacked a list endpoint. Added ListAssessments handler + route. Created two dashboard pages: main list + detail view. All 5 states handled per DoD. Zero hardcoded hex colors. Dark mode compatible.
+
+### Files changed (8 files)
+- `server/internal/api/handlers/preflight.go` — Added ListAssessments handler (GET /v1/preflight/assess)
+- `server/internal/api/router.go` — Registered ListAssessments route
+- `dashboard/src/lib/types.ts` — Added GuardMetricItem, RolloutPhaseItem, AssessResponse, ApprovalResponse types
+- `dashboard/src/lib/api.ts` — Added api.preflight namespace (listAssessments, assess, getAssessment, requestApproval, getApproval)
+- `dashboard/src/app/(app)/projects/[projectId]/preflight/page.tsx` — Main Preflight page: list, stats, new assessment modal, pagination, all 5 states
+- `dashboard/src/app/(app)/projects/[projectId]/preflight/[assessmentId]/page.tsx` — Assessment detail: risk gauge, stats, impact summary, rollout timeline, approval section, all 5 states
+- `dashboard/src/components/nav-list.tsx` — Added Preflight link (RocketIcon) to Power Tools section
+
+### Verification
+- `go build ./...` — passes
+- `go vet ./...` — passes
+- `npx tsc --noEmit` — passes (0 errors)
+- All 5 states handled: loading (skeleton), empty, error (with retry), success, not-found
+- Dark mode: all colors use `var(--signal-*)` tokens
+- Terminology: "Ship" and "Roll Out" (not deploy/push), "Assessment" (not report/audit), "Approval" (not sign-off), "Guard metrics" (not gate metrics)
+- Feature-level language throughout
+
 ## [2026-05-24 00:30] implementation | Wave 2 Complete — Code2Flag End-to-End (Domain, Store, Handlers, Dashboard)
 
 ### Context

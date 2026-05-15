@@ -39,6 +39,7 @@ import {
   ClockIcon,
   GavelIcon,
   BotIcon,
+  RocketIcon,
 } from "@/components/icons/nav-icons";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ const insights: NavItemDef[] = [
 
 const powerTools: NavItemDef[] = [
   { href: path("/discover"), label: "Discover", icon: SearchIcon },
+  { href: path("/preflight"), label: "Preflight", icon: RocketIcon },
   { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
   { href: path("/agents"), label: "Agents", icon: BrainIcon },
   { href: path("/abm"), label: "Agent Behaviors", icon: BotIcon },

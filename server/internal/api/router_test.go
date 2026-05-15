@@ -468,6 +468,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		"",
 		nil,
 		nil,
+		nil,
 	)
 }
 

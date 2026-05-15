@@ -553,3 +553,43 @@ export interface CleanupCandidate {
   status: string;
   created_at: string;
 }
+
+// ── Preflight Types ─────────────────────────────────────────────────
+
+export interface GuardMetricItem {
+  metric: string;
+  threshold: number;
+  operator: string;
+}
+
+export interface RolloutPhaseItem {
+  phase: number;
+  percentage: number;
+  duration_hours: number;
+  guard_metrics: GuardMetricItem[];
+}
+
+export interface AssessResponse {
+  assessment_id: string;
+  flag_key: string;
+  risk_score: number;
+  impact_summary: string;
+  affected_files: number;
+  affected_code_refs: number;
+  compliance_status: "passed" | "warning" | "failed";
+  rollout_plan: RolloutPhaseItem[];
+  generated_at: string;
+}
+
+export interface ApprovalResponse {
+  approval_id: string;
+  status: "pending" | "approved" | "rejected" | "expired";
+  assessment_id: string;
+  flag_key: string;
+  requested_by: string;
+  reviewer_id?: string;
+  decision?: "approved" | "rejected";
+  comment?: string;
+  decided_at?: string;
+  created_at: string;
+}

@@ -8,6 +8,8 @@ import type {
   APIKey,
   APIKeyCreateResponse,
   ApprovalRequest,
+  ApprovalResponse,
+  AssessResponse,
   AuditEntry,
   BillingInfo,
   CheckoutResponse,
@@ -1282,6 +1284,74 @@ export const api = {
         { token },
       );
     },
+  },
+
+  // ── Preflight ─────────────────────────────────────────────────
+
+  preflight: {
+    /** List preflight assessments for the current project */
+    listAssessments: (
+      token: string,
+      params: {
+        flag_key?: string;
+        limit?: number;
+        offset?: number;
+      } = {},
+    ) => {
+      const qs = new URLSearchParams();
+      if (params.flag_key) qs.set("flag_key", params.flag_key);
+      qs.set("limit", String(params.limit ?? 50));
+      qs.set("offset", String(params.offset ?? 0));
+      return requestListPaginated<AssessResponse>(
+        `/v1/preflight/assess?${qs.toString()}`,
+        { token },
+      );
+    },
+
+    /** Run a pre-change assessment */
+    assess: (
+      token: string,
+      projectId: string,
+      body: {
+        flag_key: string;
+        env_id: string;
+        change_type: string;
+        target_percentage?: number;
+        observation_period_hours?: number;
+      },
+    ) =>
+      request<AssessResponse>(`/v1/preflight/assess`, {
+        method: "POST",
+        body,
+        token,
+      }),
+
+    /** Get an assessment by ID */
+    getAssessment: (token: string, assessmentId: string) =>
+      request<AssessResponse>(`/v1/preflight/assess/${assessmentId}`, {
+        token,
+      }),
+
+    /** Request approval for a change */
+    requestApproval: (
+      token: string,
+      body: {
+        assessment_id: string;
+        justification?: string;
+        scheduled_at?: string;
+      },
+    ) =>
+      request<ApprovalResponse>(`/v1/preflight/approval`, {
+        method: "POST",
+        body,
+        token,
+      }),
+
+    /** Get approval status */
+    getApproval: (token: string, approvalId: string) =>
+      request<ApprovalResponse>(`/v1/preflight/approval/${approvalId}`, {
+        token,
+      }),
   },
 };
 
