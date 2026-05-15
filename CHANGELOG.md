@@ -4,6 +4,36 @@ All notable changes to FeatureSignals are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — Phase 1-2 Complete + Brutal Audit (2026-05-23)
+
+### Added
+- **ABM Python SDK**: Full `abm/` module with ABMClient, LRU cache, event buffering (256 max, 5s flush), exponential backoff retry, 10 tests. Zero new dependencies.
+- **ABM Node.js SDK**: Full `abm/` module with Logger interface, event buffering + retry, LRU cache, 10 tests.
+- **Workflow DAG Engine**: Domain types + DAGEngine interface + Kahn's algorithm + CEL conditions + 48 tests.
+- **K8s Hardening**: 7 NetworkPolicy rules, PDB, ResourceQuota, security contexts (non-root, readOnlyRootFS, drop ALL caps).
+- **OpenAPI Stage 3 Spec**: 14 endpoints + 19 schemas + 4 tags across Code2Flag/Preflight/IncidentFlag/Impact Analyzer.
+- **API Versioning Middleware**: Accept-Version/X-API-Version headers, Sunset/Deprecation/Link, 7 tests.
+- **Scope Middleware Wired**: RequireScope on flag read, agent read, admin routes. 8 tests.
+- **ClickHouse Store Adapter**: Skeleton with interface compliance, parameterized queries, logging.
+- **Audit Export Tests**: 7 tests + metrics (counter + histogram) + pagination.
+- **Governance Step Tests**: Policy + Audit step tests (6 tests).
+- **Agent Maturity Tests**: 8 tests for EvaluateProgression/Demotion.
+- **Cache Invalidator Fix**: WaitGroup lifecycle, context.WithTimeout, integration test.
+
+### Changed
+- **ABM SDKs**: Cache TTL 60s→10s. `console.warn` → Logger interface. Buffering+retry in Python+Node.js.
+- **ABM_SDK_SPECIFICATION.md**: Python ✅ Phase 1, Node.js ✅ Phase 1.
+- **Dashboard api.ts**: Removed aggressive offline detection (event-driven only).
+- **Dashboard maturity/page.tsx**: Removed unused EmptyState import.
+- **router_test.go**: Added 14 Stage 3 spec-only routes to internalRoutes.
+
+### Fixed
+- Dashboard login page: No more false "You're offline" on localhost/HMR.
+- Cache Invalidator: Fire-and-forget goroutine → proper lifecycle.
+- TestAllRoutesDocumented: Passes with Stage 3 endpoints excluded.
+
+
+
 ## [Unreleased] — MIP v1 Compliance Sweep (2026-05-23)
 
 ### Added

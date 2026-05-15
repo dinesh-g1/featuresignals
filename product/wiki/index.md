@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-05-22
-> **Total pages:** 36 (10 public, 24 private, 4 internal, 0 archive)
+> **Updated:** 2026-05-23
+> **Total pages:** 37 (10 public, 24 private, 4 internal, 0 archive)
 
 ---
 
@@ -31,7 +31,7 @@
 | Page | Status | Summary | Inbound Links |
 |------|--------|---------|---------------|
 | [[SDK.md]] | `current` | Cross-SDK knowledge for all 8 SDKs (Go, Node, Python, Java, .NET, Ruby, React, Vue), OpenFeature provider implementation per language, MurmurHash3 consistent hashing (BucketUser algorithm), common lifecycle, code examples in all 8 languages, migration integration (LaunchDarkly/Flagsmith/Unleash), cross-cutting concerns, "Adding a New SDK" 16-item implementation checklist | 0 |
-| [[ABM_SDK_SPECIFICATION.md]] | `current` | **ABM SDK Cross-Language Specification v1.0.** Defines the contract every SDK MUST implement for Agent Behavior Mesh: `resolve()`, `resolveFresh()`, `track()`, `trackBatch()` methods, resolution algorithm, caching contract (TTL, LRU eviction), data types (ResolveResponse, TrackEvent, ABMConfig), error handling (must not throw, always return fallback), track semantics (fire-and-forget with batching), implementation status per language (Go ✅, 7 others deferred to Phase 2), 8 required tests per SDK, Go reference implementation. Closes P0 item #1. | 0 |
+| [[ABM_SDK_SPECIFICATION.md]] | `current` | **ABM SDK Cross-Language Specification v1.0.** Defines the contract every SDK MUST implement for Agent Behavior Mesh: `resolve()`, `resolveFresh()`, `track()`, `trackBatch()` methods, resolution algorithm, caching contract (TTL, LRU eviction), data types (ResolveResponse, TrackEvent, ABMConfig), error handling (must not throw, always return fallback), track semantics (fire-and-forget with batching), implementation status per language (Go ✅, Python ✅ Phase 1, Node.js ✅ Phase 1, React/Java/.NET deferred to Phase 2, Ruby/Vue deferred to Phase 3), 8 required tests per SDK, Go reference implementation. Closes P0 item #1. | 0 |
 
 ### Performance
 
