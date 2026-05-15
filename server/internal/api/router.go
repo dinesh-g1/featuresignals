@@ -75,6 +75,7 @@ func NewRouter(
 		pflHandler *handlers.PreflightHandler,
 		incHandler *handlers.IncidentHandler,
 		impHandler *handlers.ImpactHandler,
+		ghWebhookHandler *handlers.GitHubWebhookHandler,
 	) http.Handler {
 	r := chi.NewRouter()
 
@@ -288,6 +289,13 @@ func NewRouter(
 			}
 			httputil.JSON(w, http.StatusOK, cfg)
 		})
+
+		// ── GitHub Webhook Receiver (public, no JWT) ───────────────
+		// GitHub calls this with HMAC-SHA256 signature verification.
+		// No JWT auth — security is via webhook secret verification.
+		if ghWebhookHandler != nil {
+			r.Post("/hooks/github", ghWebhookHandler.Handle)
+		}
 
 		// ── Auth Initiation (rate-limited, no JWT) ───────────────
 		// These endpoints initiate authentication flows. Rate limited

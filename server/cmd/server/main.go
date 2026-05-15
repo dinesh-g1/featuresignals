@@ -441,6 +441,7 @@ func main() {
 	// ── AI Janitor Setup ──────────────────────────────────────────
 	var janitorH *handlers.JanitorHandler
 	var janitorStore *postgres.JanitorStore
+	var tokenEncryptor *janitor.TokenEncryptor
 	{
 		janitorLogger := logger.With("component", "janitor")
 		janitorStore = postgres.NewJanitorStore(pool)
@@ -516,7 +517,6 @@ func main() {
 		janitorLogger.Info("Git providers registered", "providers", janitor.ListGitProviders())
 
 		// Token encryptor (best-effort — tokens stored in plaintext if key is missing)
-		var tokenEncryptor *janitor.TokenEncryptor
 		if cfg.JanitorEncryptionKey != "" {
 			var encErr error
 			tokenEncryptor, encErr = janitor.NewTokenEncryptor(cfg.JanitorEncryptionKey)
@@ -605,11 +605,71 @@ func main() {
 	impStore := postgres.NewImpactStore(pool, logger)
 	impHandler := handlers.NewImpactHandler(impStore, impStore, store, c2fStore, logger)
 
+	// ── GitHub Integration: Scanner, PR Creator, Webhook ──────
+	providerFactory := func(orgID string) (janitor.GitProvider, error) {
+		janitorLogger := logger.With("component", "provider_factory", "org_id", orgID)
+		repos, err := janitorStore.ListRepositories(context.Background(), orgID, 1, 0)
+		if err != nil {
+			return nil, fmt.Errorf("listing repos for org %s: %w", orgID, err)
+		}
+		if len(repos) == 0 || !repos[0].Connected {
+			return nil, fmt.Errorf("no connected repository for org %s", orgID)
+		}
+		repo := repos[0]
+		token := repo.EncryptedToken
+		if tokenEncryptor != nil && token != "" {
+			decrypted, decErr := tokenEncryptor.Decrypt(token)
+			if decErr != nil {
+				janitorLogger.Warn("failed to decrypt token, using raw", "error", decErr)
+			} else {
+				token = decrypted
+			}
+		}
+		return janitor.NewGitProvider(janitor.GitProviderConfig{
+			Provider: repo.Provider,
+			Token:    token,
+		})
+	}
+
+	scanEventBus := sse.NewScanEventBus(logger.With("component", "scan_event_bus"))
+	// Create a default GitProvider from the first connected repo (if any).
+	var defaultProvider janitor.GitProvider
+	if tokenEncryptor != nil {
+		repos, _ := janitorStore.ListRepositories(context.Background(), "", 1, 0)
+		if len(repos) > 0 && repos[0].Connected {
+			provider, err := providerFactory(repos[0].OrgID)
+			if err == nil {
+				defaultProvider = provider
+			}
+		}
+	}
+
+	repoScanner := janitor.NewRepoScanner(defaultProvider, c2fStore, janitorStore, scanEventBus, logger)
+	prCreator := janitor.NewPRCreator(providerFactory, janitorStore, c2fStore, c2fStore, logger)
+
+	ghWebhookHandler := handlers.NewGitHubWebhookHandler(
+		tokenEncryptor,
+		janitorStore,
+		c2fStore,
+		c2fStore,
+		logger,
+	)
+
+	_ = repoScanner
+	_ = prCreator
+	_ = scanEventBus
+
+	logger.Info("GitHub integration initialized",
+		"webhook_endpoint", "/v1/hooks/github",
+		"scanner_ready", repoScanner != nil,
+		"pr_creator_ready", prCreator != nil,
+	)
+
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, governancePipeline, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler, pflHandler, incHandler, impHandler)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler, pflHandler, incHandler, impHandler, ghWebhookHandler)
 
 	// Server
 	srv := &http.Server{
