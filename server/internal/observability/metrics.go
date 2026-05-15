@@ -45,6 +45,14 @@ type Instruments struct {
 	// ── EventBus ──────────────────────────────────────────
 	EventBusPublished        ometric.Int64Counter
 	EventBusPublishDuration  ometric.Float64Histogram
+
+	// ── Governance Pipeline ───────────────────────────────
+	GovernanceStepExecuted ometric.Int64Counter
+	GovernanceStepDuration ometric.Float64Histogram
+
+	// ── Audit Export ──────────────────────────────────────
+	AuditExportCount    ometric.Int64Counter
+	AuditExportDuration ometric.Float64Histogram
 }
 
 // NewInstruments registers all metric instruments. Safe to call even if OTEL is
@@ -131,6 +139,24 @@ func NewInstruments() *Instruments {
 		ometric.WithUnit("ms"),
 	)
 
+	// ── Governance Pipeline ───────────────────────────────
+	governanceStepExecuted, _ := meter.Int64Counter("governance.step.executed",
+		ometric.WithDescription("Number of governance pipeline step executions"),
+	)
+	governanceStepDuration, _ := meter.Float64Histogram("governance.step.duration_ms",
+		ometric.WithDescription("Governance step execution latency in milliseconds"),
+		ometric.WithUnit("ms"),
+	)
+
+	// ── Audit Export ──────────────────────────────────────
+	auditExportCount, _ := meter.Int64Counter("audit.export.count",
+		ometric.WithDescription("Number of audit export requests"),
+	)
+	auditExportDuration, _ := meter.Float64Histogram("audit.export.duration_ms",
+		ometric.WithDescription("Audit export latency in milliseconds"),
+		ometric.WithUnit("ms"),
+	)
+
 	return &Instruments{
 		EvalCount:       evalCount,
 		EvalDuration:    evalDuration,
@@ -158,6 +184,12 @@ func NewInstruments() *Instruments {
 
 		EventBusPublished:       eventBusPublished,
 		EventBusPublishDuration: eventBusPublishDuration,
+
+		GovernanceStepExecuted: governanceStepExecuted,
+		GovernanceStepDuration: governanceStepDuration,
+
+		AuditExportCount:    auditExportCount,
+		AuditExportDuration: auditExportDuration,
 	}
 }
 
@@ -257,6 +289,28 @@ func (i *Instruments) RecordEventBusPublish(ctx context.Context, topic string, s
 	i.EventBusPublishDuration.Record(ctx, durationMs, ometric.WithAttributes(
 		attribute.String("topic", topic),
 		attribute.String("status", status),
+	))
+}
+
+// RecordGovernanceStep records a governance pipeline step execution.
+func (i *Instruments) RecordGovernanceStep(ctx context.Context, stepName string, outcome string, durationMs float64) {
+	i.GovernanceStepExecuted.Add(ctx, 1, ometric.WithAttributes(
+		attribute.String("step", stepName),
+		attribute.String("outcome", outcome),
+	))
+	i.GovernanceStepDuration.Record(ctx, durationMs, ometric.WithAttributes(
+		attribute.String("step", stepName),
+		attribute.String("outcome", outcome),
+	))
+}
+
+// RecordAuditExport records an audit export request with format and duration.
+func (i *Instruments) RecordAuditExport(ctx context.Context, format string, durationMs float64) {
+	i.AuditExportCount.Add(ctx, 1, ometric.WithAttributes(
+		attribute.String("format", format),
+	))
+	i.AuditExportDuration.Record(ctx, durationMs, ometric.WithAttributes(
+		attribute.String("format", format),
 	))
 }
 

@@ -53,7 +53,7 @@ type Config struct {
 	HTTPClient *http.Client
 
 	// CacheTTL is how long resolved behaviors are cached locally.
-	// Default: 60 seconds. 0 disables caching.
+	// Default: 10 seconds (per ABM_SDK_SPECIFICATION.md §1.3). 0 disables caching.
 	CacheTTL time.Duration
 }
 
@@ -123,7 +123,7 @@ func NewClient(cfg Config) *Client {
 		cfg.HTTPClient = &http.Client{Timeout: 10 * time.Second}
 	}
 	if cfg.CacheTTL == 0 {
-		cfg.CacheTTL = 60 * time.Second
+		cfg.CacheTTL = 10 * time.Second // Per ABM_SDK_SPECIFICATION.md §1.3
 	}
 
 	return &Client{

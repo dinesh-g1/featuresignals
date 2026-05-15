@@ -123,6 +123,17 @@ type Config struct {
 	PolicyEvalMaxPolicies int
 	// Timeout for CEL expression evaluation (milliseconds).
 	PolicyEvalTimeoutMs int
+	// Per-step governance pipeline timeout (milliseconds).
+	PipelineStepTimeoutMs int
+
+	// ── Agent Runtime ─────────────────────────────────────────────
+	AgentHeartbeatIntervalSec int
+	AgentStaleTimeoutSec       int
+
+	// ── Workflow Engine ───────────────────────────────────────────
+	WorkflowMaxConcurrent     int
+	WorkflowDefaultTimeoutSec int
+	WorkflowMaxRetries        int
 
 	// Router configuration
 	RouterDomain string
@@ -220,8 +231,18 @@ func Load() *Config {
 		LocalRegion: getEnv("LOCAL_REGION", "in"),
 
 		// Policy Evaluator
-		PolicyEvalMaxPolicies: getEnvInt("POLICY_EVAL_MAX_POLICIES", 50),
-		PolicyEvalTimeoutMs:   getEnvInt("POLICY_EVAL_TIMEOUT_MS", 10),
+		PolicyEvalMaxPolicies:  getEnvInt("POLICY_EVAL_MAX_POLICIES", 50),
+		PolicyEvalTimeoutMs:    getEnvInt("POLICY_EVAL_TIMEOUT_MS", 10),
+		PipelineStepTimeoutMs:  getEnvInt("PIPELINE_STEP_TIMEOUT_MS", 10),
+
+		// Agent Runtime
+		AgentHeartbeatIntervalSec: getEnvInt("AGENT_HEARTBEAT_INTERVAL_SEC", 30),
+		AgentStaleTimeoutSec:      getEnvInt("AGENT_STALE_TIMEOUT_SEC", 120),
+
+		// Workflow Engine
+		WorkflowMaxConcurrent:     getEnvInt("WORKFLOW_MAX_CONCURRENT", 50),
+		WorkflowDefaultTimeoutSec: getEnvInt("WORKFLOW_DEFAULT_TIMEOUT_SEC", 300),
+		WorkflowMaxRetries:        getEnvInt("WORKFLOW_MAX_RETRIES", 3),
 
 		RouterDomain: getEnv("ROUTER_DOMAIN", ""),
 		RouterEmail:  getEnv("ROUTER_EMAIL", ""),

@@ -4,9 +4,36 @@ All notable changes to FeatureSignals are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [Unreleased] — MIP v1 Compliance Sweep (2026-05-23)
 
 ### Added
+- **Governance Pipeline (7-step)**: Six new GovernanceStep implementations: Auth, AuthZ, Maturity, RateLimit, BlastRadius, Audit. Full pipeline wired in main.go with OTel metrics per step. 22 table-driven tests.
+- **NATS Topic Specification**: 274-line formal spec: 13 subjects, 5 JetStream streams, 5 consumer groups, trace propagation, monitoring/alerting.
+- **Internal Agent Protocol (IAP) Specification**: 343-line spec: 21 message types, 7 payload schemas, transport adapter interface, serialization rules.
+- **ABM SDK Cross-Language Specification**: 183-line spec: resolve/track contract, caching rules, error handling, 8 required tests per SDK.
+- **InMemoryAgentTransport**: Channel-based IAP transport for testing and single-instance dev.
+- **WorkflowStore**: Standalone narrow interface + PG impl (12 methods): workflow CRUD, run lifecycle, node state upsert.
+- **Migration 000111**: FK index `idx_workflow_node_states_agent`.
+- **DeepSeek Integration Tests**: 5 real-API tests passing with `-race`.
+- **Governance Pipeline Metrics**: `GovernanceStepExecuted` counter + `GovernanceStepDuration` histogram.
+- **In-app Docs**: 14 new PAGE_DOCS_MAP entries (100% nav coverage). Terminology: remove→sweep, Monitor→Observe, Inspect→Analyze, kill switches→instant pause.
+- **Config**: 8 new fields for Agent Runtime, Workflow Engine, Governance Pipeline. All documented in .env.example.
+- **Recharts**: Eval Events page now has live AreaChart.
+
+### Changed
+- **NATSEventBus**: Now records `RecordEventBusPublish` with timing. OTel trace context via NATS headers + consumer-side restoration.
+- **PolicyGovernanceStep**: Now records `RecordPolicyEvaluation`.
+- **InMemoryPipeline**: Now records `RecordGovernanceStep` per step (step name + passed/rejected).
+- **EventBus factory**: Requires `*observability.Instruments`.
+- **audit_step.go**: Fire-and-forget goroutine → synchronous write (MIP §3.3).
+- **docker-compose.yml**: NATS resource limits (256M), persistent volume.
+- **.env + .env.example**: DeepSeek, NATS, Agent, Workflow, Pipeline, OTel sections.
+- **nav-list.tsx**: Hardcoded `#0969da` → `var(--signal-fg-accent)`.
+- **eval-events/page.tsx**: Added not-found (404) state.
+
+### Removed
+- Stale root `.env.example`, `.env.local`, `dashboard/.env.local`, `deploy/.env.cell.example`.
+
 
 ## [v2.0.0-alpha] — 2026-05-19 — Agent Platform Foundation
 

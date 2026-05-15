@@ -58,6 +58,18 @@ export const DOCS_LINKS = {
   scanConfig: `${DOCS_BASE}/advanced/ai-janitor-configuration`,
   builtInRoles: `${DOCS_BASE}/advanced/rbac`,
   eventTypes: `${DOCS_BASE}/api-reference/webhooks`,
+  // Additional in-app docs links for pages missing coverage
+  dashboard: `${DOCS_BASE}/getting-started/dashboard-overview`,
+  projects: `${DOCS_BASE}/core-concepts/projects-and-environments`,
+  usage: `${DOCS_BASE}/billing/usage-and-metering`,
+  limits: `${DOCS_BASE}/advanced/rate-limits`,
+  settings: `${DOCS_BASE}/getting-started/organization-settings`,
+  support: `${DOCS_BASE}/getting-started/support`,
+  metrics: `${DOCS_BASE}/advanced/eval-metrics`,
+  health: `${DOCS_BASE}/advanced/flag-health`,
+  usageInsights: `${DOCS_BASE}/advanced/usage-insights`,
+  envComparison: `${DOCS_BASE}/advanced/environment-comparison`,
+  targetInspector: `${DOCS_BASE}/advanced/target-inspector`,
 } as const;
 
 interface DocsLinkProps {

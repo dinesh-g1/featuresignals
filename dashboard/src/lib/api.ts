@@ -154,18 +154,8 @@ function showOfflineToast(isOffline: boolean) {
 
 export function setupOfflineDetection(): void {
   if (typeof window === "undefined") return;
-
-  if (!isOnline()) {
-    showOfflineToast(true);
-  }
-
-  window.addEventListener("offline", () => {
-    showOfflineToast(true);
-  });
-
-  window.addEventListener("online", () => {
-    showOfflineToast(false);
-  });
+  window.addEventListener("offline", () => showOfflineToast(true));
+  window.addEventListener("online", () => showOfflineToast(false));
 }
 
 // --- Core request with timeout, retry, and dedup ---
@@ -202,11 +192,6 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  // Offline check
-  if (!isOnline()) {
-    throw new Error("You're offline. Check your network connection.");
-  }
-
   const method = options.method || "GET";
 
   // Deduplication for GET requests (skip for retried requests to avoid deadlock with token refresh)

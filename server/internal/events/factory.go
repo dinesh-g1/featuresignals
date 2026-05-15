@@ -9,6 +9,7 @@ import (
 	"github.com/featuresignals/server/internal/config"
 	"github.com/featuresignals/server/internal/domain"
 	natsbus "github.com/featuresignals/server/internal/events/nats"
+	"github.com/featuresignals/server/internal/observability"
 )
 
 // NewEventBus creates a domain.EventBus based on the configured provider.
@@ -19,7 +20,7 @@ import (
 //
 // Returns the EventBus and a cleanup function that should be called during
 // graceful shutdown (defer cleanup()).
-func NewEventBus(cfg *config.Config, logger *slog.Logger) (domain.EventBus, func(), error) {
+func NewEventBus(cfg *config.Config, logger *slog.Logger, instr *observability.Instruments) (domain.EventBus, func(), error) {
 	busLogger := logger.With("component", "eventbus_factory")
 
 	switch cfg.EventBusProvider {
@@ -33,7 +34,7 @@ func NewEventBus(cfg *config.Config, logger *slog.Logger) (domain.EventBus, func
 			return nil, nil, fmt.Errorf("nats connect %s: %w", cfg.NATSURL, err)
 		}
 
-		bus := natsbus.NewNATSEventBus(nc, busLogger)
+		bus := natsbus.NewNATSEventBus(nc, busLogger, instr)
 		cleanup := func() {
 			if err := bus.Close(); err != nil {
 				busLogger.Warn("error closing NATS event bus", "error", err)

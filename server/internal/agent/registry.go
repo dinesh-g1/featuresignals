@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/observability"
 )
 
 // ─── In-Memory ToolRegistry ────────────────────────────────────────────────
@@ -153,12 +154,14 @@ type InMemoryPipeline struct {
 	mu     sync.RWMutex
 	steps  []domain.GovernanceStep
 	logger *slog.Logger
+	instr  *observability.Instruments
 }
 
 // NewInMemoryPipeline creates an empty governance pipeline.
-func NewInMemoryPipeline(logger *slog.Logger) *InMemoryPipeline {
+func NewInMemoryPipeline(logger *slog.Logger, instr *observability.Instruments) *InMemoryPipeline {
 	return &InMemoryPipeline{
 		logger: logger.With("component", "governance_pipeline"),
+		instr:  instr,
 	}
 }
 
@@ -171,9 +174,11 @@ func (p *InMemoryPipeline) Execute(ctx context.Context, action domain.AgentActio
 	for _, step := range steps {
 		stepCtx, stepCancel := context.WithTimeout(ctx, 10*time.Millisecond)
 		action.PipelineStage = step.Name()
+		stepStart := time.Now()
 
 		next, err := step.Execute(stepCtx, action)
 		stepCancel()
+		stepDur := float64(time.Since(stepStart).Microseconds()) / 1000.0
 
 		if err != nil {
 			p.logger.Warn("governance step rejected action",
@@ -182,7 +187,13 @@ func (p *InMemoryPipeline) Execute(ctx context.Context, action domain.AgentActio
 				"action_id", action.ID,
 				"error", err,
 			)
+			if p.instr != nil {
+				p.instr.RecordGovernanceStep(ctx, step.Name(), "rejected", stepDur)
+			}
 			return action, err
+		}
+		if p.instr != nil {
+			p.instr.RecordGovernanceStep(ctx, step.Name(), "passed", stepDur)
 		}
 		action = next
 	}

@@ -268,7 +268,7 @@ func main() {
 
 
 	// EventBus (abstract messaging between services)
-	eventBus, eventBusCleanup, busErr := events.NewEventBus(cfg, logger)
+	eventBus, eventBusCleanup, busErr := events.NewEventBus(cfg, logger, otelInstruments)
 	if busErr != nil {
 		logger.Error("failed to create event bus", "error", busErr)
 		os.Exit(1)
@@ -504,24 +504,37 @@ func main() {
 		)
 	}
 
-	// ── Agent Governance Pipeline (CEL Policy Evaluator) ──────────
-	// The CEL evaluator powers the policy governance step in the
-	// agent runtime pipeline. It evaluates CEL-like expressions
-	// against agent actions to enforce governance policies.
+	// ── Agent Governance Pipeline (7-step pipeline) ───────────────
+	// The governance pipeline enforces the 7-step protocol on every
+	// agent action: auth → authz → policy → maturity → rate_limit →
+	// blast_radius → audit. Steps can be reordered or extended per
+	// organization via the Process Alignment Architecture.
 	celTimeout := time.Duration(cfg.PolicyEvalTimeoutMs) * time.Millisecond
 	celEvaluator := agent.NewCELEvaluator(celTimeout)
-	policyStep := agent.NewPolicyGovernanceStep(store, celEvaluator, logger)
-	governancePipeline := agent.NewInMemoryPipeline(logger)
-	governancePipeline.AddStep(policyStep)
-	logger.Info("CEL evaluator and governance pipeline initialized",
-		"timeout_ms", celTimeout.Milliseconds(),
+	governancePipeline := agent.NewInMemoryPipeline(logger, otelInstruments)
+
+	// Step 1: Auth — validate agent identity and org membership
+	governancePipeline.AddStep(agent.NewAuthGovernanceStep(logger))
+	// Step 2: AuthZ — validate agent scopes cover required scopes
+	governancePipeline.AddStep(agent.NewAuthZGovernanceStep(logger))
+	// Step 3: Policy — evaluate CEL policies against the action
+	governancePipeline.AddStep(agent.NewPolicyGovernanceStep(store, celEvaluator, logger, otelInstruments))
+	// Step 4: Maturity — check agent maturity level meets requirements
+	governancePipeline.AddStep(agent.NewMaturityGovernanceStep(logger))
+	// Step 5: Rate Limit — enforce per-minute, per-hour, concurrent limits
+	governancePipeline.AddStep(agent.NewRateLimitGovernanceStep(logger))
+	// Step 6: Blast Radius — validate estimated impact scope
+	governancePipeline.AddStep(agent.NewBlastRadiusGovernanceStep(logger))
+	// Step 7: Audit — record action in tamper-evident audit log
+	governancePipeline.AddStep(agent.NewAuditGovernanceStep(store, logger))
+
+	logger.Info("agent governance pipeline initialized",
+		"steps", governancePipeline.Steps(),
+		"cel_timeout_ms", celTimeout.Milliseconds(),
 		"policy_eval_timeout_ms", cfg.PolicyEvalTimeoutMs,
 	)
-	// governancePipeline is ready for wiring into agent handlers
-	// when the full agent runtime is activated.
-	_ = governancePipeline
 
-	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, api.BillingConfig{
+	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, governancePipeline, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,

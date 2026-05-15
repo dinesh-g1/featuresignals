@@ -5,6 +5,12 @@ services:
       - "4222:4222"
       - "8222:8222"
     command: "-js -m 8222"
+    volumes:
+      - nats_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     healthcheck:
       test: ["CMD", "nats", "server", "check", "connection"]
       interval: 5s
@@ -101,3 +107,4 @@ services:
 
 volumes:
   pgdata:
+  nats_data:

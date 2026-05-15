@@ -24,8 +24,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/observability"
 )
 
 // NATSEventBus implements domain.EventBus using NATS as the message broker.
@@ -35,6 +37,7 @@ import (
 type NATSEventBus struct {
 	conn   *nats.Conn
 	logger *slog.Logger
+	instr  *observability.Instruments
 
 	mu     sync.Mutex
 	subs   map[string]*nats.Subscription // subject:consumerGroup → subscription
@@ -44,13 +47,14 @@ type NATSEventBus struct {
 // NewNATSEventBus creates a NATS-backed EventBus. The connection must be
 // already established; the bus does not manage connection lifecycle beyond
 // closing it on Shutdown. Pass nil logger for silent operation.
-func NewNATSEventBus(conn *nats.Conn, logger *slog.Logger) *NATSEventBus {
+func NewNATSEventBus(conn *nats.Conn, logger *slog.Logger, instr *observability.Instruments) *NATSEventBus {
 	if logger == nil {
 		logger = slog.New(slog.NewTextHandler(nil, nil)) // discard
 	}
 	return &NATSEventBus{
 		conn:   conn,
 		logger: logger.With("component", "nats_eventbus"),
+		instr:  instr,
 		subs:   make(map[string]*nats.Subscription),
 	}
 }
@@ -79,14 +83,39 @@ func (b *NATSEventBus) Publish(ctx context.Context, env *domain.EventEnvelope) e
 		return fmt.Errorf("nats publish: marshal envelope: %w", err)
 	}
 
-	if err := b.conn.Publish(subject, data); err != nil {
+	// Propagate OpenTelemetry trace context via NATS headers
+	msg := nats.NewMsg(subject)
+	msg.Data = data
+
+	sc := trace.SpanContextFromContext(ctx)
+	if sc.HasTraceID() {
+		msg.Header.Set("X-Trace-ID", sc.TraceID().String())
+		msg.Header.Set("X-Span-ID", sc.SpanID().String())
+		if sc.IsSampled() {
+			msg.Header.Set("X-Trace-Sampled", "1")
+		}
+		// Also populate envelope fields for consumers that read the body
+		env.TraceID = sc.TraceID().String()
+		env.SpanID = sc.SpanID().String()
+	}
+
+	start := time.Now()
+	if err := b.conn.PublishMsg(msg); err != nil {
+		if b.instr != nil {
+			b.instr.RecordEventBusPublish(ctx, subject, false, float64(time.Since(start).Microseconds())/1000.0)
+		}
 		return fmt.Errorf("nats publish: %w", err)
+	}
+
+	if b.instr != nil {
+		b.instr.RecordEventBusPublish(ctx, subject, true, float64(time.Since(start).Microseconds())/1000.0)
 	}
 
 	b.logger.Debug("published",
 		"subject", subject,
 		"id", env.ID,
 		"payload_len", len(env.Payload),
+		"trace_id", env.TraceID,
 	)
 	return nil
 }
@@ -119,7 +148,37 @@ func (b *NATSEventBus) Subscribe(ctx context.Context, subject string, consumerGr
 			env.Subject = msg.Subject
 		}
 
-		handlerCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		// Restore OpenTelemetry trace context from NATS headers or envelope
+		traceID := msg.Header.Get("X-Trace-ID")
+		spanID := msg.Header.Get("X-Span-ID")
+		if traceID == "" {
+			traceID = env.TraceID
+			spanID = env.SpanID
+		}
+
+		handlerCtx := context.Background()
+		if traceID != "" && spanID != "" {
+			tid, err := trace.TraceIDFromHex(traceID)
+			if err == nil {
+				sid, err := trace.SpanIDFromHex(spanID)
+				if err == nil {
+					sampled := msg.Header.Get("X-Trace-Sampled") == "1"
+					traceFlags := trace.FlagsSampled
+					if !sampled {
+						traceFlags = 0
+					}
+					sc := trace.NewSpanContext(trace.SpanContextConfig{
+						TraceID:    tid,
+						SpanID:     sid,
+						TraceFlags: trace.TraceFlags(traceFlags),
+						Remote:     true,
+					})
+					handlerCtx = trace.ContextWithSpanContext(context.Background(), sc)
+				}
+			}
+		}
+
+		handlerCtx, cancel := context.WithTimeout(handlerCtx, 30*time.Second)
 		defer cancel()
 
 		if err := handler(handlerCtx, &env); err != nil {

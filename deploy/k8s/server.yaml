@@ -48,3 +48,130 @@ metadata:
 type: Opaque
 stringData:
   jwt-secret: "change-this-in-production-use-a-random-64-char-string"
+---
+# ----------------------------------------------------------------------------
+# Server Deployment
+# ----------------------------------------------------------------------------
+# Architecture: Layer 2 (API Server) of the 4-layer defense-in-depth model.
+#   Layer 1: Global Router (hostNetwork TLS/WAF/rate-limit)
+#   Layer 2: API Server (JWT/RBAC/org-scoping) <-- this deployment
+#   Layer 3: PostgreSQL (SSL/parameterized queries/least-privilege)
+#   Layer 4: CI/CD Pipeline (build → scan → deploy)
+#
+# Security: Non-root user, read-only root filesystem, all capabilities dropped.
+# Hot path: Flag evaluation serves sub-millisecond p99 from in-memory cache.
+# Cache invalidation: PG LISTEN/NOTIFY for cross-instance consistency.
+# ----------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  namespace: featuresignals
+  labels:
+    app: server
+    component: api
+    tier: backend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+        component: api
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Pod-level security: fsGroup ensures volume mounts are readable by UID 1000
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      # Image pull secret for GHCR private images
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: server
+          image: featuresignals/server:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # --- Environment: all config from ConfigMap, secrets from Secret ---
+          envFrom:
+            - configMapRef:
+                name: server-config
+            - secretRef:
+                name: jwt-secret
+          # --- Container Security Context ---
+          # Per ARCHITECTURE.md §Security Architecture Layer 2:
+          #   - No root execution
+          #   - Read-only root filesystem (writable /tmp via emptyDir)
+          #   - All Linux capabilities dropped
+          #   - Privilege escalation blocked
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          # --- Resource Limits ---
+          # Per PERFORMANCE_BUDGETS.md: server baseline 100m CPU / 128Mi memory.
+          # Burst headroom to 500m CPU / 512Mi for license validation, webhook dispatch.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          # --- Probes ---
+          # Readiness: fast-start (5s initial, 5s period) — server boots quickly.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Liveness: delayed start (10s) to allow migrations/init to complete.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # --- Volumes ---
+          # /tmp as emptyDir: required because readOnlyRootFilesystem=true.
+          # Go server uses /tmp for temporary file operations (auto-TLS, uploads).
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+      # Tolerations: allow scheduling on control-plane nodes in single-node K3s.
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule

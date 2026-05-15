@@ -116,6 +116,16 @@
           "format": "uuid",
           "type": "string"
         }
+      },
+      "AssessmentID": {
+        "description": "Preflight assessment ID",
+        "in": "path",
+        "name": "assessmentID",
+        "required": true,
+        "schema": {
+          "format": "uuid",
+          "type": "string"
+        }
       }
     },
     "schemas": {
@@ -154,12 +164,7 @@
             "type": "string"
           },
           "status": {
-            "enum": [
-              "pending",
-              "approved",
-              "rejected",
-              "applied"
-            ],
+            "enum": ["pending", "approved", "rejected", "applied"],
             "type": "string"
           },
           "updated_at": {
@@ -196,9 +201,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "context"
-        ],
+        "required": ["context"],
         "type": "object"
       },
       "CancelRequest": {
@@ -256,10 +259,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "entity_a",
-          "entity_b"
-        ],
+        "required": ["entity_a", "entity_b"],
         "type": "object"
       },
       "CompleteSignupRequest": {
@@ -272,10 +272,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "otp"
-        ],
+        "required": ["email", "otp"],
         "type": "object"
       },
       "Condition": {
@@ -318,16 +315,11 @@
             "type": "string"
           },
           "type": {
-            "enum": [
-              "server",
-              "client"
-            ],
+            "enum": ["server", "client"],
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "CreateApprovalRequest": {
@@ -343,11 +335,7 @@
           },
           "payload": {}
         },
-        "required": [
-          "flag_id",
-          "env_id",
-          "change_type"
-        ],
+        "required": ["flag_id", "env_id", "change_type"],
         "type": "object"
       },
       "CreateEnvironmentRequest": {
@@ -362,21 +350,14 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "CreateFlagRequest": {
         "properties": {
           "category": {
             "default": "release",
-            "enum": [
-              "release",
-              "experiment",
-              "ops",
-              "permission"
-            ],
+            "enum": ["release", "experiment", "ops", "permission"],
             "type": "string"
           },
           "default_value": {},
@@ -385,12 +366,7 @@
           },
           "flag_type": {
             "default": "boolean",
-            "enum": [
-              "boolean",
-              "string",
-              "number",
-              "json"
-            ],
+            "enum": ["boolean", "string", "number", "json"],
             "type": "string"
           },
           "key": {
@@ -411,12 +387,7 @@
           },
           "status": {
             "default": "active",
-            "enum": [
-              "active",
-              "rolled_out",
-              "deprecated",
-              "archived"
-            ],
+            "enum": ["active", "rolled_out", "deprecated", "archived"],
             "type": "string"
           },
           "tags": {
@@ -426,10 +397,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "key",
-          "name"
-        ],
+        "required": ["key", "name"],
         "type": "object"
       },
       "CreateProjectRequest": {
@@ -441,9 +409,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object"
       },
       "CreateSegmentRequest": {
@@ -455,10 +421,7 @@
             "type": "string"
           },
           "match_type": {
-            "enum": [
-              "all",
-              "any"
-            ],
+            "enum": ["all", "any"],
             "type": "string"
           },
           "name": {
@@ -471,10 +434,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "key",
-          "name"
-        ],
+        "required": ["key", "name"],
         "type": "object"
       },
       "CreateWebhookRequest": {
@@ -496,10 +456,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "url"
-        ],
+        "required": ["name", "url"],
         "type": "object"
       },
       "DismissHintRequest": {
@@ -508,9 +465,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "hint_id"
-        ],
+        "required": ["hint_id"],
         "type": "object"
       },
       "EnvComparisonResponse": {
@@ -596,9 +551,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ],
+        "required": ["error"],
         "type": "object"
       },
       "EvalContext": {
@@ -612,9 +565,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "key"
-        ],
+        "required": ["key"],
         "type": "object"
       },
       "EvalResult": {
@@ -661,10 +612,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "flag_key",
-          "context"
-        ],
+        "required": ["flag_key", "context"],
         "type": "object"
       },
       "FeaturesResponse": {
@@ -705,12 +653,7 @@
       "FlagResponse": {
         "properties": {
           "category": {
-            "enum": [
-              "release",
-              "experiment",
-              "ops",
-              "permission"
-            ],
+            "enum": ["release", "experiment", "ops", "permission"],
             "type": "string"
           },
           "created_at": {
@@ -722,12 +665,7 @@
             "type": "string"
           },
           "flag_type": {
-            "enum": [
-              "boolean",
-              "string",
-              "number",
-              "json"
-            ],
+            "enum": ["boolean", "string", "number", "json"],
             "type": "string"
           },
           "id": {
@@ -750,12 +688,7 @@
             "type": "array"
           },
           "status": {
-            "enum": [
-              "active",
-              "rolled_out",
-              "deprecated",
-              "archived"
-            ],
+            "enum": ["active", "rolled_out", "deprecated", "archived"],
             "type": "string"
           },
           "tags": {
@@ -816,16 +749,11 @@
       "GatewayRequest": {
         "properties": {
           "gateway": {
-            "enum": [
-              "payu",
-              "stripe"
-            ],
+            "enum": ["payu", "stripe"],
             "type": "string"
           }
         },
-        "required": [
-          "gateway"
-        ],
+        "required": ["gateway"],
         "type": "object"
       },
       "GatewayResponse": {
@@ -881,11 +809,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "password",
-          "name"
-        ],
+        "required": ["email", "password", "name"],
         "type": "object"
       },
       "InspectEntityRequest": {
@@ -898,9 +822,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "key"
-        ],
+        "required": ["key"],
         "type": "object"
       },
       "InviteRequest": {
@@ -910,18 +832,11 @@
             "type": "string"
           },
           "role": {
-            "enum": [
-              "owner",
-              "admin",
-              "developer",
-              "viewer"
-            ],
+            "enum": ["owner", "admin", "developer", "viewer"],
             "type": "string"
           }
         },
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "type": "object"
       },
       "KillFlagRequest": {
@@ -931,9 +846,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "env_id"
-        ],
+        "required": ["env_id"],
         "type": "object"
       },
       "LoginRequest": {
@@ -950,10 +863,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "type": "object"
       },
       "LoginResponse": {
@@ -979,9 +889,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "password"
-        ],
+        "required": ["password"],
         "type": "object"
       },
       "MFAEnableResponse": {
@@ -1013,9 +921,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code"
-        ],
+        "required": ["code"],
         "type": "object"
       },
       "MemberResponse": {
@@ -1036,12 +942,7 @@
             "type": "string"
           },
           "role": {
-            "enum": [
-              "owner",
-              "admin",
-              "developer",
-              "viewer"
-            ],
+            "enum": ["owner", "admin", "developer", "viewer"],
             "type": "string"
           }
         },
@@ -1184,10 +1085,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "source_env_id",
-          "target_env_id"
-        ],
+        "required": ["source_env_id", "target_env_id"],
         "type": "object"
       },
       "RefreshRequest": {
@@ -1196,9 +1094,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "refresh_token"
-        ],
+        "required": ["refresh_token"],
         "type": "object"
       },
       "RefreshResponse": {
@@ -1231,27 +1127,20 @@
             "type": "string"
           }
         },
-        "required": [
-          "email"
-        ],
+        "required": ["email"],
         "type": "object"
       },
       "ReviewRequest": {
         "properties": {
           "action": {
-            "enum": [
-              "approve",
-              "reject"
-            ],
+            "enum": ["approve", "reject"],
             "type": "string"
           },
           "note": {
             "type": "string"
           }
         },
-        "required": [
-          "action"
-        ],
+        "required": ["action"],
         "type": "object"
       },
       "RotateAPIKeyRequest": {
@@ -1362,11 +1251,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "contact_name",
-          "email",
-          "company"
-        ],
+        "required": ["contact_name", "email", "company"],
         "type": "object"
       },
       "SegmentResponse": {
@@ -1386,10 +1271,7 @@
             "type": "string"
           },
           "match_type": {
-            "enum": [
-              "all",
-              "any"
-            ],
+            "enum": ["all", "any"],
             "type": "string"
           },
           "name": {
@@ -1474,11 +1356,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "source_env_id",
-          "target_env_id",
-          "flag_keys"
-        ],
+        "required": ["source_env_id", "target_env_id", "flag_keys"],
         "type": "object"
       },
       "TargetingRule": {
@@ -1502,9 +1380,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "type": "object"
       },
       "TokenExchangeResponse": {
@@ -1608,18 +1484,11 @@
       "UpdateRoleRequest": {
         "properties": {
           "role": {
-            "enum": [
-              "owner",
-              "admin",
-              "developer",
-              "viewer"
-            ],
+            "enum": ["owner", "admin", "developer", "viewer"],
             "type": "string"
           }
         },
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "type": "object"
       },
       "UpdateSegmentRequest": {
@@ -1628,10 +1497,7 @@
             "type": "string"
           },
           "match_type": {
-            "enum": [
-              "all",
-              "any"
-            ],
+            "enum": ["all", "any"],
             "type": "string"
           },
           "name": {
@@ -1708,10 +1574,7 @@
             "type": "string"
           },
           "provider_type": {
-            "enum": [
-              "saml",
-              "oidc"
-            ],
+            "enum": ["saml", "oidc"],
             "type": "string"
           }
         },
@@ -1820,12 +1683,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "online",
-              "degraded",
-              "offline",
-              "provisioning"
-            ]
+            "enum": ["online", "degraded", "offline", "provisioning"]
           },
           "scopes": {
             "type": "array",
@@ -1853,10 +1711,7 @@
       },
       "CreateAgentRequest": {
         "type": "object",
-        "required": [
-          "name",
-          "type"
-        ],
+        "required": ["name", "type"],
         "properties": {
           "name": {
             "type": "string"
@@ -1889,11 +1744,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "online",
-              "degraded",
-              "offline"
-            ]
+            "enum": ["online", "degraded", "offline"]
           },
           "scopes": {
             "type": "array",
@@ -1940,12 +1791,7 @@
           },
           "effect": {
             "type": "string",
-            "enum": [
-              "allow",
-              "block",
-              "warn",
-              "require_approval"
-            ]
+            "enum": ["allow", "block", "warn", "require_approval"]
           },
           "created_at": {
             "type": "string",
@@ -1959,10 +1805,7 @@
       },
       "CreatePolicyRequest": {
         "type": "object",
-        "required": [
-          "name",
-          "rules"
-        ],
+        "required": ["name", "rules"],
         "properties": {
           "name": {
             "type": "string"
@@ -1978,12 +1821,7 @@
           },
           "effect": {
             "type": "string",
-            "enum": [
-              "allow",
-              "block",
-              "warn",
-              "require_approval"
-            ]
+            "enum": ["allow", "block", "warn", "require_approval"]
           },
           "scope": {
             "type": "object"
@@ -2013,12 +1851,7 @@
           },
           "effect": {
             "type": "string",
-            "enum": [
-              "allow",
-              "block",
-              "warn",
-              "require_approval"
-            ]
+            "enum": ["allow", "block", "warn", "require_approval"]
           },
           "scope": {
             "type": "object"
@@ -2033,9 +1866,7 @@
       },
       "TogglePolicyRequest": {
         "type": "object",
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "properties": {
           "enabled": {
             "type": "boolean"
@@ -2044,11 +1875,7 @@
       },
       "ABMResolutionRequest": {
         "type": "object",
-        "required": [
-          "behavior_key",
-          "agent_id",
-          "agent_type"
-        ],
+        "required": ["behavior_key", "agent_id", "agent_type"],
         "properties": {
           "behavior_key": {
             "type": "string"
@@ -2141,9 +1968,7 @@
       },
       "ABMTrackBatchRequest": {
         "type": "object",
-        "required": [
-          "events"
-        ],
+        "required": ["events"],
         "properties": {
           "events": {
             "type": "array",
@@ -2185,12 +2010,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "active",
-              "paused",
-              "retired"
-            ]
+            "enum": ["draft", "active", "paused", "retired"]
           },
           "created_at": {
             "type": "string",
@@ -2204,12 +2024,7 @@
       },
       "CreateABMBehaviorRequest": {
         "type": "object",
-        "required": [
-          "key",
-          "name",
-          "agent_type",
-          "variants"
-        ],
+        "required": ["key", "name", "agent_type", "variants"],
         "properties": {
           "key": {
             "type": "string"
@@ -2237,12 +2052,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "active",
-              "paused",
-              "retired"
-            ]
+            "enum": ["draft", "active", "paused", "retired"]
           }
         }
       },
@@ -2269,12 +2079,818 @@
           },
           "status": {
             "type": "string",
+            "enum": ["draft", "active", "paused", "retired"]
+          }
+        }
+      },
+      "Code2FlagReferenceResponse": {
+        "type": "object",
+        "properties": {
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "flag_key": {
+                  "type": "string"
+                },
+                "repo_name": {
+                  "type": "string"
+                },
+                "file_path": {
+                  "type": "string"
+                },
+                "line_number": {
+                  "type": "integer"
+                },
+                "reference_type": {
+                  "type": "string",
+                  "enum": ["usage", "definition", "cleanup_candidate"]
+                },
+                "snippet": {
+                  "type": "string"
+                },
+                "last_seen_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "Code2FlagSpecRequest": {
+        "type": "object",
+        "required": ["flag_key", "repo_name"],
+        "properties": {
+          "flag_key": {
+            "type": "string"
+          },
+          "repo_name": {
+            "type": "string"
+          },
+          "file_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "context": {
+            "type": "string"
+          }
+        }
+      },
+      "Code2FlagSpecResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "flag_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "flag_type": {
+            "type": "string",
+            "enum": ["boolean", "string", "number", "json"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["release", "experiment", "ops", "permission"]
+          },
+          "default_value": {},
+          "suggested_environments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Code2FlagImplementRequest": {
+        "type": "object",
+        "required": ["flag_key", "repo_name"],
+        "properties": {
+          "flag_key": {
+            "type": "string"
+          },
+          "repo_name": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
             "enum": [
-              "draft",
-              "active",
-              "paused",
-              "retired"
+              "go",
+              "typescript",
+              "javascript",
+              "python",
+              "java",
+              "ruby",
+              "dotnet",
+              "php"
             ]
+          },
+          "implementation_type": {
+            "type": "string",
+            "enum": ["if_else", "sdk_call"]
+          },
+          "target_file": {
+            "type": "string"
+          }
+        }
+      },
+      "Code2FlagImplementResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "flag_key": {
+            "type": "string"
+          },
+          "repo_name": {
+            "type": "string"
+          },
+          "target_file": {
+            "type": "string"
+          },
+          "diff": {
+            "type": "string"
+          },
+          "pull_request_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Code2FlagCleanupResponse": {
+        "type": "object",
+        "properties": {
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "flag_key": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "last_evaluated_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "reference_count": {
+                  "type": "integer"
+                },
+                "risk_level": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"]
+                }
+              }
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "Code2FlagCleanupRequest": {
+        "type": "object",
+        "required": ["flag_key", "repo_name"],
+        "properties": {
+          "flag_key": {
+            "type": "string"
+          },
+          "repo_name": {
+            "type": "string"
+          },
+          "remove_references_only": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PreflightAssessRequest": {
+        "type": "object",
+        "required": ["flag_key", "env_id"],
+        "properties": {
+          "flag_key": {
+            "type": "string"
+          },
+          "env_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "change_type": {
+            "type": "string",
+            "enum": [
+              "rollout",
+              "toggle",
+              "kill",
+              "rollback",
+              "archive",
+              "update_rules"
+            ]
+          },
+          "target_percentage": {
+            "type": "integer"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PreflightAssessResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "flag_key": {
+            "type": "string"
+          },
+          "env_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "change_type": {
+            "type": "string"
+          },
+          "risk_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "estimated_impact": {
+            "type": "object",
+            "properties": {
+              "affected_targets": {
+                "type": "integer"
+              },
+              "affected_percentage": {
+                "type": "number"
+              },
+              "dependent_flags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dependent_services": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "compliance_checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "check_name": {
+                  "type": "string"
+                },
+                "passed": {
+                  "type": "boolean"
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed"]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PreflightApprovalRequest": {
+        "type": "object",
+        "required": ["assessment_id"],
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requested_by": {
+            "type": "string"
+          },
+          "justification": {
+            "type": "string"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": ["low", "normal", "high", "emergency"]
+          }
+        }
+      },
+      "PreflightApprovalResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "flag_key": {
+            "type": "string"
+          },
+          "env_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "change_type": {
+            "type": "string"
+          },
+          "risk_level": {
+            "type": "string"
+          },
+          "requested_by": {
+            "type": "string"
+          },
+          "justification": {
+            "type": "string"
+          },
+          "urgency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected", "expired"]
+          },
+          "reviewers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "decision": {
+                  "type": "string",
+                  "enum": ["pending", "approved", "rejected"]
+                },
+                "comment": {
+                  "type": "string"
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolved_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IncidentFlagMonitorResponse": {
+        "type": "object",
+        "properties": {
+          "active_alerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "flag_key": {
+                  "type": "string"
+                },
+                "env_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "alert_type": {
+                  "type": "string",
+                  "enum": [
+                    "error_rate_spike",
+                    "latency_spike",
+                    "evaluation_anomaly",
+                    "rollout_regression"
+                  ]
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["info", "warning", "critical"]
+                },
+                "message": {
+                  "type": "string"
+                },
+                "detected_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "monitored_flags": {
+            "type": "integer"
+          },
+          "overall_status": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "critical"]
+          }
+        }
+      },
+      "IncidentFlagCorrelateRequest": {
+        "type": "object",
+        "required": ["incident_started_at"],
+        "properties": {
+          "incident_started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "incident_ended_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "services_affected": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "IncidentFlagCorrelateResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "incident_window": {
+            "type": "object",
+            "properties": {
+              "started_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "ended_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "correlated_changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "flag_key": {
+                  "type": "string"
+                },
+                "env_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "change_type": {
+                  "type": "string"
+                },
+                "changed_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "changed_by": {
+                  "type": "string"
+                },
+                "correlation_score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "likely_cause": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "analysis": {
+            "type": "string"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IncidentFlagRemediateRequest": {
+        "type": "object",
+        "required": ["flag_key", "env_id", "action"],
+        "properties": {
+          "flag_key": {
+            "type": "string"
+          },
+          "env_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["pause", "rollback", "kill", "reduce_rollout"]
+          },
+          "rollback_to_percentage": {
+            "type": "integer"
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "IncidentFlagRemediateResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "flag_key": {
+            "type": "string"
+          },
+          "env_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "previous_state": {},
+          "new_state": {},
+          "status": {
+            "type": "string",
+            "enum": ["applied", "pending_approval", "failed"]
+          },
+          "applied_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ImpactReportResponse": {
+        "type": "object",
+        "properties": {
+          "flag_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "report_period": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "end": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "total_evaluations": {
+                "type": "integer"
+              },
+              "unique_targets": {
+                "type": "integer"
+              },
+              "error_rate": {
+                "type": "number"
+              },
+              "p99_latency_ms": {
+                "type": "number"
+              },
+              "rollout_percentage": {
+                "type": "number"
+              }
+            }
+          },
+          "business_impact": {
+            "type": "object",
+            "properties": {
+              "conversion_delta": {
+                "type": "number"
+              },
+              "revenue_attributed": {
+                "type": "number"
+              },
+              "error_cost_estimate": {
+                "type": "number"
+              }
+            }
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ImpactCostResponse": {
+        "type": "object",
+        "properties": {
+          "total_cost": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "cost_by_flag": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "flag_key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "evaluation_cost": {
+                  "type": "number"
+                },
+                "maintenance_cost": {
+                  "type": "number"
+                },
+                "technical_debt_cost": {
+                  "type": "number"
+                },
+                "total_cost": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "cost_by_category": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "total_cost": {
+                  "type": "number"
+                },
+                "flag_count": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ImpactLearningResponse": {
+        "type": "object",
+        "properties": {
+          "insights": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "best_practice",
+                    "anti_pattern",
+                    "risk_pattern",
+                    "optimization"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "related_flags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "generated_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total_flags_analyzed": {
+                "type": "integer"
+              },
+              "cleanup_candidates": {
+                "type": "integer"
+              },
+              "flags_without_owners": {
+                "type": "integer"
+              },
+              "stale_flags": {
+                "type": "integer"
+              },
+              "avg_flag_lifetime_days": {
+                "type": "number"
+              }
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
@@ -2359,9 +2975,7 @@
         },
         "security": [],
         "summary": "Ops login",
-        "tags": [
-          "Ops"
-        ]
+        "tags": ["Ops"]
       }
     },
     "/api/v1/ops/auth/logout": {
@@ -2418,9 +3032,7 @@
           }
         ],
         "summary": "Ops logout",
-        "tags": [
-          "Ops"
-        ]
+        "tags": ["Ops"]
       }
     },
     "/api/v1/ops/auth/refresh": {
@@ -2473,9 +3085,7 @@
         },
         "security": [],
         "summary": "Ops refresh token",
-        "tags": [
-          "Ops"
-        ]
+        "tags": ["Ops"]
       }
     },
     "/docs": {
@@ -2528,9 +3138,7 @@
         },
         "security": [],
         "summary": "API documentation index",
-        "tags": [
-          "Documentation"
-        ]
+        "tags": ["Documentation"]
       }
     },
     "/docs/openapi.json": {
@@ -2583,9 +3191,7 @@
         },
         "security": [],
         "summary": "OpenAPI specification",
-        "tags": [
-          "Documentation"
-        ]
+        "tags": ["Documentation"]
       }
     },
     "/health": {
@@ -2638,9 +3244,7 @@
         },
         "security": [],
         "summary": "Health check",
-        "tags": [
-          "Health"
-        ]
+        "tags": ["Health"]
       }
     },
     "/v1/agent/bulk-eval": {
@@ -2707,9 +3311,7 @@
           }
         ],
         "summary": "Agent bulk evaluate",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/agent/create-flag": {
@@ -2766,9 +3368,7 @@
           }
         ],
         "summary": "Agent create flag",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/agent/evaluate": {
@@ -2835,9 +3435,7 @@
           }
         ],
         "summary": "Agent evaluate",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/agent/flag/{key}": {
@@ -2904,9 +3502,7 @@
           }
         ],
         "summary": "Agent flag lookup",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/analytics/overview": {
@@ -2963,9 +3559,7 @@
           }
         ],
         "summary": "Analytics overview",
-        "tags": [
-          "Analytics"
-        ]
+        "tags": ["Analytics"]
       }
     },
     "/v1/api-keys/{keyID}": {
@@ -3027,9 +3621,7 @@
           }
         ],
         "summary": "Revoke API key",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       }
     },
     "/v1/api-keys/{keyID}/rotate": {
@@ -3101,9 +3693,7 @@
           }
         ],
         "summary": "Rotate API key",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       }
     },
     "/v1/approvals": {
@@ -3167,9 +3757,7 @@
           }
         ],
         "summary": "List approvals",
-        "tags": [
-          "Approvals"
-        ],
+        "tags": ["Approvals"],
         "parameters": [
           {
             "name": "limit",
@@ -3265,9 +3853,7 @@
           }
         ],
         "summary": "Create approval",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       }
     },
     "/v1/approvals/{approvalID}": {
@@ -3336,9 +3922,7 @@
           }
         ],
         "summary": "Get approval",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       }
     },
     "/v1/approvals/{approvalID}/review": {
@@ -3417,9 +4001,7 @@
           }
         ],
         "summary": "Review approval",
-        "tags": [
-          "Approvals"
-        ]
+        "tags": ["Approvals"]
       }
     },
     "/v1/audit": {
@@ -3483,9 +4065,7 @@
           }
         ],
         "summary": "List audit log",
-        "tags": [
-          "Audit"
-        ],
+        "tags": ["Audit"],
         "parameters": [
           {
             "name": "limit",
@@ -3566,9 +4146,7 @@
           }
         ],
         "summary": "Export audit log",
-        "tags": [
-          "Audit"
-        ]
+        "tags": ["Audit"]
       }
     },
     "/v1/auth/complete-signup": {
@@ -3638,9 +4216,7 @@
         },
         "security": [],
         "summary": "Complete signup",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/initiate-signup": {
@@ -3710,9 +4286,7 @@
         },
         "security": [],
         "summary": "Initiate signup",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/login": {
@@ -3782,9 +4356,7 @@
         },
         "security": [],
         "summary": "Log in",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/logout": {
@@ -3848,9 +4420,7 @@
           }
         ],
         "summary": "Log out",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/mfa/disable": {
@@ -3924,9 +4494,7 @@
           }
         ],
         "summary": "Disable MFA",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/mfa/enable": {
@@ -3990,9 +4558,7 @@
           }
         ],
         "summary": "Enable MFA",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/mfa/status": {
@@ -4056,9 +4622,7 @@
           }
         ],
         "summary": "Get MFA status",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/mfa/verify": {
@@ -4132,9 +4696,7 @@
           }
         ],
         "summary": "Verify MFA code",
-        "tags": [
-          "MFA"
-        ]
+        "tags": ["MFA"]
       }
     },
     "/v1/auth/refresh": {
@@ -4204,9 +4766,7 @@
         },
         "security": [],
         "summary": "Refresh token",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/resend-signup-otp": {
@@ -4276,9 +4836,7 @@
         },
         "security": [],
         "summary": "Resend signup OTP",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/send-verification-email": {
@@ -4342,9 +4900,7 @@
           }
         ],
         "summary": "Send verification email",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/token-exchange": {
@@ -4414,9 +4970,7 @@
         },
         "security": [],
         "summary": "Exchange one-time token",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/auth/verify-email": {
@@ -4469,9 +5023,7 @@
         },
         "security": [],
         "summary": "Verify email",
-        "tags": [
-          "Auth"
-        ]
+        "tags": ["Auth"]
       }
     },
     "/v1/billing/cancel": {
@@ -4545,9 +5097,7 @@
           }
         ],
         "summary": "Cancel subscription",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/checkout": {
@@ -4611,9 +5161,7 @@
           }
         ],
         "summary": "Create checkout session",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/credits": {
@@ -4670,9 +5218,7 @@
           }
         ],
         "summary": "List credit balances",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/credits/balance": {
@@ -4729,9 +5275,7 @@
           }
         ],
         "summary": "Get credit balance",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/credits/history": {
@@ -4788,9 +5332,7 @@
           }
         ],
         "summary": "Get credit history",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/credits/purchase": {
@@ -4857,9 +5399,7 @@
           }
         ],
         "summary": "Purchase credits",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/gateway": {
@@ -4933,9 +5473,7 @@
           }
         ],
         "summary": "Update payment gateway",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/payu/callback": {
@@ -4988,9 +5526,7 @@
         },
         "security": [],
         "summary": "PayU callback",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/payu/failure": {
@@ -5043,9 +5579,7 @@
         },
         "security": [],
         "summary": "PayU failure",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/portal": {
@@ -5109,9 +5643,7 @@
           }
         ],
         "summary": "Get billing portal URL",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/stripe/webhook": {
@@ -5164,9 +5696,7 @@
         },
         "security": [],
         "summary": "Stripe webhook",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/subscription": {
@@ -5230,9 +5760,7 @@
           }
         ],
         "summary": "Get subscription",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/billing/usage": {
@@ -5296,9 +5824,7 @@
           }
         ],
         "summary": "Get usage",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/capabilities": {
@@ -5351,9 +5877,7 @@
         },
         "security": [],
         "summary": "Get server capabilities",
-        "tags": [
-          "Pricing"
-        ],
+        "tags": ["Pricing"],
         "parameters": [
           {
             "name": "limit",
@@ -5439,9 +5963,7 @@
           }
         ],
         "summary": "Get all flags for client",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/data/export": {
@@ -5498,9 +6020,7 @@
           }
         ],
         "summary": "Export organization data",
-        "tags": [
-          "Data Export"
-        ]
+        "tags": ["Data Export"]
       }
     },
     "/v1/docs": {
@@ -5553,9 +6073,7 @@
         },
         "security": [],
         "summary": "API docs",
-        "tags": [
-          "Docs"
-        ]
+        "tags": ["Docs"]
       }
     },
     "/v1/environments/{envID}/api-keys": {
@@ -5646,9 +6164,7 @@
           }
         ],
         "summary": "List API keys",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       },
       "post": {
         "description": "Creates a new API key. The full key is returned only on creation.",
@@ -5718,9 +6234,7 @@
           }
         ],
         "summary": "Create API key",
-        "tags": [
-          "API Keys"
-        ]
+        "tags": ["API Keys"]
       }
     },
     "/v1/evaluate": {
@@ -5794,9 +6308,7 @@
           }
         ],
         "summary": "Evaluate a single flag",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/evaluate/bulk": {
@@ -5863,9 +6375,7 @@
           }
         ],
         "summary": "Bulk evaluate",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/features": {
@@ -5929,9 +6439,7 @@
           }
         ],
         "summary": "List enabled features",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/feedback": {
@@ -5998,9 +6506,7 @@
           }
         ],
         "summary": "Submit feedback",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/integrations": {
@@ -6057,9 +6563,7 @@
           }
         ],
         "summary": "List integrations",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       },
       "post": {
         "description": "Creates a new integration (Slack, webhook, etc.).",
@@ -6114,9 +6618,7 @@
           }
         ],
         "summary": "Create integration",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       }
     },
     "/v1/integrations/{integrationID}": {
@@ -6183,9 +6685,7 @@
           }
         ],
         "summary": "Delete integration",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       },
       "get": {
         "description": "Returns a single integration by ID.",
@@ -6250,9 +6750,7 @@
           }
         ],
         "summary": "Get integration",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       },
       "put": {
         "description": "Updates an integration configuration.",
@@ -6317,9 +6815,7 @@
           }
         ],
         "summary": "Update integration",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       }
     },
     "/v1/integrations/{integrationID}/deliveries": {
@@ -6386,9 +6882,7 @@
           }
         ],
         "summary": "List integration deliveries",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       }
     },
     "/v1/integrations/{integrationID}/test": {
@@ -6455,9 +6949,7 @@
           }
         ],
         "summary": "Test integration",
-        "tags": [
-          "Integrations"
-        ]
+        "tags": ["Integrations"]
       }
     },
     "/v1/ip-allowlist": {
@@ -6521,9 +7013,7 @@
           }
         ],
         "summary": "Get IP allowlist",
-        "tags": [
-          "IP Allowlist"
-        ]
+        "tags": ["IP Allowlist"]
       },
       "put": {
         "description": "Creates or updates the IP allowlist.",
@@ -6595,9 +7085,7 @@
           }
         ],
         "summary": "Update IP allowlist",
-        "tags": [
-          "IP Allowlist"
-        ]
+        "tags": ["IP Allowlist"]
       }
     },
     "/v1/limits": {
@@ -6654,9 +7142,7 @@
           }
         ],
         "summary": "Get plan limits",
-        "tags": [
-          "Billing"
-        ]
+        "tags": ["Billing"]
       }
     },
     "/v1/members": {
@@ -6720,9 +7206,7 @@
           }
         ],
         "summary": "List members",
-        "tags": [
-          "Team"
-        ],
+        "tags": ["Team"],
         "parameters": [
           {
             "name": "limit",
@@ -6820,9 +7304,7 @@
           }
         ],
         "summary": "Invite member",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/members/{memberID}": {
@@ -6884,9 +7366,7 @@
           }
         ],
         "summary": "Remove member",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       },
       "put": {
         "description": "Changes a team member's role.",
@@ -6956,9 +7436,7 @@
           }
         ],
         "summary": "Update member role",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/members/{memberID}/permissions": {
@@ -7020,9 +7498,7 @@
           }
         ],
         "summary": "Get member permissions",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       },
       "put": {
         "description": "Replaces per-environment permissions for a member.",
@@ -7092,9 +7568,7 @@
           }
         ],
         "summary": "Update member permissions",
-        "tags": [
-          "Team"
-        ]
+        "tags": ["Team"]
       }
     },
     "/v1/metrics/evaluations": {
@@ -7158,9 +7632,7 @@
           }
         ],
         "summary": "Get evaluation metrics",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/metrics/evaluations/reset": {
@@ -7224,9 +7696,7 @@
           }
         ],
         "summary": "Reset evaluation metrics",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/metrics/impressions": {
@@ -7283,9 +7753,7 @@
           }
         ],
         "summary": "Get impression metrics",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/metrics/impressions/flush": {
@@ -7342,9 +7810,7 @@
           }
         ],
         "summary": "Flush impressions",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/onboarding": {
@@ -7408,9 +7874,7 @@
           }
         ],
         "summary": "Get onboarding state",
-        "tags": [
-          "Onboarding"
-        ]
+        "tags": ["Onboarding"]
       },
       "patch": {
         "description": "Patches onboarding step completion flags.",
@@ -7482,9 +7946,7 @@
           }
         ],
         "summary": "Update onboarding state",
-        "tags": [
-          "Onboarding"
-        ]
+        "tags": ["Onboarding"]
       }
     },
     "/v1/openapi.json": {
@@ -7537,9 +7999,7 @@
         },
         "security": [],
         "summary": "OpenAPI spec",
-        "tags": [
-          "Docs"
-        ]
+        "tags": ["Docs"]
       }
     },
     "/v1/pinned": {
@@ -7596,9 +8056,7 @@
           }
         ],
         "summary": "Pin item",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/pinned/{pinnedID}": {
@@ -7665,9 +8123,7 @@
           }
         ],
         "summary": "Unpin item",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/pricing": {
@@ -7720,9 +8176,7 @@
         },
         "security": [],
         "summary": "Get pricing",
-        "tags": [
-          "Pricing"
-        ]
+        "tags": ["Pricing"]
       }
     },
     "/v1/projects": {
@@ -7786,9 +8240,7 @@
           }
         ],
         "summary": "List projects",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "parameters": [
           {
             "name": "limit",
@@ -7884,9 +8336,7 @@
           }
         ],
         "summary": "Create project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}": {
@@ -7948,9 +8398,7 @@
           }
         ],
         "summary": "Delete project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "get": {
         "description": "Returns a single project by ID.",
@@ -8017,9 +8465,7 @@
           }
         ],
         "summary": "Get project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       },
       "put": {
         "description": "Updates a project's name, description, or settings.",
@@ -8079,9 +8525,7 @@
           }
         ],
         "summary": "Update project",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}/dashboard": {
@@ -8133,9 +8577,7 @@
           }
         ],
         "summary": "Project dashboard",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}/activity": {
@@ -8197,9 +8639,7 @@
           }
         ],
         "summary": "Project activity",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}/environments": {
@@ -8290,9 +8730,7 @@
           }
         ],
         "summary": "List environments",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       },
       "post": {
         "description": "Creates a new environment in the specified project.",
@@ -8369,9 +8807,7 @@
           }
         ],
         "summary": "Create environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}": {
@@ -8436,9 +8872,7 @@
           }
         ],
         "summary": "Get environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       },
       "delete": {
         "description": "Permanently deletes an environment and its flag states.",
@@ -8501,9 +8935,7 @@
           }
         ],
         "summary": "Delete environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       },
       "put": {
         "description": "Updates an environment's name, key, or description.",
@@ -8566,9 +8998,7 @@
           }
         ],
         "summary": "Update environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/clone": {
@@ -8643,9 +9073,7 @@
           }
         ],
         "summary": "Clone environment",
-        "tags": [
-          "Environments"
-        ]
+        "tags": ["Environments"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/compare-entities": {
@@ -8720,9 +9148,7 @@
           }
         ],
         "summary": "Compare entities",
-        "tags": [
-          "Insights"
-        ]
+        "tags": ["Insights"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/flag-insights": {
@@ -8787,9 +9213,7 @@
           }
         ],
         "summary": "Flag insights",
-        "tags": [
-          "Insights"
-        ]
+        "tags": ["Insights"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/flag-states": {
@@ -8883,9 +9307,7 @@
           }
         ],
         "summary": "List flag states",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/environments/{envID}/inspect-entity": {
@@ -8960,9 +9382,7 @@
           }
         ],
         "summary": "Inspect entity",
-        "tags": [
-          "Insights"
-        ]
+        "tags": ["Insights"]
       }
     },
     "/v1/projects/{projectID}/flags": {
@@ -9053,9 +9473,7 @@
           }
         ],
         "summary": "List flags",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       },
       "post": {
         "description": "Creates a new feature flag in the project.",
@@ -9132,9 +9550,7 @@
           }
         ],
         "summary": "Create flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/compare-environments": {
@@ -9203,9 +9619,7 @@
           }
         ],
         "summary": "Compare environments",
-        "tags": [
-          "Flag Management"
-        ]
+        "tags": ["Flag Management"]
       }
     },
     "/v1/projects/{projectID}/flags/sync-environments": {
@@ -9277,9 +9691,7 @@
           }
         ],
         "summary": "Sync environments",
-        "tags": [
-          "Flag Management"
-        ]
+        "tags": ["Flag Management"]
       }
     },
     "/v1/projects/{projectID}/flags/archived": {
@@ -9338,9 +9750,7 @@
           }
         ],
         "summary": "List archived flags",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}": {
@@ -9405,9 +9815,7 @@
           }
         ],
         "summary": "Delete flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       },
       "get": {
         "description": "Returns a single feature flag by key.",
@@ -9477,9 +9885,7 @@
           }
         ],
         "summary": "Get flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       },
       "put": {
         "description": "Updates the flag definition (name, description, tags, category, status).",
@@ -9559,9 +9965,7 @@
           }
         ],
         "summary": "Update flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/environments/{envID}": {
@@ -9636,9 +10040,7 @@
           }
         ],
         "summary": "Get flag state",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       },
       "put": {
         "description": "Updates the flag's enabled status, rules, rollout percentage, or schedule for a specific environment.",
@@ -9721,9 +10123,7 @@
           }
         ],
         "summary": "Update flag state",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/history": {
@@ -9788,9 +10188,7 @@
           }
         ],
         "summary": "Get flag history",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/history/{version}": {
@@ -9863,9 +10261,7 @@
           }
         ],
         "summary": "Get flag version",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/kill": {
@@ -9947,9 +10343,7 @@
           }
         ],
         "summary": "Kill switch",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/promote": {
@@ -10031,9 +10425,7 @@
           }
         ],
         "summary": "Promote flag",
-        "tags": [
-          "Flag State"
-        ]
+        "tags": ["Flag State"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/rollback": {
@@ -10098,9 +10490,7 @@
           }
         ],
         "summary": "Rollback flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/archive": {
@@ -10175,9 +10565,7 @@
           }
         ],
         "summary": "Archive flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/flags/{flagKey}/restore": {
@@ -10252,9 +10640,7 @@
           }
         ],
         "summary": "Restore flag",
-        "tags": [
-          "Flags"
-        ]
+        "tags": ["Flags"]
       }
     },
     "/v1/projects/{projectID}/pinned": {
@@ -10316,9 +10702,7 @@
           }
         ],
         "summary": "List pinned items",
-        "tags": [
-          "Projects"
-        ]
+        "tags": ["Projects"]
       }
     },
     "/v1/projects/{projectID}/segments": {
@@ -10409,9 +10793,7 @@
           }
         ],
         "summary": "List segments",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       },
       "post": {
         "description": "Creates a new user segment with targeting rules.",
@@ -10488,9 +10870,7 @@
           }
         ],
         "summary": "Create segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       }
     },
     "/v1/projects/{projectID}/segments/{segmentKey}": {
@@ -10555,9 +10935,7 @@
           }
         ],
         "summary": "Delete segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       },
       "get": {
         "description": "Returns a single segment by key.",
@@ -10627,9 +11005,7 @@
           }
         ],
         "summary": "Get segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       },
       "put": {
         "description": "Updates a segment's name, description, match type, or rules.",
@@ -10709,9 +11085,7 @@
           }
         ],
         "summary": "Update segment",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       }
     },
     "/v1/projects/{projectID}/segments/{segmentKey}/evaluate": {
@@ -10786,9 +11160,7 @@
           }
         ],
         "summary": "Evaluate segment match",
-        "tags": [
-          "Segments"
-        ]
+        "tags": ["Segments"]
       }
     },
     "/v1/regions": {
@@ -10841,9 +11213,7 @@
         },
         "security": [],
         "summary": "List data regions",
-        "tags": [
-          "Pricing"
-        ],
+        "tags": ["Pricing"],
         "parameters": [
           {
             "name": "limit",
@@ -10924,9 +11294,7 @@
           }
         ],
         "summary": "List custom roles",
-        "tags": [
-          "Custom Roles"
-        ],
+        "tags": ["Custom Roles"],
         "parameters": [
           {
             "name": "limit",
@@ -11005,9 +11373,7 @@
           }
         ],
         "summary": "Create custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       }
     },
     "/v1/roles/{roleID}": {
@@ -11069,9 +11435,7 @@
           }
         ],
         "summary": "Delete custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       },
       "get": {
         "description": "Returns a single custom role.",
@@ -11131,9 +11495,7 @@
           }
         ],
         "summary": "Get custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       },
       "put": {
         "description": "Updates a custom role template.",
@@ -11193,9 +11555,7 @@
           }
         ],
         "summary": "Update custom role",
-        "tags": [
-          "Custom Roles"
-        ]
+        "tags": ["Custom Roles"]
       }
     },
     "/v1/sales/inquiry": {
@@ -11258,9 +11618,7 @@
         },
         "security": [],
         "summary": "Submit sales inquiry",
-        "tags": [
-          "Sales"
-        ]
+        "tags": ["Sales"]
       }
     },
     "/v1/scim/Users": {
@@ -11317,9 +11675,7 @@
           }
         ],
         "summary": "List SCIM users",
-        "tags": [
-          "SCIM"
-        ],
+        "tags": ["SCIM"],
         "parameters": [
           {
             "name": "limit",
@@ -11398,9 +11754,7 @@
           }
         ],
         "summary": "Create SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       }
     },
     "/v1/scim/Users/{userID}": {
@@ -11462,9 +11816,7 @@
           }
         ],
         "summary": "Delete SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       },
       "get": {
         "description": "Gets a single user via SCIM 2.0.",
@@ -11524,9 +11876,7 @@
           }
         ],
         "summary": "Get SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       },
       "put": {
         "description": "Updates a user via SCIM 2.0.",
@@ -11586,9 +11936,7 @@
           }
         ],
         "summary": "Update SCIM user",
-        "tags": [
-          "SCIM"
-        ]
+        "tags": ["SCIM"]
       }
     },
     "/v1/search": {
@@ -11645,9 +11993,7 @@
           }
         ],
         "summary": "Search",
-        "tags": [
-          "Search"
-        ]
+        "tags": ["Search"]
       }
     },
     "/v1/search/suggest": {
@@ -11704,9 +12050,7 @@
           }
         ],
         "summary": "Search suggestions",
-        "tags": [
-          "Search"
-        ]
+        "tags": ["Search"]
       }
     },
     "/v1/sso/config": {
@@ -11763,9 +12107,7 @@
           }
         ],
         "summary": "Delete SSO config",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       },
       "get": {
         "description": "Returns the SSO configuration. Secrets are masked.",
@@ -11827,9 +12169,7 @@
           }
         ],
         "summary": "Get SSO config",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       },
       "post": {
         "description": "Creates or updates the SSO configuration.",
@@ -11901,9 +12241,7 @@
           }
         ],
         "summary": "Create/update SSO config",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/config/test": {
@@ -11960,9 +12298,7 @@
           }
         ],
         "summary": "Test SSO connection",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/discovery/{orgSlug}": {
@@ -12020,9 +12356,7 @@
         },
         "security": [],
         "summary": "SSO discovery",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/oidc/authorize/{orgSlug}": {
@@ -12080,9 +12414,7 @@
         },
         "security": [],
         "summary": "Initiate OIDC login",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/oidc/callback/{orgSlug}": {
@@ -12140,9 +12472,7 @@
         },
         "security": [],
         "summary": "OIDC callback",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/saml/acs/{orgSlug}": {
@@ -12200,9 +12530,7 @@
         },
         "security": [],
         "summary": "SAML ACS",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/saml/login/{orgSlug}": {
@@ -12260,9 +12588,7 @@
         },
         "security": [],
         "summary": "Initiate SAML login",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/sso/saml/metadata/{orgSlug}": {
@@ -12320,9 +12646,7 @@
         },
         "security": [],
         "summary": "SAML metadata",
-        "tags": [
-          "SSO"
-        ]
+        "tags": ["SSO"]
       }
     },
     "/v1/status": {
@@ -12375,9 +12699,7 @@
         },
         "security": [],
         "summary": "Get service status",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/status/global": {
@@ -12430,9 +12752,7 @@
         },
         "security": [],
         "summary": "Get global status",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/status/history": {
@@ -12485,9 +12805,7 @@
         },
         "security": [],
         "summary": "Get status history",
-        "tags": [
-          "Status"
-        ],
+        "tags": ["Status"],
         "parameters": [
           {
             "name": "limit",
@@ -12564,9 +12882,7 @@
         },
         "security": [],
         "summary": "Get SLA info",
-        "tags": [
-          "Status"
-        ]
+        "tags": ["Status"]
       }
     },
     "/v1/stream/{envKey}": {
@@ -12628,9 +12944,7 @@
           }
         ],
         "summary": "SSE stream",
-        "tags": [
-          "Evaluation"
-        ]
+        "tags": ["Evaluation"]
       }
     },
     "/v1/track": {
@@ -12697,9 +13011,7 @@
           }
         ],
         "summary": "Track impression",
-        "tags": [
-          "Metrics"
-        ]
+        "tags": ["Metrics"]
       }
     },
     "/v1/users/me": {
@@ -12756,9 +13068,7 @@
           }
         ],
         "summary": "Delete account (GDPR)",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/users/me/data": {
@@ -12815,9 +13125,7 @@
           }
         ],
         "summary": "Export personal data (GDPR)",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/users/me/email-preferences": {
@@ -12874,9 +13182,7 @@
           }
         ],
         "summary": "Update email preferences",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/users/me/hints": {
@@ -12933,9 +13239,7 @@
           }
         ],
         "summary": "Get dismissed hints",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "parameters": [
           {
             "name": "limit",
@@ -13031,9 +13335,7 @@
           }
         ],
         "summary": "Dismiss hint",
-        "tags": [
-          "User"
-        ]
+        "tags": ["User"]
       }
     },
     "/v1/webhooks": {
@@ -13097,9 +13399,7 @@
           }
         ],
         "summary": "List webhooks",
-        "tags": [
-          "Webhooks"
-        ],
+        "tags": ["Webhooks"],
         "parameters": [
           {
             "name": "limit",
@@ -13195,9 +13495,7 @@
           }
         ],
         "summary": "Create webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/v1/webhooks/{webhookID}": {
@@ -13259,9 +13557,7 @@
           }
         ],
         "summary": "Delete webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "get": {
         "description": "Returns a single webhook by ID.",
@@ -13328,9 +13624,7 @@
           }
         ],
         "summary": "Get webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       },
       "put": {
         "description": "Updates a webhook's URL, events, secret, or enabled state.",
@@ -13407,9 +13701,7 @@
           }
         ],
         "summary": "Update webhook",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/v1/webhooks/{webhookID}/deliveries": {
@@ -13500,9 +13792,7 @@
           }
         ],
         "summary": "List deliveries",
-        "tags": [
-          "Webhooks"
-        ]
+        "tags": ["Webhooks"]
       }
     },
     "/v1/agents": {
@@ -13566,9 +13856,7 @@
           }
         ],
         "summary": "List all agents",
-        "tags": [
-          "Agent Registry"
-        ],
+        "tags": ["Agent Registry"],
         "parameters": [
           {
             "name": "limit",
@@ -13664,9 +13952,7 @@
           }
         ],
         "summary": "Register a new agent",
-        "tags": [
-          "Agent Registry"
-        ]
+        "tags": ["Agent Registry"]
       }
     },
     "/v1/policies": {
@@ -13730,9 +14016,7 @@
           }
         ],
         "summary": "List all policies",
-        "tags": [
-          "Policies"
-        ],
+        "tags": ["Policies"],
         "parameters": [
           {
             "name": "limit",
@@ -13828,9 +14112,7 @@
           }
         ],
         "summary": "Create a policy",
-        "tags": [
-          "Policies"
-        ]
+        "tags": ["Policies"]
       }
     },
     "/v1/abm/resolve": {
@@ -13904,9 +14186,7 @@
           }
         ],
         "summary": "Resolve behavior variant",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       }
     },
     "/v1/abm/track": {
@@ -13973,9 +14253,7 @@
           }
         ],
         "summary": "Record track event",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       }
     },
     "/v1/abm/track/batch": {
@@ -14042,9 +14320,7 @@
           }
         ],
         "summary": "Batch track events",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       }
     },
     "/v1/abm/behaviors": {
@@ -14108,9 +14384,7 @@
           }
         ],
         "summary": "List behaviors",
-        "tags": [
-          "ABM"
-        ],
+        "tags": ["ABM"],
         "parameters": [
           {
             "name": "limit",
@@ -14206,9 +14480,7 @@
           }
         ],
         "summary": "Create behavior",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       }
     },
     "/v1/abm/behaviors/{key}": {
@@ -14272,9 +14544,7 @@
           }
         ],
         "summary": "Get behavior",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       },
       "patch": {
         "description": "Updates an existing ABM behavior's variants, rules, or configuration.",
@@ -14346,9 +14616,7 @@
           }
         ],
         "summary": "Update behavior",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       },
       "delete": {
         "description": "Removes an ABM behavior.",
@@ -14403,9 +14671,7 @@
           }
         ],
         "summary": "Delete behavior",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       }
     },
     "/v1/abm/behaviors/{key}/analytics": {
@@ -14462,9 +14728,7 @@
           }
         ],
         "summary": "Get behavior analytics",
-        "tags": [
-          "ABM"
-        ]
+        "tags": ["ABM"]
       }
     },
     "/v1/eval-events": {
@@ -14521,9 +14785,7 @@
           }
         ],
         "summary": "Query evaluation events",
-        "tags": [
-          "Eval Events"
-        ]
+        "tags": ["Eval Events"]
       }
     },
     "/v1/eval-events/volume": {
@@ -14580,9 +14842,7 @@
           }
         ],
         "summary": "Get evaluation volume time series",
-        "tags": [
-          "Eval Events"
-        ]
+        "tags": ["Eval Events"]
       }
     },
     "/v1/agents/{agentID}": {
@@ -14646,9 +14906,7 @@
           }
         ],
         "summary": "Get agent by ID",
-        "tags": [
-          "Agent Registry"
-        ]
+        "tags": ["Agent Registry"]
       },
       "patch": {
         "description": "Updates an existing agent's metadata, status, or scopes.",
@@ -14720,9 +14978,7 @@
           }
         ],
         "summary": "Update agent",
-        "tags": [
-          "Agent Registry"
-        ]
+        "tags": ["Agent Registry"]
       },
       "delete": {
         "description": "Removes an agent from the registry.",
@@ -14777,9 +15033,7 @@
           }
         ],
         "summary": "Remove agent",
-        "tags": [
-          "Agent Registry"
-        ]
+        "tags": ["Agent Registry"]
       }
     },
     "/v1/agents/{agentID}/heartbeat": {
@@ -14846,9 +15100,7 @@
           }
         ],
         "summary": "Update agent heartbeat",
-        "tags": [
-          "Agent Registry"
-        ]
+        "tags": ["Agent Registry"]
       }
     },
     "/v1/agents/{agentID}/maturity": {
@@ -14905,9 +15157,7 @@
           }
         ],
         "summary": "Get agent maturity levels",
-        "tags": [
-          "Agent Registry"
-        ]
+        "tags": ["Agent Registry"]
       }
     },
     "/v1/policies/{policyID}": {
@@ -14971,9 +15221,7 @@
           }
         ],
         "summary": "Get policy by ID",
-        "tags": [
-          "Policies"
-        ]
+        "tags": ["Policies"]
       },
       "patch": {
         "description": "Updates an existing governance policy's rules or configuration.",
@@ -15045,9 +15293,7 @@
           }
         ],
         "summary": "Update policy",
-        "tags": [
-          "Policies"
-        ]
+        "tags": ["Policies"]
       },
       "delete": {
         "description": "Removes a governance policy.",
@@ -15102,9 +15348,7 @@
           }
         ],
         "summary": "Delete policy",
-        "tags": [
-          "Policies"
-        ]
+        "tags": ["Policies"]
       }
     },
     "/v1/policies/{policyID}/toggle": {
@@ -15178,9 +15422,1123 @@
           }
         ],
         "summary": "Enable/disable policy",
-        "tags": [
-          "Policies"
+        "tags": ["Policies"]
+      }
+    },
+    "/v1/code2flag/references": {
+      "get": {
+        "description": "Scans connected GitHub repositories for flag references in code. Returns usages, definitions, and cleanup candidates.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Code2FlagReferenceResponse"
+                }
+              }
+            },
+            "description": "Code references — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Find flag references in code",
+        "tags": ["Code2Flag"],
+        "parameters": [
+          {
+            "name": "flag_key",
+            "in": "query",
+            "required": false,
+            "description": "Filter by flag key",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repo_name",
+            "in": "query",
+            "required": false,
+            "description": "Filter by repository name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reference_type",
+            "in": "query",
+            "required": false,
+            "description": "Filter by reference type",
+            "schema": {
+              "type": "string",
+              "enum": ["usage", "definition", "cleanup_candidate"]
+            }
+          }
         ]
+      }
+    },
+    "/v1/code2flag/spec": {
+      "post": {
+        "description": "Analyzes code references and generates a flag specification with suggested type, category, default value, and environments.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Code2FlagSpecRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Code2FlagSpecResponse"
+                }
+              }
+            },
+            "description": "Flag specification — generated"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Generate flag specification from code",
+        "tags": ["Code2Flag"]
+      }
+    },
+    "/v1/code2flag/implement": {
+      "post": {
+        "description": "Generates implementation code (if/else or SDK call) for a flag in the specified language and file.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Code2FlagImplementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Code2FlagImplementResponse"
+                }
+              }
+            },
+            "description": "Implementation — generated"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Generate flag implementation code",
+        "tags": ["Code2Flag"]
+      }
+    },
+    "/v1/code2flag/cleanup": {
+      "get": {
+        "description": "Finds flags that are safe to remove based on evaluation history, reference analysis, and status.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Code2FlagCleanupResponse"
+                }
+              }
+            },
+            "description": "Cleanup candidates — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Find flags safe to remove",
+        "tags": ["Code2Flag"],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "description": "Filter by project ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "risk_level",
+            "in": "query",
+            "required": false,
+            "description": "Filter by risk level",
+            "schema": {
+              "type": "string",
+              "enum": ["low", "medium", "high"]
+            }
+          }
+        ]
+      },
+      "post": {
+        "description": "Creates a pull request to remove a flag and its references from the specified repository.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Code2FlagCleanupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Code2FlagImplementResponse"
+                }
+              }
+            },
+            "description": "Cleanup PR — created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create PR to remove a flag",
+        "tags": ["Code2Flag"]
+      }
+    },
+    "/v1/preflight/assess": {
+      "post": {
+        "description": "Runs a pre-change assessment including impact analysis, risk scoring, compliance checks, and rollout recommendations.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreflightAssessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightAssessResponse"
+                }
+              }
+            },
+            "description": "Assessment — created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Run pre-change assessment",
+        "tags": ["Preflight"]
+      }
+    },
+    "/v1/preflight/assess/{assessmentID}": {
+      "get": {
+        "description": "Returns the results of a previously run preflight assessment including risk score, impact estimates, and compliance status.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AssessmentID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightAssessResponse"
+                }
+              }
+            },
+            "description": "Assessment results — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get assessment results",
+        "tags": ["Preflight"]
+      }
+    },
+    "/v1/preflight/approval": {
+      "post": {
+        "description": "Requests approval for a change based on a completed preflight assessment.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreflightApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightApprovalResponse"
+                }
+              }
+            },
+            "description": "Approval request — created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Request approval for a change",
+        "tags": ["Preflight"]
+      }
+    },
+    "/v1/preflight/approval/{approvalID}": {
+      "get": {
+        "description": "Returns the status and details of a preflight approval request including reviewer decisions.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ApprovalID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightApprovalResponse"
+                }
+              }
+            },
+            "description": "Approval status — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get approval status",
+        "tags": ["Preflight"]
+      }
+    },
+    "/v1/incidentflag/monitor": {
+      "get": {
+        "description": "Returns active monitoring status for all flags including alerts, anomalies, and overall health.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentFlagMonitorResponse"
+                }
+              }
+            },
+            "description": "Monitoring status — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get active monitoring status",
+        "tags": ["IncidentFlag"],
+        "parameters": [
+          {
+            "name": "flag_key",
+            "in": "query",
+            "required": false,
+            "description": "Filter by flag key",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "env_id",
+            "in": "query",
+            "required": false,
+            "description": "Filter by environment ID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/incidentflag/correlate": {
+      "post": {
+        "description": "Correlates a production incident with recent flag changes to identify potential causes.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentFlagCorrelateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentFlagCorrelateResponse"
+                }
+              }
+            },
+            "description": "Correlation results — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Correlate incident with flag changes",
+        "tags": ["IncidentFlag"]
+      }
+    },
+    "/v1/incidentflag/remediate": {
+      "post": {
+        "description": "Triggers auto-remediation actions such as instant pause, rollback, or kill on a flag.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentFlagRemediateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentFlagRemediateResponse"
+                }
+              }
+            },
+            "description": "Remediation — applied"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Trigger auto-remediation",
+        "tags": ["IncidentFlag"]
+      }
+    },
+    "/v1/impact/report/{flagKey}": {
+      "get": {
+        "description": "Returns an impact report for a specific flag including metrics, business impact, and recommendations.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FlagKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactReportResponse"
+                }
+              }
+            },
+            "description": "Impact report — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get impact report for a flag",
+        "tags": ["Impact Analyzer"]
+      }
+    },
+    "/v1/impact/cost": {
+      "get": {
+        "description": "Returns cost attribution across all flags broken down by individual flag and category.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactCostResponse"
+                }
+              }
+            },
+            "description": "Cost attribution — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get cost attribution across flags",
+        "tags": ["Impact Analyzer"]
+      }
+    },
+    "/v1/impact/learning": {
+      "get": {
+        "description": "Returns org-wide learning insights including best practices, anti-patterns, risk patterns, and cleanup recommendations.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactLearningResponse"
+                }
+              }
+            },
+            "description": "Learning insights — success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get org-wide learning insights",
+        "tags": ["Impact Analyzer"]
       }
     }
   },
@@ -15347,6 +16705,22 @@
     {
       "description": "Evaluation event analytics and volume time series",
       "name": "Eval Events"
+    },
+    {
+      "description": "Feature flag IDE — discover, spec, create, implement, and cleanup flags",
+      "name": "Code2Flag"
+    },
+    {
+      "description": "Pre-change command center — impact analysis, risk scoring, compliance, and approval",
+      "name": "Preflight"
+    },
+    {
+      "description": "Post-change safety net — monitoring, correlation, and auto-remediation",
+      "name": "IncidentFlag"
+    },
+    {
+      "description": "Feedback loop — impact measurement, cost attribution, and org learning",
+      "name": "Impact Analyzer"
     }
   ]
 }

@@ -46,6 +46,10 @@ type PGInvalidator struct {
 	subs    map[string]domain.InvalidationHandler // channel → handler
 	closed  bool
 	closeCh chan struct{}
+
+	// handlerWg tracks in-flight handler goroutines so Close() can wait
+	// for them to complete before returning (CLAUDE.md §2.1: no fire-and-forget).
+	handlerWg sync.WaitGroup
 }
 
 // NewPGInvalidator creates a new PGInvalidator backed by the given pool.
@@ -105,15 +109,22 @@ func (p *PGInvalidator) Subscribe(ctx context.Context, channel string, handler d
 }
 
 // Close shuts down the invalidator. Active Subscribe calls will return
-// when their context is cancelled. Close is idempotent.
+// when their context is cancelled. Close waits for in-flight handler
+// goroutines to complete (per CLAUDE.md §2.1). Close is idempotent.
 func (p *PGInvalidator) Close() error {
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if p.closed {
+		p.mu.Unlock()
 		return nil
 	}
 	p.closed = true
 	close(p.closeCh)
+	p.mu.Unlock()
+
+	// Wait for in-flight handler goroutines to drain.
+	// We release the lock first so concurrent Invalidate/Subscribe
+	// calls can fail fast on p.closed rather than blocking.
+	p.handlerWg.Wait()
 	return nil
 }
 
@@ -202,10 +213,14 @@ func (p *PGInvalidator) listenOnce(ctx context.Context, channel string, handler 
 		)
 
 		// Invoke handler in a goroutine to avoid blocking the LISTEN loop.
-		// The handler receives its own context with a timeout.
-		handlerCtx, handlerCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		// The handler receives a context derived from the listen loop's ctx
+		// with a timeout. The goroutine lifecycle is tracked via handlerWg
+		// so Close() can wait for completion (CLAUDE.md §2.1).
+		handlerCtx, handlerCancel := context.WithTimeout(ctx, 5*time.Second)
+		p.handlerWg.Add(1)
 		go func() {
 			defer handlerCancel()
+			defer p.handlerWg.Done()
 			handler(handlerCtx, notification.Channel, []byte(notification.Payload))
 		}()
 	}

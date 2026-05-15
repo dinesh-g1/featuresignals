@@ -56,6 +56,7 @@ func NewRouter(
 	logger *slog.Logger,
 	metricsCollector *metrics.Collector,
 	otelInstruments *observability.Instruments,
+	governancePipeline domain.GovernancePipeline,
 	billing BillingConfig,
 	otpSender domain.OTPSender,
 	appBaseURL string,
@@ -116,7 +117,7 @@ func NewRouter(
 	segmentH := handlers.NewSegmentHandler(store)
 	apiKeyH := handlers.NewAPIKeyHandler(store)
 	auditH := handlers.NewAuditHandler(store)
-	auditExportH := handlers.NewAuditExportHandler(store)
+	auditExportH := handlers.NewAuditExportHandler(store, otelInstruments, logger)
 	teamH := handlers.NewTeamHandler(store, jwtMgr, emitter, lifecycle, dashboardURL)
 	limitsH := handlers.NewLimitsHandler(store, store)
 	searchH := handlers.NewSearchHandler(store)
@@ -136,6 +137,17 @@ func NewRouter(
 	agentRegistryH := handlers.NewAgentRegistryHandler(store, logger, otelInstruments)
 	abmH := handlers.NewABMHandler(store, logger, otelInstruments)
 	policyH := handlers.NewPolicyHandler(store, logger, otelInstruments)
+
+	// Governance pipeline is ready for agent action execution endpoints.
+	// TODO(agent-runtime): Wire governancePipeline into agent handlers when
+	// agent action submission endpoints (MCP tools, action API) are built.
+	if governancePipeline != nil {
+		logger.Info("governance pipeline available for agent handlers",
+			"steps", governancePipeline.Steps(),
+		)
+	} else {
+		logger.Warn("governance pipeline is nil — agent actions will not be governed")
+	}
 
 	userPrivacyH := handlers.NewUserPrivacyHandler(store)
 	featuresH := handlers.NewFeaturesHandler(store)
@@ -254,6 +266,7 @@ func NewRouter(
 	// rate limiting, and feature gating.
 
 	r.Route("/v1", func(r chi.Router) {
+		r.Use(middleware.APIVersion)
 		r.Use(middleware.RequireJSON)
 
 		// ═══════════════════════════════════════════════════════════
@@ -528,11 +541,14 @@ func NewRouter(
 				r.Get("/projects/{projectID}/environments", envH.List)
 				r.Get("/projects/{projectID}/environments/{envID}", envH.Get)
 
-				// Flags
-				r.Get("/projects/{projectID}/flags", flagH.List)
-				r.Get("/flags", flagH.List) // flat endpoint: ?project_id=x&sort=name:asc&label_selector=key==val
-				r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
-				r.Get("/projects/{projectID}/flags/archived", flagH.ListArchived)
+				// Flags — read operations require flag:read scope
+					r.Group(func(r chi.Router) {
+						r.Use(middleware.RequireScope(domain.ScopeFlagRead))
+						r.Get("/projects/{projectID}/flags", flagH.List)
+						r.Get("/flags", flagH.List) // flat endpoint: ?project_id=x&sort=name:asc&label_selector=key==val
+						r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
+						r.Get("/projects/{projectID}/flags/archived", flagH.ListArchived)
+					})
 
 				// Flag history & versioning
 				r.Get("/projects/{projectID}/flags/{flagKey}/history", flagHistoryH.ListVersions)
@@ -569,10 +585,13 @@ func NewRouter(
 				r.Get("/members", teamH.List)
 				r.Get("/members/{memberID}/permissions", teamH.ListPermissions)
 
-				// Agent Registry (P0 #15, #16, #19) — Read
-					r.Get("/agents", agentRegistryH.List)
-					r.Get("/agents/{agentID}", agentRegistryH.Get)
-					r.Get("/agents/{agentID}/maturity", agentRegistryH.ListMaturities)
+				// Agent Registry (P0 #15, #16, #19) — Read (requires agent:read scope)
+						r.Group(func(r chi.Router) {
+							r.Use(middleware.RequireScope(domain.ScopeAgentRead))
+							r.Get("/agents", agentRegistryH.List)
+							r.Get("/agents/{agentID}", agentRegistryH.Get)
+							r.Get("/agents/{agentID}/maturity", agentRegistryH.ListMaturities)
+						})
 
 					// Governance Policies — Read
 					r.Get("/policies", policyH.List)
@@ -690,13 +709,14 @@ func NewRouter(
 			// to owner and admin roles.
 
 			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireRole(ownerAdmin...))
+					r.Use(middleware.RequireRole(ownerAdmin...))
+					r.Use(middleware.RequireScope(domain.ScopeAdmin))
 
-				// Destructive resource operations
-				r.Delete("/projects/{projectID}", projectH.Delete)
-				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
+					// Destructive resource operations
+					r.Delete("/projects/{projectID}", projectH.Delete)
+					r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
 
-				// API Key management — requires apikey:write scope
+					// API Key management — requires apikey:write scope
 					r.Group(func(r chi.Router) {
 						r.Use(middleware.RequireScope(domain.ScopeAPIKeyWrite))
 						r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
@@ -704,7 +724,7 @@ func NewRouter(
 						r.Post("/api-keys/{keyID}/rotate", apiKeyH.Rotate)
 					})
 
-				// Team / Member management — write ops require team:write scope
+					// Team / Member management — write ops require team:write scope
 					r.Group(func(r chi.Router) {
 						r.Use(middleware.RequireScope(domain.ScopeTeamWrite))
 						r.Post("/members/invite", teamH.Invite)
@@ -713,19 +733,19 @@ func NewRouter(
 						r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
 					})
 
-				// Metrics — evaluation & impression analytics
-				r.Get("/metrics/evaluations", metricsH.Summary)
-				r.Post("/metrics/evaluations/reset", metricsH.Reset)
-				r.Get("/metrics/impressions", metricsH.ImpressionSummary)
-				r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
+					// Metrics — evaluation & impression analytics
+					r.Get("/metrics/evaluations", metricsH.Summary)
+					r.Post("/metrics/evaluations/reset", metricsH.Reset)
+					r.Get("/metrics/impressions", metricsH.ImpressionSummary)
+					r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
 
-				// Internal KPI analytics
-				r.Get("/analytics/overview", analyticsH.Overview)
+					// Internal KPI analytics
+					r.Get("/analytics/overview", analyticsH.Overview)
 
-				// Evaluation event analytics
-				r.Get("/eval-events", evalEventsH.Query)
-				r.Get("/eval-events/volume", evalEventsH.Volume)
-			})
+					// Evaluation event analytics
+					r.Get("/eval-events", evalEventsH.Query)
+					r.Get("/eval-events/volume", evalEventsH.Volume)
+				})
 
 			// ── Approval Review (Pro+, admin-only) ──────────────────
 			r.Group(func(r chi.Router) {

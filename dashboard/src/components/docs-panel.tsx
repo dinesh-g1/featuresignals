@@ -120,11 +120,34 @@ const PAGE_DOCS_MAP: Record<string, DocsSection[]> = {
       keywords: ["role", "permission", "team", "member", "rbac", "access"],
     },
   ],
+  "/eval-events": [
+    {
+      title: "Evaluation Events",
+      description:
+        "Real-time analytics on feature evaluation volume, latency, and variant distribution.",
+      href: DOCS_LINKS.evalEvents,
+      keywords: ["eval", "event", "analytics", "volume", "latency", "variant"],
+    },
+    {
+      title: "Understanding Eval Data",
+      description:
+        "How evaluation events are emitted, batched, and sampled. Includes latency percentiles (p50/p95/p99).",
+      href: DOCS_LINKS.evalEvents,
+      keywords: ["emission", "batch", "sample", "percentile", "latency"],
+    },
+    {
+      title: "ClickHouse Analytics",
+      description:
+        "How evaluation data flows to ClickHouse for sub-millisecond query performance at scale.",
+      href: DOCS_LINKS.evalEvents,
+      keywords: ["clickhouse", "analytics", "materialized", "view", "scale"],
+    },
+  ],
   "/janitor": [
     {
       title: "AI Janitor",
       description:
-        "Automatically detect and remove stale feature flags from your codebase.",
+        "Automatically detect and sweep stale feature flags from your codebase.",
       href: DOCS_LINKS.janitor,
       keywords: ["janitor", "ai", "stale", "sweep", "tech debt"],
     },
@@ -146,7 +169,7 @@ const PAGE_DOCS_MAP: Record<string, DocsSection[]> = {
     {
       title: "What is ABM?",
       description:
-        "The Agent Behavior Mesh (ABM) is the agent equivalent of feature management. It lets you define behaviors, targeting rules, and variants for AI agents — enabling safe rollout, A/B testing, and kill switches for agent capabilities.",
+        "The Agent Behavior Mesh (ABM) is the agent equivalent of feature management. It lets you define behaviors, targeting rules, and variants for AI agents — enabling safe rollout, A/B testing, and instant pause for agent capabilities.",
       href: DOCS_LINKS.abm,
       keywords: ["abm", "concept", "overview"],
     },
@@ -223,6 +246,130 @@ const PAGE_DOCS_MAP: Record<string, DocsSection[]> = {
         "Policies support four modes: allow (permit), block (deny), warn (allow with warning), and require_approval (human review).",
       href: DOCS_LINKS.policies,
       keywords: ["enforce", "mode", "block", "warn", "require_approval"],
+    },
+  ],
+  "/dashboard": [
+    {
+      title: "Dashboard Overview",
+      description:
+        "Your organization home — quick stats, recent activity, and project overview.",
+      href: DOCS_LINKS.dashboard,
+      keywords: ["dashboard", "home", "overview", "stats"],
+    },
+  ],
+  "/projects": [
+    {
+      title: "Projects & Environments",
+      description:
+        "Organize feature flags into projects and environments (dev, staging, production).",
+      href: DOCS_LINKS.projects,
+      keywords: ["project", "environment", "dev", "staging", "production"],
+    },
+  ],
+  "/usage": [
+    {
+      title: "Usage & Metering",
+      description:
+        "Track evaluation volume, active flags, and billing meter consumption.",
+      href: DOCS_LINKS.usage,
+      keywords: ["usage", "billing", "meter", "evaluation", "consumption"],
+    },
+  ],
+  "/limits": [
+    {
+      title: "Rate Limits",
+      description:
+        "Understand per-endpoint rate limits and how to handle 429 responses.",
+      href: DOCS_LINKS.limits,
+      keywords: ["rate", "limit", "429", "throttle", "retry"],
+    },
+  ],
+  "/settings/general": [
+    {
+      title: "Organization Settings",
+      description:
+        "Configure your organization name, slug, billing details, and team defaults.",
+      href: DOCS_LINKS.settings,
+      keywords: ["settings", "organization", "configure", "billing"],
+    },
+  ],
+  "/support": [
+    {
+      title: "Support",
+      description:
+        "Contact support, browse FAQs, and access the community forum.",
+      href: DOCS_LINKS.support,
+      keywords: ["support", "help", "faq", "contact", "community"],
+    },
+  ],
+  "/analytics": [
+    {
+      title: "Flag Analytics",
+      description:
+        "Analyze evaluation trends, variant distribution, and latency across all flags.",
+      href: DOCS_LINKS.evalEvents,
+      keywords: ["analytics", "trend", "distribution", "chart"],
+    },
+  ],
+  "/metrics": [
+    {
+      title: "Evaluation Metrics",
+      description:
+        "Observe evaluation counts, cache hit rates, and SDK health across environments.",
+      href: DOCS_LINKS.metrics,
+      keywords: ["metrics", "monitor", "cache", "sdk", "health"],
+    },
+  ],
+  "/health": [
+    {
+      title: "Flag Health",
+      description:
+        "Identify stale flags, unused variants, and technical debt in your flag inventory.",
+      href: DOCS_LINKS.health,
+      keywords: ["health", "stale", "unused", "debt", "inventory"],
+    },
+  ],
+  "/usage-insights": [
+    {
+      title: "Usage Insights",
+      description:
+        "Deep-dive into evaluation patterns, cost attribution, and optimization opportunities.",
+      href: DOCS_LINKS.usageInsights,
+      keywords: ["insights", "cost", "optimization", "pattern"],
+    },
+  ],
+  "/env-comparison": [
+    {
+      title: "Environment Comparison",
+      description:
+        "Compare flag configurations side-by-side across environments to catch drift.",
+      href: DOCS_LINKS.envComparison,
+      keywords: ["compare", "environment", "drift", "diff"],
+    },
+  ],
+  "/target-inspector": [
+    {
+      title: "Target Inspector",
+      description:
+        "Analyze and debug targeting rules — see exactly which users match which rules.",
+      href: DOCS_LINKS.targetInspector,
+      keywords: ["target", "inspect", "debug", "rule", "match"],
+    },
+  ],
+  "/workflows": [
+    {
+      title: "Workflow Orchestration",
+      description:
+        "Automate multi-step agent tasks with DAG-based workflows — define nodes, edges, and execution order.",
+      href: DOCS_LINKS.agents,
+      keywords: ["workflow", "dag", "orchestration", "automation", "pipeline"],
+    },
+    {
+      title: "Workflow Runs",
+      description:
+        "Track workflow execution — view node states, retries, and results across all runs.",
+      href: DOCS_LINKS.agents,
+      keywords: ["run", "execution", "node", "state", "retry"],
     },
   ],
 };

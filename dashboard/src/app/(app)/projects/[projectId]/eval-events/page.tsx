@@ -16,6 +16,15 @@ import {
 import { ErrorDisplay } from "@/components/ui";
 import { usePageStates } from "@/hooks/use-page-states";
 import { BarChart3, Clock, Activity } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import type { EvalEventAnalytics, EvalEventVolume } from "@/lib/types";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -73,6 +82,7 @@ export default function EvalEventsPage() {
   const [volume, setVolume] = useState<EvalEventVolume | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   // Filter state
   const [flagKey, setFlagKey] = useState("");
@@ -118,6 +128,10 @@ export default function EvalEventsPage() {
           })
           .catch((err) => {
             classifyError(err);
+            const msg = err instanceof Error ? err.message : "";
+            if (msg.includes("404") || msg.includes("not found")) {
+              setNotFound(true);
+            }
             setError(
               err instanceof Error
                 ? err.message
@@ -182,6 +196,46 @@ export default function EvalEventsPage() {
   // ─── Render: Full-page states ───────────────────────────────────────
 
   if (loading) return <EvalEventsSkeleton />;
+
+  if (notFound && !hasData) {
+    return (
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          title="Evaluation Events"
+          description="Real-time feature evaluation analytics and volume tracking"
+        />
+        <Card>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center py-16">
+              <BarChart3 className="h-14 w-14 text-[var(--signal-fg-tertiary)] mb-4" />
+              <h3 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
+                Flag not found
+              </h3>
+              <p className="mt-2 max-w-md text-sm text-center text-[var(--signal-fg-secondary)]">
+                The feature flag{" "}
+                <code className="font-mono text-[var(--signal-fg-accent)]">
+                  {flagKey}
+                </code>{" "}
+                was not found. Check the flag key or navigate back to the flags
+                list.
+              </p>
+              <Button
+                variant="secondary"
+                className="mt-4"
+                onClick={() => {
+                  setNotFound(false);
+                  setFlagKey("");
+                  load();
+                }}
+              >
+                Clear and retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isForbidden) {
     return (
@@ -368,16 +422,87 @@ export default function EvalEventsPage() {
               </p>
             </div>
           ) : (
-            <div className="h-64 rounded-lg border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)] flex items-center justify-center">
-              <div className="text-center">
-                <BarChart3 className="h-10 w-10 text-[var(--signal-fg-tertiary)] mx-auto mb-2" />
-                <p className="text-sm font-medium text-[var(--signal-fg-secondary)]">
-                  Chart area — will be replaced with a charting library
-                </p>
-                <p className="mt-1 text-xs text-[var(--signal-fg-tertiary)]">
-                  {volume.data.length} data points available
-                </p>
-              </div>
+            <div className="h-80 rounded-lg border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={volume.data.map((pt) => ({
+                    time: new Date(pt.timestamp).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                    evaluations: pt.value,
+                  }))}
+                  margin={{ top: 20, right: 24, left: 12, bottom: 12 }}
+                >
+                  <defs>
+                    <linearGradient
+                      id="evalVolumeGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        style={{
+                          stopColor: "var(--signal-fg-accent)",
+                          stopOpacity: 0.3,
+                        }}
+                      />
+                      <stop
+                        offset="95%"
+                        style={{
+                          stopColor: "var(--signal-fg-accent)",
+                          stopOpacity: 0.02,
+                        }}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--signal-border-subtle)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fontSize: 11, fill: "var(--signal-fg-tertiary)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "var(--signal-fg-tertiary)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={48}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--signal-bg-primary)",
+                      border: "1px solid var(--signal-border-subtle)",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      color: "var(--signal-fg-primary)",
+                    }}
+                    labelStyle={{ color: "var(--signal-fg-secondary)" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="evaluations"
+                    stroke="var(--signal-fg-accent)"
+                    strokeWidth={2}
+                    fill="url(#evalVolumeGradient)"
+                    dot={false}
+                    activeDot={{
+                      r: 4,
+                      fill: "var(--signal-fg-accent)",
+                      stroke: "var(--signal-bg-primary)",
+                      strokeWidth: 2,
+                    }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           )}
         </CardContent>

@@ -1,0 +1,259 @@
+# ============================================================================
+# FeatureSignals Network Policies
+# ============================================================================
+# Enforces the 4-layer defense-in-depth model from the Threat Model
+# (ARCHITECTURE.md §Security Architecture):
+#
+#   Layer 1: Global Router (hostNetwork) — only edge ingress point
+#   Layer 2: API Server + Dashboard — zero inbound except from global-router
+#   Layer 3: PostgreSQL — only reachable from server
+#   Layer 4: Observability — cross-namespace telemetry, scraped by SigNoz
+#
+# Strategy: DENY ALL by default, then explicitly allow each required flow.
+# Every rule is labeled with the threat model layer it enforces.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 1. Default Deny-All Ingress
+#    Closes all inbound traffic to every pod in the featuresignals namespace.
+#    Specific allows follow. This is the FIRST line of defense at the network
+#    layer — no pod accepts traffic unless explicitly permitted.
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-ingress
+  namespace: featuresignals
+  labels:
+    policy: default-deny
+    layer: network
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# ----------------------------------------------------------------------------
+# 2. Global Router → Server (API)
+#    Enables: api.featuresignals.com → Go API server (:8080)
+#    Layer 1→2 boundary: the global-router is the ONLY source of external
+#    API traffic. The server never receives traffic from any other source.
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-router-to-server
+  namespace: featuresignals
+  labels:
+    policy: allow
+    layer: l1-to-l2
+    flow: router-to-server
+spec:
+  podSelector:
+    matchLabels:
+      app: server
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: global-router
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# ----------------------------------------------------------------------------
+# 3. Global Router → Dashboard
+#    Enables: app.featuresignals.com → Next.js dashboard (:3000)
+#    Layer 1→2 boundary: the global-router is the ONLY source of external
+#    dashboard traffic.
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-router-to-dashboard
+  namespace: featuresignals
+  labels:
+    policy: allow
+    layer: l1-to-l2
+    flow: router-to-dashboard
+spec:
+  podSelector:
+    matchLabels:
+      app: dashboard
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: global-router
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+# ----------------------------------------------------------------------------
+# 4. Server → PostgreSQL
+#    Enables: Go API server → CloudNative PG cluster (:5432)
+#    Layer 2→3 boundary: only the server may talk to the database.
+#    Uses CNPG pod labels (cnpg.io/cluster) for precise targeting.
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-server-to-postgres
+  namespace: featuresignals
+  labels:
+    policy: allow
+    layer: l2-to-l3
+    flow: server-to-postgres
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: featuresignals-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: server
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# ----------------------------------------------------------------------------
+# 5. Server → NATS (conditional)
+#    Enables: Go API server → NATS message broker (:4222)
+#    UNCOMMENT when NATS is deployed in the featuresignals namespace.
+#    Per ARCHITECTURE.md: NATS is used for async event dispatch (webhooks,
+#    email, audit streaming) decoupled from the eval hot path.
+# ----------------------------------------------------------------------------
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: allow-server-to-nats
+#   namespace: featuresignals
+#   labels:
+#     policy: allow
+#     layer: l2-to-l3
+#     flow: server-to-nats
+# spec:
+#   podSelector:
+#     matchLabels:
+#       app: nats
+#   policyTypes:
+#     - Ingress
+#   ingress:
+#     - from:
+#         - podSelector:
+#             matchLabels:
+#               app: server
+#       ports:
+#         - protocol: TCP
+#           port: 4222
+---
+# ----------------------------------------------------------------------------
+# 6. Server & Dashboard → SigNoz OTEL Collector (cross-namespace)
+#    Enables: OTLP telemetry export to SigNoz (traces, metrics, logs)
+#    Server pushes to signoz-otel-collector.observability:4318 (HTTP).
+#    Layer 2→4 boundary: telemetry egress only.
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-otel-collector
+  namespace: featuresignals
+  labels:
+    policy: allow
+    layer: telemetry
+    flow: egress-otlp
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - server
+          - dashboard
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app: otel-collector
+      ports:
+        - protocol: TCP
+          port: 4318
+---
+# ----------------------------------------------------------------------------
+# 7. Ingress from Observability Namespace (metrics scraping)
+#    Allows SigNoz / Prometheus to scrape metrics from server and dashboard.
+#    The observability namespace must be labeled with the standard
+#    kubernetes.io/metadata.name label (automatic on K3s/K8s 1.23+).
+#    Metrics port: adjust to match your actual metrics endpoint port.
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-metrics-scraping
+  namespace: featuresignals
+  labels:
+    policy: allow
+    layer: telemetry
+    flow: ingress-metrics
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - server
+          - dashboard
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 8080
+          # Primary metrics port (server /health + /metrics on same port)
+        - protocol: TCP
+          port: 3000
+          # Dashboard metrics port
+---
+# ----------------------------------------------------------------------------
+# 8. DNS Resolution (egress to kube-system)
+#    Allows all pods in featuresignals to resolve DNS names via CoreDNS.
+#    CoreDNS runs in kube-system, listening on UDP 53.
+#    This is essential for service discovery (e.g., resolving
+#    signoz-otel-collector.observability.svc.cluster.local).
+# ----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: featuresignals
+  labels:
+    policy: allow
+    layer: infrastructure
+    flow: dns
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53

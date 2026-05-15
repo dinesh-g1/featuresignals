@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import {
   ArrowLeft,
@@ -37,7 +36,10 @@ import {
 
 // ─── Level Metadata ────────────────────────────────────────────────────────
 
-const LEVEL_META: Record<number, { name: string; color: string; description: string }> = {
+const LEVEL_META: Record<
+  number,
+  { name: string; color: string; description: string }
+> = {
   1: {
     name: "L1 — Shadow",
     color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
@@ -52,13 +54,15 @@ const LEVEL_META: Record<number, { name: string; color: string; description: str
   },
   3: {
     name: "L3 — Supervised",
-    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
+    color:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
     description:
       "Supervised mode: acts autonomously with human review. Override is available but not required for routine actions.",
   },
   4: {
     name: "L4 — Autonomous",
-    color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+    color:
+      "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
     description:
       "Autonomous mode: acts independently. Human override is available but rarely needed. Self-healing for common issues.",
   },
@@ -85,36 +89,156 @@ function getProgressionRules(
 ): ProgressionRule[] {
   const rules: Record<number, ProgressionRule[]> = {
     1: [
-      { label: "Accuracy", current: stats.accuracy, required: 0.85, format: "percent" },
-      { label: "Total Decisions", current: stats.total_decisions, required: 100, format: "number" },
-      { label: "Max Incidents", current: stats.incidents_caused, required: 3, format: "number" },
-      { label: "Max Override Rate", current: stats.human_override_rate, required: 0.15, format: "percent" },
-      { label: "Min Days Since Incident", current: stats.days_since_last_incident, required: 7, format: "days" },
-      { label: "Avg Confidence", current: stats.avg_confidence, required: 0.70, format: "percent" },
+      {
+        label: "Accuracy",
+        current: stats.accuracy,
+        required: 0.85,
+        format: "percent",
+      },
+      {
+        label: "Total Decisions",
+        current: stats.total_decisions,
+        required: 100,
+        format: "number",
+      },
+      {
+        label: "Max Incidents",
+        current: stats.incidents_caused,
+        required: 3,
+        format: "number",
+      },
+      {
+        label: "Max Override Rate",
+        current: stats.human_override_rate,
+        required: 0.15,
+        format: "percent",
+      },
+      {
+        label: "Min Days Since Incident",
+        current: stats.days_since_last_incident,
+        required: 7,
+        format: "days",
+      },
+      {
+        label: "Avg Confidence",
+        current: stats.avg_confidence,
+        required: 0.7,
+        format: "percent",
+      },
     ],
     2: [
-      { label: "Accuracy", current: stats.accuracy, required: 0.90, format: "percent" },
-      { label: "Total Decisions", current: stats.total_decisions, required: 500, format: "number" },
-      { label: "Max Incidents", current: stats.incidents_caused, required: 5, format: "number" },
-      { label: "Max Override Rate", current: stats.human_override_rate, required: 0.10, format: "percent" },
-      { label: "Min Days Since Incident", current: stats.days_since_last_incident, required: 14, format: "days" },
-      { label: "Avg Confidence", current: stats.avg_confidence, required: 0.80, format: "percent" },
+      {
+        label: "Accuracy",
+        current: stats.accuracy,
+        required: 0.9,
+        format: "percent",
+      },
+      {
+        label: "Total Decisions",
+        current: stats.total_decisions,
+        required: 500,
+        format: "number",
+      },
+      {
+        label: "Max Incidents",
+        current: stats.incidents_caused,
+        required: 5,
+        format: "number",
+      },
+      {
+        label: "Max Override Rate",
+        current: stats.human_override_rate,
+        required: 0.1,
+        format: "percent",
+      },
+      {
+        label: "Min Days Since Incident",
+        current: stats.days_since_last_incident,
+        required: 14,
+        format: "days",
+      },
+      {
+        label: "Avg Confidence",
+        current: stats.avg_confidence,
+        required: 0.8,
+        format: "percent",
+      },
     ],
     3: [
-      { label: "Accuracy", current: stats.accuracy, required: 0.95, format: "percent" },
-      { label: "Total Decisions", current: stats.total_decisions, required: 2000, format: "number" },
-      { label: "Max Incidents", current: stats.incidents_caused, required: 3, format: "number" },
-      { label: "Max Override Rate", current: stats.human_override_rate, required: 0.05, format: "percent" },
-      { label: "Min Days Since Incident", current: stats.days_since_last_incident, required: 30, format: "days" },
-      { label: "Avg Confidence", current: stats.avg_confidence, required: 0.85, format: "percent" },
+      {
+        label: "Accuracy",
+        current: stats.accuracy,
+        required: 0.95,
+        format: "percent",
+      },
+      {
+        label: "Total Decisions",
+        current: stats.total_decisions,
+        required: 2000,
+        format: "number",
+      },
+      {
+        label: "Max Incidents",
+        current: stats.incidents_caused,
+        required: 3,
+        format: "number",
+      },
+      {
+        label: "Max Override Rate",
+        current: stats.human_override_rate,
+        required: 0.05,
+        format: "percent",
+      },
+      {
+        label: "Min Days Since Incident",
+        current: stats.days_since_last_incident,
+        required: 30,
+        format: "days",
+      },
+      {
+        label: "Avg Confidence",
+        current: stats.avg_confidence,
+        required: 0.85,
+        format: "percent",
+      },
     ],
     4: [
-      { label: "Accuracy", current: stats.accuracy, required: 0.98, format: "percent" },
-      { label: "Total Decisions", current: stats.total_decisions, required: 10000, format: "number" },
-      { label: "Max Incidents", current: stats.incidents_caused, required: 1, format: "number" },
-      { label: "Max Override Rate", current: stats.human_override_rate, required: 0.02, format: "percent" },
-      { label: "Min Days Since Incident", current: stats.days_since_last_incident, required: 90, format: "days" },
-      { label: "Avg Confidence", current: stats.avg_confidence, required: 0.90, format: "percent" },
+      {
+        label: "Accuracy",
+        current: stats.accuracy,
+        required: 0.98,
+        format: "percent",
+      },
+      {
+        label: "Total Decisions",
+        current: stats.total_decisions,
+        required: 10000,
+        format: "number",
+      },
+      {
+        label: "Max Incidents",
+        current: stats.incidents_caused,
+        required: 1,
+        format: "number",
+      },
+      {
+        label: "Max Override Rate",
+        current: stats.human_override_rate,
+        required: 0.02,
+        format: "percent",
+      },
+      {
+        label: "Min Days Since Incident",
+        current: stats.days_since_last_incident,
+        required: 90,
+        format: "days",
+      },
+      {
+        label: "Avg Confidence",
+        current: stats.avg_confidence,
+        required: 0.9,
+        format: "percent",
+      },
     ],
   };
   return rules[level] ?? [];
@@ -122,11 +246,14 @@ function getProgressionRules(
 
 // ─── Demotion risk calculation ─────────────────────────────────────────────
 
-const DEMOTION_RULES: Record<number, { maxAccuracy: number; maxIncidents: number; maxOverrideRate: number }> = {
-  2: { maxAccuracy: 0.80, maxIncidents: 5, maxOverrideRate: 0.25 },
-  3: { maxAccuracy: 0.85, maxIncidents: 5, maxOverrideRate: 0.20 },
+const DEMOTION_RULES: Record<
+  number,
+  { maxAccuracy: number; maxIncidents: number; maxOverrideRate: number }
+> = {
+  2: { maxAccuracy: 0.8, maxIncidents: 5, maxOverrideRate: 0.25 },
+  3: { maxAccuracy: 0.85, maxIncidents: 5, maxOverrideRate: 0.2 },
   4: { maxAccuracy: 0.88, maxIncidents: 3, maxOverrideRate: 0.15 },
-  5: { maxAccuracy: 0.92, maxIncidents: 2, maxOverrideRate: 0.10 },
+  5: { maxAccuracy: 0.92, maxIncidents: 2, maxOverrideRate: 0.1 },
 };
 
 function getDemotionRisk(
@@ -158,7 +285,10 @@ function getDemotionRisk(
   if (riskScore >= 3) return { risk: "high", message: warnings.join(" ") };
   if (riskScore >= 2) return { risk: "medium", message: warnings.join(" ") };
   if (riskScore >= 1) return { risk: "low", message: warnings.join(" ") };
-  return { risk: "none", message: "All demotion criteria are within safe limits." };
+  return {
+    risk: "none",
+    message: "All demotion criteria are within safe limits.",
+  };
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -193,7 +323,9 @@ export default function AgentMaturityPage() {
 
   const [agent, setAgent] = useState<Agent | null>(null);
   const [maturity, setMaturity] = useState<AgentMaturity | null>(null);
-  const [evalResult, setEvalResult] = useState<MaturityEvaluationResult | null>(null);
+  const [evalResult, setEvalResult] = useState<MaturityEvaluationResult | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -215,7 +347,9 @@ export default function AgentMaturityPage() {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load agent maturity data",
+        err instanceof Error
+          ? err.message
+          : "Failed to load agent maturity data",
       );
     } finally {
       setIsLoading(false);
@@ -294,7 +428,10 @@ export default function AgentMaturityPage() {
 
   if (!agent) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center" data-signal-empty="true">
+      <div
+        className="flex flex-col items-center justify-center p-12 text-center"
+        data-signal-empty="true"
+      >
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--signal-bg-secondary)] ring-1 ring-[var(--signal-border-default)]">
           <Bot className="h-7 w-7 text-[var(--signal-fg-tertiary)]" />
         </div>
@@ -314,8 +451,10 @@ export default function AgentMaturityPage() {
     );
   }
 
-  const stats = maturity?.stats ?? agent.maturity?.stats ?? ({} as MaturityStats);
-  const currentLevel = maturity?.current_level ?? agent.maturity?.current_level ?? 1;
+  const stats =
+    maturity?.stats ?? agent.maturity?.stats ?? ({} as MaturityStats);
+  const currentLevel =
+    maturity?.current_level ?? agent.maturity?.current_level ?? 1;
   const levelMeta = LEVEL_META[currentLevel] ?? LEVEL_META[1];
   const progressionRules = getProgressionRules(currentLevel, stats);
   const demotionRisk = getDemotionRisk(currentLevel, stats);
@@ -329,7 +468,11 @@ export default function AgentMaturityPage() {
       {/* ── Back Link + Header ─────────────────────────────────── */}
       <div className="flex items-center gap-4">
         <Link href={`/projects/${projectId}/agents/${agentId}`}>
-          <Button variant="ghost" size="icon" aria-label="Back to agent details">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Back to agent details"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -360,10 +503,14 @@ export default function AgentMaturityPage() {
                 {evalResult?.changed && (
                   <Badge
                     variant={
-                      evalResult.direction === "promoted" ? "success" : "warning"
+                      evalResult.direction === "promoted"
+                        ? "success"
+                        : "warning"
                     }
                   >
-                    {evalResult.direction === "promoted" ? "↑ Promoted" : "↓ Demoted"}
+                    {evalResult.direction === "promoted"
+                      ? "↑ Promoted"
+                      : "↓ Demoted"}
                   </Badge>
                 )}
               </div>
@@ -573,7 +720,8 @@ export default function AgentMaturityPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="h-4 w-4" />
-            Progression Requirements{nextLevel ? ` (L${currentLevel} → L${nextLevel})` : ""}
+            Progression Requirements
+            {nextLevel ? ` (L${currentLevel} → L${nextLevel})` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -581,8 +729,8 @@ export default function AgentMaturityPage() {
             <div className="flex items-center gap-3 py-2 text-sm text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
               <span>
-                Agent has reached the maximum maturity level (L5 Sentinel).
-                No further progression is possible.
+                Agent has reached the maximum maturity level (L5 Sentinel). No
+                further progression is possible.
               </span>
             </div>
           ) : progressionRules.length === 0 ? (

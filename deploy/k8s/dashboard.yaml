@@ -13,18 +13,38 @@ spec:
       labels:
         app: dashboard
     spec:
+      # Pod-level security: fsGroup ensures shared volume access for UID 1000
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: dashboard
           image: ghcr.io/dinesh-g1/featuresignals-dashboard:7814be9e0acfa9715dbb4fcf2cd899bfa311391d
+          imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - name: http
+              containerPort: 3000
+              protocol: TCP
           env:
             - name: NEXT_PUBLIC_API_URL
               value: "https://api.featuresignals.com"
             - name: NEXT_SERVER_API_URL
               value: "http://featuresignals-server:8080"
+          # --- Container Security Context ---
+          # Next.js requires /tmp writable for ISR cache, image optimization,
+          # and server-side rendering temporary artifacts.
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          # --- Resource Limits ---
           resources:
             limits:
               cpu: "500m"
@@ -35,15 +55,36 @@ spec:
           livenessProbe:
             httpGet:
               path: /api/health
-              port: 3000
+              port: http
             initialDelaySeconds: 15
             periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /api/health
-              port: 3000
+              port: http
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # --- Volumes ---
+          # /tmp as emptyDir for Next.js build cache and SSR artifacts.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+      # Tolerations: allow scheduling on control-plane nodes in single-node K3s
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
 ---
 apiVersion: v1
 kind: Service

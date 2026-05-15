@@ -1,0 +1,63 @@
+# ============================================================================
+# FeatureSignals Resource Quota
+# ============================================================================
+# Enforces hard limits on the total resource consumption of the
+# featuresignals namespace. Prevents any single workload from starving
+# others and protects the K3s node from overcommit.
+#
+# Node capacity: Hetzner CPX42 (8 vCPU, 16 GB RAM, 160 GB NVMe)
+#   - K3s system overhead:     ~1 CPU,  ~2 GB RAM
+#   - Observability namespace: ~2 CPU,  ~4 GB RAM (SigNoz + ClickHouse)
+#   - featuresignals quota:    ~4 CPU,  ~8 GB RAM (this file)
+#   - Headroom for ops/staging:~1 CPU,  ~2 GB RAM
+#
+# The limits are set ABOVE the sum of all resource requests to allow
+# bursting (CPU limits > requests) while preventing runaway consumption.
+# ============================================================================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: featuresignals-quota
+  namespace: featuresignals
+  labels:
+    policy: resource-quota
+    scope: namespace
+spec:
+  hard:
+    # --- Compute ---
+    # requests: sum of all containers' guaranteed minimum CPU/memory
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    # limits: sum of all containers' maximum allowed CPU/memory
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+
+    # --- Storage ---
+    # Limit total PVC storage to prevent unbounded disk consumption
+    requests.storage: "50Gi"
+    # Limit number of PVCs to prevent resource exhaustion
+    persistentvolumeclaims: "10"
+
+    # --- Object Counts ---
+    # Prevent unbounded resource creation (safety limits)
+    configmaps: "50"
+    secrets: "50"
+    services: "20"
+    count/deployments.apps: "20"
+    count/statefulsets.apps: "5"
+    count/jobs.batch: "30"
+    count/cronjobs.batch: "10"
+    count/ingresses.networking.k8s.io: "10"
+---
+# ============================================================================
+# Per-Service Allocation Reference (not enforced by this manifest)
+# ============================================================================
+# Service          | req CPU | req Mem | lim CPU | lim Mem | Notes
+# ---------------- | ------- | ------- | ------- | ------- | ------------------
+# server           | 100m    | 128Mi   | 500m    | 512Mi   | Eval hot path
+# dashboard        | 100m    | 128Mi   | 500m    | 256Mi   | Next.js SSR
+# global-router    | 100m    | 128Mi   | 500m    | 256Mi   | hostNetwork edge
+# postgres (CNPG)  | 500m    | 1Gi     | 1       | 2Gi     | Managed by operator
+# NATS (planned)   | 50m     | 64Mi    | 200m    | 256Mi   | Event messaging
+# ---------------- | ------- | ------- | ------- | ------- | ------------------
+# Total (current)  | 800m    | 1.4Gi   | 2.5     | 3.0Gi   | Well within quota

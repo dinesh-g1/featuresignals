@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/featuresignals/server/internal/domain"
+	"github.com/featuresignals/server/internal/observability"
 )
 
 // PolicyEvaluator is the interface the policy step needs from the CEL
@@ -30,14 +31,16 @@ type PolicyGovernanceStep struct {
 	store     domain.PolicyReader
 	evaluator PolicyEvaluator
 	logger    *slog.Logger
+	instr     *observability.Instruments
 }
 
 // NewPolicyGovernanceStep creates the policy governance step.
-func NewPolicyGovernanceStep(store domain.PolicyReader, evaluator PolicyEvaluator, logger *slog.Logger) *PolicyGovernanceStep {
+func NewPolicyGovernanceStep(store domain.PolicyReader, evaluator PolicyEvaluator, logger *slog.Logger, instr *observability.Instruments) *PolicyGovernanceStep {
 	return &PolicyGovernanceStep{
 		store:     store,
 		evaluator: evaluator,
 		logger:    logger.With("step", domain.GovStepPolicy),
+		instr:     instr,
 	}
 }
 
@@ -111,6 +114,11 @@ func (s *PolicyGovernanceStep) Execute(ctx context.Context, action domain.AgentA
 	}
 
 	elapsed := time.Since(start)
+
+	// Record policy evaluation metric
+	if s.instr != nil {
+		s.instr.RecordPolicyEvaluation(ctx, result.Passed, float64(elapsed.Microseconds())/1000.0)
+	}
 
 	if result.Passed {
 		s.logger.Info("policy evaluation passed",

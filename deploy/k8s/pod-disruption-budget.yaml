@@ -1,0 +1,40 @@
+# ============================================================================
+# FeatureSignals Pod Disruption Budgets
+# ============================================================================
+# PDBs protect application availability during voluntary disruptions:
+#   - Node drains (kubectl drain, K3s upgrades, node pool changes)
+#   - Cluster autoscaler scale-in events
+#   - Rolling updates of the underlying node
+#
+# The server is the critical eval hot path. maxUnavailable: 1 ensures
+# at least N-1 pods are always available (when replicas > 1).
+# For single-replica deployments (replicas: 1), the PDB prevents
+# voluntary eviction entirely — the node won't drain until the pod
+# is manually removed or rescheduled.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Server PDB
+# ----------------------------------------------------------------------------
+# With replicas: 1, this PDB prevents the server pod from being evicted
+# during node maintenance. The drain operation will block until the pod
+# is manually deleted or the PDB is temporarily removed.
+#
+# When scaling to multi-replica (replicas: 2+), this PDB guarantees at
+# least (replicas - 1) pods remain running during voluntary disruptions,
+# preserving the eval hot path with zero downtime.
+# ----------------------------------------------------------------------------
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: server-pdb
+  namespace: featuresignals
+  labels:
+    app: server
+    component: api
+    tier: backend
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: server

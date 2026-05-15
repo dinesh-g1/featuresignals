@@ -452,6 +452,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		logger,
 		metricsCollector,
 		otelInstruments,
+		nil, // governancePipeline (not needed for router tests)
 		api.BillingConfig{Registry: payment.NewRegistry()},
 		noopOTPEmail{},
 		"http://localhost:8080",
@@ -781,6 +782,7 @@ var internalRoutes = map[string]bool{
 			"DELETE /v1/agents/{agentID}":        true,
 			"POST /v1/agents/{agentID}/heartbeat": true,
 			"GET /v1/agents/{agentID}/maturity":   true,
+			"POST /v1/agents/{agentID}/evaluate-maturity": true,
 
 			// Governance Policies (v2.0.0-alpha) — OpenAPI spec update pending
 			"POST /v1/policies":                  true,
@@ -804,6 +806,23 @@ var internalRoutes = map[string]bool{
 			"PATCH /v1/abm/behaviors/{key}":          true,
 			"DELETE /v1/abm/behaviors/{key}":         true,
 			"GET /v1/abm/behaviors/{key}/analytics":  true,
+
+			// Stage 3 Products (v2.1.0) — spec complete in OpenAPI, handler implementations deferred to Phase 2
+			"GET /v1/code2flag/references":                true,
+			"POST /v1/code2flag/spec":                     true,
+			"POST /v1/code2flag/implement":                true,
+			"GET /v1/code2flag/cleanup":                   true,
+			"POST /v1/code2flag/cleanup":                  true,
+			"POST /v1/preflight/assess":                   true,
+			"GET /v1/preflight/assess/{assessmentID}":     true,
+			"POST /v1/preflight/approval":                 true,
+			"GET /v1/preflight/approval/{approvalID}":     true,
+			"GET /v1/incidentflag/monitor":                true,
+			"POST /v1/incidentflag/correlate":             true,
+			"POST /v1/incidentflag/remediate":             true,
+			"GET /v1/impact/report/{flagKey}":             true,
+			"GET /v1/impact/cost":                         true,
+			"GET /v1/impact/learning":                     true,
 			}
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has

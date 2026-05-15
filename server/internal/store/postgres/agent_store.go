@@ -104,12 +104,13 @@ func (s *Store) ListAgents(ctx context.Context, orgID string, limit, offset int)
 }
 
 // ListAgentsByType returns agents for an organization filtered by agent type.
+// Only returns active agents (matches partial index idx_agents_org_type).
 func (s *Store) ListAgentsByType(ctx context.Context, orgID, agentType string, limit, offset int) ([]domain.Agent, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, name, agent_type, version, brain_type, status,
 		        scopes, rate_limits, cost_profile,
 		        registered_at, last_heartbeat, created_at, updated_at
-		 FROM agents WHERE org_id = $1 AND agent_type = $2
+		 FROM agents WHERE org_id = $1 AND agent_type = $2 AND status = 'active'
 		 ORDER BY created_at DESC
 		 LIMIT $3 OFFSET $4`,
 		orgID, agentType, limit, offset,
@@ -130,11 +131,11 @@ func (s *Store) CountAgents(ctx context.Context, orgID string) (int, error) {
 	return count, err
 }
 
-// CountAgentsByType returns the total number of agents of a specific type.
+// CountAgentsByType returns the total number of active agents of a specific type.
 func (s *Store) CountAgentsByType(ctx context.Context, orgID, agentType string) (int, error) {
 	var count int
 	err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM agents WHERE org_id = $1 AND agent_type = $2`, orgID, agentType).Scan(&count)
+		`SELECT COUNT(*) FROM agents WHERE org_id = $1 AND agent_type = $2 AND status = 'active'`, orgID, agentType).Scan(&count)
 	return count, err
 }
 

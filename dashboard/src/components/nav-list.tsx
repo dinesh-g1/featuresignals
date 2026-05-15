@@ -522,7 +522,7 @@ export function NavList() {
           <PrismLotusIcon size={32} className="shrink-0" />
           <div className="flex flex-col leading-none min-w-0 flex-1">
             <span className="text-base font-bold tracking-tight whitespace-nowrap text-[var(--signal-fg-primary)]">
-              Feature<span className="text-[#0969da]">Signals</span>
+              Feature<span className="text-[var(--signal-fg-accent)]">Signals</span>
             </span>
             <span className="text-[10px] font-medium tracking-wide text-[var(--signal-fg-tertiary)] uppercase mt-0.5 whitespace-nowrap truncate">
               FlagEngine

@@ -2,7 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
+  - resource-quota.yaml
+  - network-policy.yaml
   - postgres.yaml
   - server.yaml
   - dashboard.yaml
   - global-router.yaml
+  - pod-disruption-budget.yaml

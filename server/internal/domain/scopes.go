@@ -60,6 +60,9 @@ const (
 
 	// Audit
 	ScopeAuditRead Scope = "audit:read"
+
+	// Admin — cross-cutting admin operations (destructive actions, member mgmt, metrics)
+	ScopeAdmin Scope = "admin"
 )
 
 // RoleScopes maps coarse roles to their default fine-grained scopes.
@@ -89,6 +92,7 @@ var RoleScopes = map[string][]Scope{
 		ScopeOrgRead, ScopeOrgAdmin,
 		ScopeAPIKeyRead, ScopeAPIKeyWrite,
 		ScopeAuditRead, ScopeTeamRead, ScopeTeamWrite,
+		ScopeAdmin,
 	},
 	"owner": {
 		// All scopes
@@ -101,6 +105,7 @@ var RoleScopes = map[string][]Scope{
 		ScopeOrgRead, ScopeOrgAdmin,
 		ScopeAPIKeyRead, ScopeAPIKeyWrite,
 		ScopeAuditRead, ScopeTeamRead, ScopeTeamWrite,
+		ScopeAdmin,
 	},
 }
 

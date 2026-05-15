@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -227,4 +228,78 @@ func TestPGInvalidator_MultipleChannels(t *testing.T) {
 	if segCount != 1 {
 		t.Errorf("expected 1 segment_changes message, got %d", segCount)
 	}
+}
+
+// TestPGInvalidator_CloseWaitsForHandlers verifies that Close() blocks until
+// all in-flight handler goroutines have completed (CLAUDE.md §2.1).
+func TestPGInvalidator_CloseWaitsForHandlers(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	inv := NewPGInvalidator(pool, testLogger())
+
+	// Channel used to block the handler until we're ready.
+	handlerStarted := make(chan struct{})
+	handlerCanFinish := make(chan struct{})
+	var handlerFinished atomic.Bool
+
+	// Subscribe in a goroutine.
+	subDone := make(chan error, 1)
+	go func() {
+		subDone <- inv.Subscribe(ctx, ChannelFlagChanges, func(hCtx context.Context, channel string, payload []byte) {
+			close(handlerStarted)
+			// Block until we signal it can finish.
+			<-handlerCanFinish
+			handlerFinished.Store(true)
+		})
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+
+	// Send a notification to trigger the handler.
+	if err := inv.Invalidate(ctx, ChannelFlagChanges, []byte(`{"type":"test"}`)); err != nil {
+		t.Fatalf("Invalidate failed: %v", err)
+	}
+
+	// Wait for the handler to start.
+	select {
+	case <-handlerStarted:
+		// Good — handler is now blocked on handlerCanFinish.
+	case <-time.After(5 * time.Second):
+		t.Fatal("handler did not start within 5s")
+	}
+
+	// Now call Close() in a goroutine and verify it blocks.
+	closeDone := make(chan struct{})
+	go func() {
+		inv.Close()
+		close(closeDone)
+	}()
+
+	// Close should NOT return immediately because a handler is still running.
+	select {
+	case <-closeDone:
+		t.Error("Close() returned before handler completed — goroutine leak")
+	case <-time.After(200 * time.Millisecond):
+		// Expected — Close() is blocked waiting for the handler.
+	}
+
+	// Signal the handler to finish.
+	close(handlerCanFinish)
+
+	// Now Close() should complete.
+	select {
+	case <-closeDone:
+		// Good.
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close() did not return within 5s after handler finished")
+	}
+
+	if !handlerFinished.Load() {
+		t.Error("handler did not run to completion")
+	}
+
+	// Clean up the subscriber.
+	cancel()
+	<-subDone
 }
