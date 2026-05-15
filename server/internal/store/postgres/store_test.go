@@ -101,6 +101,7 @@ func cleanup(t *testing.T, pool *pgxpool.Pool) {
 		"agents",
 		"governance_policies",
 		"audit_logs", "env_permissions", "flag_states", "api_keys",
+		"generated_flags", "scan_results", "cleanup_queue",
 		"flags", "segments", "environments", "projects", "org_members", "users", "organizations",
 	} {
 		if _, err := pool.Exec(ctx, "DELETE FROM "+table); err != nil {

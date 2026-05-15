@@ -17,6 +17,25 @@ services:
       timeout: 3s
       retries: 5
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.12-alpine
+    ports:
+      - "9000:9000" # native protocol
+      - "8123:8123" # HTTP interface
+    environment:
+      CLICKHOUSE_DB: featuresignals
+      CLICKHOUSE_USER: featuresignals
+      CLICKHOUSE_PASSWORD: chdev
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./server/internal/migrate/clickhouse:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   postgres:
     image: postgres:16-alpine
     ports:
@@ -64,6 +83,12 @@ services:
       SUPER_MODE_DOMAIN: featuresignals.com
       EVENT_BUS_PROVIDER: ${EVENT_BUS_PROVIDER:-noop}
       NATS_URL: ${NATS_URL:-nats://nats:4222}
+      CLICKHOUSE_ENABLED: ${CLICKHOUSE_ENABLED:-false}
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "9000"
+      CLICKHOUSE_DATABASE: featuresignals
+      CLICKHOUSE_USER: featuresignals
+      CLICKHOUSE_PASSWORD: chdev
     healthcheck:
       test:
         [
@@ -108,3 +133,4 @@ services:
 volumes:
   pgdata:
   nats_data:
+  clickhouse_data:

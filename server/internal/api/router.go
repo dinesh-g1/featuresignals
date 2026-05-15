@@ -71,6 +71,7 @@ func NewRouter(
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
 	janitorH *handlers.JanitorHandler,
+	c2fHandler *handlers.Code2FlagHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -860,6 +861,26 @@ func NewRouter(
 		r.Use(middleware.RequireRole(ownerAdmin...))
 		r.Get("/v1/janitor/scans/{scanId}/events", janitorH.ScanEvents)
 	})
+
+	// ═══════════════════════════════════════════════════════════════════
+	// Code2Flag — Feature Discovery & Creation (Stage 3)
+	// ═══════════════════════════════════════════════════════════════════
+	//
+	// Code2Flag discovers conditionals in code, generates flag
+	// specifications, produces implementation code snippets, and
+	// identifies flags safe for cleanup. Admin + developer access.
+	if c2fHandler != nil {
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Use(middleware.RequireRole(writers...))
+			r.Route("/v1/code2flag", func(r chi.Router) {
+				r.Get("/references", c2fHandler.ListReferences)
+				r.Post("/spec", c2fHandler.CreateSpec)
+				r.Post("/implement", c2fHandler.CreateImplementation)
+				r.Get("/cleanup", c2fHandler.ListCleanupCandidates)
+			})
+		})
+	}
 
 	// ═══════════════════════════════════════════════════════════════════
 	// Operations Portal API (/api/v1/ops)

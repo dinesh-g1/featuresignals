@@ -112,6 +112,7 @@ const insights: NavItemDef[] = [
 ];
 
 const powerTools: NavItemDef[] = [
+  { href: path("/discover"), label: "Discover", icon: SearchIcon },
   { href: path("/janitor"), label: "AI Janitor", icon: SparklesIcon },
   { href: path("/agents"), label: "Agents", icon: BrainIcon },
   { href: path("/abm"), label: "Agent Behaviors", icon: BotIcon },
@@ -522,7 +523,8 @@ export function NavList() {
           <PrismLotusIcon size={32} className="shrink-0" />
           <div className="flex flex-col leading-none min-w-0 flex-1">
             <span className="text-base font-bold tracking-tight whitespace-nowrap text-[var(--signal-fg-primary)]">
-              Feature<span className="text-[var(--signal-fg-accent)]">Signals</span>
+              Feature
+              <span className="text-[var(--signal-fg-accent)]">Signals</span>
             </span>
             <span className="text-[10px] font-medium tracking-wide text-[var(--signal-fg-tertiary)] uppercase mt-0.5 whitespace-nowrap truncate">
               FlagEngine

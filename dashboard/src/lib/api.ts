@@ -11,6 +11,10 @@ import type {
   AuditEntry,
   BillingInfo,
   CheckoutResponse,
+  CleanupCandidate,
+  Code2FlagImplementation,
+  Code2FlagReference,
+  Code2FlagSpec,
   CompareTargetsResult,
   CreateApprovalPayload,
   EnvComparisonResponse,
@@ -1193,7 +1197,102 @@ export const api = {
 
   disconnectRepository: (token: string, repoId: string) =>
     request(`/v1/janitor/repositories/${repoId}`, { method: "DELETE", token }),
+
+  // ── Code2Flag ──────────────────────────────────────────────
+
+  code2flag: {
+    /** List feature candidates (references) found in code repositories */
+    listReferences: (
+      token: string,
+      projectId: string,
+      params: {
+        type?: string;
+        repository?: string;
+        status?: string;
+        limit?: number;
+        offset?: number;
+      } = {},
+    ) => {
+      const qs = new URLSearchParams();
+      qs.set("project_id", projectId);
+      if (params.type) qs.set("type", params.type);
+      if (params.repository) qs.set("repository", params.repository);
+      if (params.status) qs.set("status", params.status);
+      qs.set("limit", String(params.limit ?? 50));
+      qs.set("offset", String(params.offset ?? 0));
+      return requestListPaginated<Code2FlagReference>(
+        `/v1/code2flag/references?${qs.toString()}`,
+        { token },
+      );
+    },
+
+    /** Generate a feature flag spec from selected references */
+    createSpec: (
+      token: string,
+      projectId: string,
+      body: {
+        flag_key: string;
+        repo_name: string;
+        references?: string[];
+      },
+    ) =>
+      request<Code2FlagSpec>(`/v1/code2flag/spec`, {
+        method: "POST",
+        body: { ...body, project_id: projectId },
+        token,
+      }),
+
+    /** Create an implementation PR for a feature flag */
+    createImplementation: (
+      token: string,
+      projectId: string,
+      body: {
+        flag_key: string;
+        repo_name: string;
+        language: string;
+        file_path: string;
+        line_number: number;
+      },
+    ) =>
+      request<Code2FlagImplementation>(`/v1/code2flag/implement`, {
+        method: "POST",
+        body: { ...body, project_id: projectId },
+        token,
+      }),
+
+    /** List sweep candidates (flags ready for cleanup) */
+    listCleanupCandidates: (
+      token: string,
+      projectId: string,
+      params: {
+        repository?: string;
+        status?: string;
+        limit?: number;
+        offset?: number;
+      } = {},
+    ) => {
+      const qs = new URLSearchParams();
+      qs.set("project_id", projectId);
+      if (params.repository) qs.set("repository", params.repository);
+      if (params.status) qs.set("status", params.status);
+      qs.set("limit", String(params.limit ?? 50));
+      qs.set("offset", String(params.offset ?? 0));
+      return requestListPaginated<CleanupCandidate>(
+        `/v1/code2flag/cleanup?${qs.toString()}`,
+        { token },
+      );
+    },
+  },
 };
+
+// ── Code2Flag Types (re-exported from types.ts) ─────────────
+
+export type {
+  CleanupCandidate,
+  Code2FlagImplementation,
+  Code2FlagReference,
+  Code2FlagSpec,
+} from "./types";
 
 // ── AI Janitor Types ──────────────────────────────────────────
 

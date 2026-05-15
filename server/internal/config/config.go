@@ -144,6 +144,21 @@ type Config struct {
 	EventBusProvider string // "nats", "noop"
 	NATSURL          string
 
+	// ── ClickHouse ────────────────────────────────────────────────
+	ClickHouseEnabled       bool
+	ClickHouseHost          string
+	ClickHousePort          int
+	ClickHouseDatabase      string
+	ClickHouseUser          string
+	ClickHousePassword      string
+	ClickHouseBatchSize     int
+	ClickHouseFlushInterval time.Duration
+	ClickHouseMaxRetries    int
+	ClickHouseRetryBackoff  time.Duration
+	ClickHouseMaxOpenConns  int
+	ClickHouseDialTimeout   time.Duration
+	ClickHouseQueryTimeout  time.Duration
+
 	// OpenTelemetry
 	OTELEnabled        bool
 	OTELEndpoint       string
@@ -261,6 +276,21 @@ func Load() *Config {
 
 		EventBusProvider: getEnv("EVENT_BUS_PROVIDER", "noop"),
 		NATSURL:          getEnv("NATS_URL", "nats://localhost:4222"),
+
+		// ── ClickHouse ────────────────────────────────────────────────
+		ClickHouseEnabled:       getEnvBool("CLICKHOUSE_ENABLED", false),
+		ClickHouseHost:          getEnv("CLICKHOUSE_HOST", "localhost"),
+		ClickHousePort:          getEnvInt("CLICKHOUSE_PORT", 9000),
+		ClickHouseDatabase:      getEnv("CLICKHOUSE_DATABASE", "featuresignals"),
+		ClickHouseUser:          getEnv("CLICKHOUSE_USER", "featuresignals"),
+		ClickHousePassword:      os.Getenv("CLICKHOUSE_PASSWORD"),
+		ClickHouseBatchSize:     getEnvInt("CLICKHOUSE_BATCH_SIZE", 1000),
+		ClickHouseFlushInterval: time.Duration(getEnvInt("CLICKHOUSE_FLUSH_INTERVAL_MS", 1000)) * time.Millisecond,
+		ClickHouseMaxRetries:    getEnvInt("CLICKHOUSE_MAX_RETRIES", 3),
+		ClickHouseRetryBackoff:  time.Duration(getEnvInt("CLICKHOUSE_RETRY_BACKOFF_MS", 100)) * time.Millisecond,
+		ClickHouseMaxOpenConns:  getEnvInt("CLICKHOUSE_MAX_OPEN_CONNS", 10),
+		ClickHouseDialTimeout:   time.Duration(getEnvInt("CLICKHOUSE_DIAL_TIMEOUT_SEC", 10)) * time.Second,
+		ClickHouseQueryTimeout:  time.Duration(getEnvInt("CLICKHOUSE_QUERY_TIMEOUT_SEC", 30)) * time.Second,
 
 	}
 }

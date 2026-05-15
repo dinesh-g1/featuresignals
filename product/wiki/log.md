@@ -1,3 +1,130 @@
+## [2026-05-24 00:30] implementation | Wave 2 Complete — Code2Flag End-to-End (Domain, Store, Handlers, Dashboard)
+
+### Context
+MIP-ENFORCED v1.2.0 task: Implement Code2Flag — the first Stage 3 product (Steps CONCEIVE→SPECIFY→DESIGN→FLAGIFY of the 14-step lifecycle). Consolidated requirements from 8+ wiki documents (HUMAN_PROCESS_PRODUCT_ARCHITECTURE, GITHUB_APP_SPECIFICATION, OpenAPI spec, PERFORMANCE_BUDGETS, PROCESS_ALIGNMENT_ARCHITECTURE, AGENTIC_OPERATING_MODEL, migration 000108, existing Janitor code).
+
+### Architecture
+3 parallel sub-agents with disjoint write scopes, unified by domain interfaces:
+
+**Agent 1: Domain + Store**
+- `domain/code2flag.go` — ScanResult, GeneratedFlag, CleanupEntry types; Code2FlagReader + Code2FlagWriter interfaces (13 methods); ScanResultFilter + CleanupFilter filter types; well-known constants
+- `store/postgres/code2flag_store.go` — Full PG implementation: parameterized queries, tenant isolation, column allowlists for UPDATE safety, pagination, wrapNotFound/wrapConflict error mapping
+- `store/postgres/code2flag_store_test.go` — 18 table-driven tests: CRUD, filters, pagination, tenant isolation, batch insert, duplicate key, empty batch, update-not-found
+
+**Agent 2: Handlers + Router**
+- `handlers/code2flag.go` — Code2FlagHandler with 4 methods (each ≤40 lines): ListReferences, CreateSpec, CreateImplementation, ListCleanupCandidates
+- `dto/code2flag.go` — Request/response DTOs for all 4 endpoints
+- `router.go` — `/v1/code2flag` route group with JWT auth + writer roles
+- `main.go` — Code2Flag store + handler instantiation
+- `code2flag_test.go` — 12 handler tests: happy path, validation, pagination, empty, invalid JSON, all passing with -race
+
+**Agent 3: Dashboard**
+- `/discover/page.tsx` — Main Discover page: feature candidates table, filter bar, Survey Now button, 5-state handling, pagination
+- `/discover/scans/[scanId]/page.tsx` — Survey detail: stats grid, selectable rows, batch flag generation
+- `/discover/flags/[flagId]/page.tsx` — Generated flag detail: metadata, code preview, language selector, implementation PR creation
+- `lib/api.ts` — 4 new code2flag API methods
+- `lib/types.ts` — 4 new TypeScript interfaces
+- `nav-list.tsx` — Discover link in Power Tools section
+
+### PRS Requirement IDs
+FS-S3-C2F-001 through FS-S3-C2F-012 (Code2Flag product requirements), FS-S0-INT-001 (GitHub Integration)
+
+### Verification
+- go build ./... ✅ | go vet ./... ✅
+- go test ./internal/api/handlers/... -race -run Code2Flag — 12/12 PASS ✅
+- go test ./internal/store/postgres/... -race -run Code2Flag — 18 tests (skip-guarded) ✅
+- npx tsc --noEmit (dashboard) — PASS ✅
+
+### Files changed (17 files)
+- server/internal/domain/code2flag.go (new)
+- server/internal/store/postgres/code2flag_store.go (new)
+- server/internal/store/postgres/code2flag_store_test.go (new)
+- server/internal/api/handlers/code2flag.go (new)
+- server/internal/api/dto/code2flag.go (new)
+- server/internal/api/handlers/code2flag_test.go (new)
+- server/internal/api/router.go (modified — +c2fHandler param, +route group)
+- server/internal/api/router_test.go (modified — +nil c2fHandler)
+- server/cmd/server/main.go (modified — +c2fStore, +c2fHandler, +janitorStore hoist)
+- server/internal/store/postgres/store_test.go (modified — +code2flag cleanup tables)
+- dashboard/src/lib/api.ts (modified — +4 code2flag methods)
+- dashboard/src/lib/types.ts (modified — +4 interfaces)
+- dashboard/src/app/(app)/projects/[projectId]/discover/page.tsx (new)
+- dashboard/src/app/(app)/projects/[projectId]/discover/scans/[scanId]/page.tsx (new)
+- dashboard/src/app/(app)/projects/[projectId]/discover/flags/[flagId]/page.tsx (new)
+- dashboard/src/components/nav-list.tsx (modified — +Discover link)
+- product/wiki/log.md — this entry
+
+## [2026-05-23 23:59] test | ClickHouse Pipeline Tests — 55 tests across store, batch writer, consumer, pipeline, helpers
+
+### Context
+MIP-ENFORCED v1.2.0 task: Comprehensive tests for the Wave 1 ClickHouse event pipeline. Store adapter and consumer were production-ready; needed full test coverage across all components.
+
+### Test Files Created
+- **eval_events_test.go** (467 lines) — 24 tests: config validation (valid/invalid addrs/invalid db/defaults), nil/not-connected guards (InsertEvalEvent, InsertEvalEventBatch, query methods), Close lifecycle (no-connection, double-close), interface compliance, 3 integration tests (skip-guarded with CLICKHOUSE_TEST_URL)
+- **batch_writer_test.go** (370 lines) — 14 tests: New/Write/Flush/Close lifecycle, concurrent writes, Len, functional options (WithBatchSize/FlushInterval/MaxRetries/RetryBackoff), 4 integration tests (skip-guarded)
+- **clickhouse_consumer_test.go** (280 lines) — 10 tests: New/Start/Close lifecycle, handleEvent with valid/invalid JSON, empty batch, empty payload, batch serialization, consumer group name, 3 integration tests
+- **eval_event_pipeline_test.go** (new) — 8 tests: FullFlow, MultipleBatches, ConcurrentPublishes, HandleEvent_InvalidBatch, Consumer CloseIdempotent/StartAfterClose, mock EventBus PublishAndSubscribe/Close/ErrEventBusClosed
+- **helpers_test.go** (116 lines) — 4 table-driven tests: ExtractSDKName (10 cases), ExtractSDKVersion (9 cases), BoolToUInt8 (2 cases), DomainArrayToClickHouse (4 cases)
+
+### Test Patterns Used
+- Table-driven tests with t.Run() for all helpers and config validation
+- mockEvalEventStore for BatchWriter tests (records calls, verifies batches)
+- mockEventBus for consumer and pipeline tests (simulates NATS)
+- Integration tests skip-guarded with CLICKHOUSE_TEST_URL env var
+- sync.WaitGroup for concurrent write tests (race-safe)
+- t.Parallel() on independent test cases
+
+### Verification
+- go test ./internal/store/clickhouse/... -race -count=1 — PASS (1.815s, 38 tests, 4 skip)
+- go test ./internal/events/... -race -count=1 — PASS (5.348s, 25 tests, 3 skip)
+- go test ./internal/config/... -race -count=1 — PASS (2.581s, 10 tests)
+- go build ./... — PASS
+- go vet ./... — PASS
+
+### Files changed
+- server/internal/store/clickhouse/eval_events_test.go (new, 467 lines)
+- server/internal/store/clickhouse/batch_writer_test.go (new, 370 lines)
+- server/internal/store/clickhouse/helpers_test.go (new, 116 lines)
+- server/internal/events/clickhouse_consumer_test.go (new, 280 lines)
+- server/internal/events/eval_event_pipeline_test.go (new)
+- product/wiki/log.md — this entry
+
+### Wave 1 Complete — ClickHouse Event Pipeline
+All 3 sub-agents completed: (1) ClickHouse schema + production store adapter with clickhouse-go/v2 driver, (2) Config + NATS consumer + main.go wiring + docker-compose, (3) 55 comprehensive tests across all components. Pipeline: EvalHandler → EvalEventEmitter → EventBus (eval.flag.evaluated) → ClickHouseConsumer → BatchWriter → ClickHouse MergeTree.
+
+## [2026-05-23 23:55] infrastructure | ClickHouse Pipeline Wired — config, NATS consumer, main.go wiring, docker-compose
+
+### Context
+MIP-ENFORCED v1.2.0 task: Wire the ClickHouse eval event pipeline end-to-end. Agent 1 completed the ClickHouse store adapter (`clickhouse/eval_events.go`) with `ClickHouseEvalEventStore`, `BatchWriter`, and `ClickHouseConfig`. This session wires config, creates the NATS consumer, integrates into main.go, and updates infrastructure files.
+
+### Changes
+- **config.go** — Added 15 ClickHouse fields to `Config` struct with env var defaults (CLICKHOUSE_ENABLED, CLICKHOUSE_HOST, CLICKHOUSE_PORT, etc.)
+- **events/clickhouse_consumer.go** (NEW, 139 lines) — `ClickHouseConsumer` struct implementing EventBus subscription to `eval.flag.evaluated` with consumer group `clickhouse-writers`. Deserializes `EvalEventBatch`, writes individual events to `BatchWriter`. Graceful shutdown with idempotent Close.
+- **main.go** — ClickHouse initialization block after EventBus/EvalEventEmitter setup (conditional on `cfg.ClickHouseEnabled`). Creates `ClickHouseEvalEventStore`, connects, starts `BatchWriter`, starts `ClickHouseConsumer`. Graceful degradation: server runs without ClickHouse if disabled or unavailable. Shutdown block closes consumer before EventBus cleanup.
+- **docker-compose.yml** — Added `clickhouse` service (clickhouse/clickhouse-server:24.12-alpine, ports 9000/8123, healthcheck), `clickhouse_data` volume, ClickHouse env vars in server service
+- **.env** — Enabled ClickHouse locally with dev credentials
+- **.env.example** — Documented all 15 ClickHouse environment variables
+
+### Architecture
+Pipeline: `EvalHandler` → `EvalEventEmitter` → `EventBus` (subject `eval.flag.evaluated`) → `ClickHouseConsumer` → `BatchWriter` → ClickHouse MergeTree. The `EvalEventEmitter` already handled event emission; this session completed the consumption side.
+
+### Verification
+- `go build ./...` — PASS
+- `go vet ./...` — PASS
+- No changes needed to eval handler (EvalEventEmitter already publishes to EventBus)
+
+### Files changed
+- `server/internal/config/config.go` (modified — +15 fields, +15 defaults)
+- `server/internal/events/clickhouse_consumer.go` (new, 139 lines)
+- `server/cmd/server/main.go` (modified — +import, +53 lines init, +10 lines shutdown)
+- `docker-compose.yml` (modified — +26 lines ClickHouse service, +1 volume)
+- `server/.env.example` (modified — +17 lines ClickHouse section)
+- `.env` (modified — +7 lines ClickHouse vars)
+
+### P0 items addressed
+- #4 (ClickHouse Schema) — Pipeline wiring complete (store adapter was done, now consumer + config + docker)
+- #9 (NATS Spec) — Consumer group `clickhouse-writers` subscribed to `eval.flag.evaluated`
+
 ## [2026-05-23 23:30] audit+fix | Brutal MIP/PRS/DoD Audit — 190-requirement sweep, 12 gaps fixed across 8 P0 items
 
 ### Context

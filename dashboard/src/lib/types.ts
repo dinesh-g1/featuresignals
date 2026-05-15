@@ -512,3 +512,44 @@ export interface EvalEventVolume {
   since: string;
   data: TimeSeriesPoint[];
 }
+
+// ── Code2Flag Types ─────────────────────────────────────────────────
+
+export interface Code2FlagReference {
+  id: string;
+  repository: string;
+  file_path: string;
+  line_number: number;
+  conditional_type: "if-statement" | "ternary" | "switch-case" | "config-check";
+  conditional_text: string;
+  confidence: number;
+  status: "unreviewed" | "accepted" | "rejected" | "modified";
+  reference_type: "usage" | "definition" | "cleanup_candidate";
+}
+
+export interface Code2FlagSpec {
+  flag_key: string;
+  flag_name: string;
+  flag_type: string;
+  suggested_variants?: unknown;
+  confidence: number;
+  created_at: string;
+}
+
+export interface Code2FlagImplementation {
+  code_snippet: string;
+  language: string;
+  file_path: string;
+  pr_url?: string;
+  created_at: string;
+}
+
+export interface CleanupCandidate {
+  id: string;
+  flag_key: string;
+  reason: string;
+  days_since_100_percent: number;
+  pr_url?: string;
+  status: string;
+  created_at: string;
+}

@@ -50,6 +50,7 @@ import (
 	"github.com/featuresignals/server/internal/sse"
 	"github.com/featuresignals/server/internal/status"
 	"github.com/featuresignals/server/internal/store/cache"
+	"github.com/featuresignals/server/internal/store/clickhouse"
 	"github.com/featuresignals/server/internal/store/postgres"
 	"github.com/featuresignals/server/internal/version"
 	"github.com/featuresignals/server/internal/webhook"
@@ -285,6 +286,59 @@ func main() {
 		BatchIntervalMs: 5000,
 	}
 	evalEventEmitter := eval.NewEvalEventEmitter(engine, eventBus, evalEmissionConfig, logger, otelInstruments)
+
+	// ── ClickHouse (conditional) ──────────────────────────────────
+	// ClickHouse is the analytics store for evaluation events.
+	// When disabled, the server runs without ClickHouse (graceful degradation).
+	var chConsumer *events.ClickHouseConsumer
+	var chWriter *clickhouse.BatchWriter
+
+	if cfg.ClickHouseEnabled {
+		chConfig := clickhouse.ClickHouseConfig{
+			Addrs:         []string{fmt.Sprintf("%s:%d", cfg.ClickHouseHost, cfg.ClickHousePort)},
+			Database:      cfg.ClickHouseDatabase,
+			Username:      cfg.ClickHouseUser,
+			Password:      cfg.ClickHousePassword,
+			MaxOpenConns:  cfg.ClickHouseMaxOpenConns,
+			DialTimeout:   cfg.ClickHouseDialTimeout,
+			QueryTimeout:  cfg.ClickHouseQueryTimeout,
+			BatchSize:     cfg.ClickHouseBatchSize,
+			FlushInterval: cfg.ClickHouseFlushInterval,
+			MaxRetries:    cfg.ClickHouseMaxRetries,
+			RetryBackoff:  cfg.ClickHouseRetryBackoff,
+		}
+
+		chStore, chErr := clickhouse.NewClickHouseEvalEventStore(chConfig, logger)
+		if chErr != nil {
+			logger.Error("failed to create clickhouse store", "error", chErr)
+			// Graceful degradation: server runs without ClickHouse.
+		} else {
+			if connErr := chStore.Connect(ctx); connErr != nil {
+				logger.Error("failed to connect to clickhouse", "error", connErr)
+				// Graceful degradation: server runs without ClickHouse.
+			} else {
+				chWriter = clickhouse.NewBatchWriter(chStore,
+					clickhouse.WithBatchSize(cfg.ClickHouseBatchSize),
+					clickhouse.WithFlushInterval(cfg.ClickHouseFlushInterval),
+					clickhouse.WithMaxRetries(cfg.ClickHouseMaxRetries),
+					clickhouse.WithRetryBackoff(cfg.ClickHouseRetryBackoff),
+				)
+				chWriter.Start(context.Background())
+
+				chConsumer = events.NewClickHouseConsumer(eventBus, chWriter, logger, otelInstruments)
+				if startErr := chConsumer.Start(ctx); startErr != nil {
+					logger.Error("failed to start clickhouse consumer", "error", startErr)
+				} else {
+					logger.Info("clickhouse pipeline started",
+						"host", cfg.ClickHouseHost,
+						"port", cfg.ClickHousePort,
+						"database", cfg.ClickHouseDatabase,
+					)
+				}
+			}
+		}
+	}
+
 	var otpSender domain.OTPSender
 	var lifecycleMailer domain.Mailer
 
@@ -386,9 +440,10 @@ func main() {
 
 	// ── AI Janitor Setup ──────────────────────────────────────────
 	var janitorH *handlers.JanitorHandler
+	var janitorStore *postgres.JanitorStore
 	{
 		janitorLogger := logger.With("component", "janitor")
-		janitorStore := postgres.NewJanitorStore(pool)
+		janitorStore = postgres.NewJanitorStore(pool)
 		complianceStore := postgres.NewComplianceStore(pool)
 		eventBus := sse.NewScanEventBus(janitorLogger)
 
@@ -534,11 +589,15 @@ func main() {
 		"policy_eval_timeout_ms", cfg.PolicyEvalTimeoutMs,
 	)
 
+	// ── Code2Flag ───────────────────────────────────────────────
+	c2fStore := postgres.NewCode2FlagStore(pool, logger)
+	c2fHandler := handlers.NewCode2FlagHandler(c2fStore, c2fStore, janitorStore, logger)
+
 	router := api.NewRouter(routerCtx, store, jwtMgr, evalCache, evalEventEmitter, sseServer, logger, metricsCollector, otelInstruments, governancePipeline, api.BillingConfig{
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler)
 
 	// Server
 	srv := &http.Server{
@@ -569,6 +628,16 @@ func main() {
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("shutdown error", "error", err)
+	}
+
+	// Shutdown ClickHouse pipeline (before EventBus cleanup, since the
+	// consumer subscribes to the EventBus).
+	if chConsumer != nil {
+		chShutdownCtx, chShutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := chConsumer.Close(chShutdownCtx); err != nil {
+			logger.Error("clickhouse consumer close failed", "error", err)
+		}
+		chShutdownCancel()
 	}
 
 	// Drain pending OTEL telemetry before exiting
