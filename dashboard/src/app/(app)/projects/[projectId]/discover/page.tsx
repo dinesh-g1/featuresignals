@@ -368,7 +368,7 @@ function DiscoverInner() {
                 Survey Now
               </Button>
               <Link
-                href={`/projects/${currentProjectId}/settings/integrations`}
+                href={`/projects/${currentProjectId}/janitor`}
                 className="inline-flex items-center gap-1 rounded-lg border border-[var(--signal-border-default)] px-3 py-1.5 text-xs font-semibold text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)]"
               >
                 Connect Repository
