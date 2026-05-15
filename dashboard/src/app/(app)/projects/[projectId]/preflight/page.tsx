@@ -203,6 +203,8 @@ function NewAssessmentForm({
                 options={changeTypeOptions}
                 value={changeType}
                 onValueChange={setChangeType}
+                placeholder="Select change type"
+                aria-label="Change Type"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

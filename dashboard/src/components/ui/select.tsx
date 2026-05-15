@@ -20,6 +20,8 @@ export interface SelectProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   error?: boolean;
+  /** Accessible label for screen readers. Falls back to placeholder if not set. */
+  "aria-label"?: string;
 }
 
 function Select({
@@ -32,6 +34,7 @@ function Select({
   className,
   size = "md",
   error,
+  "aria-label": ariaLabel,
 }: SelectProps) {
   return (
     <SelectPrimitive.Root
@@ -40,6 +43,7 @@ function Select({
       disabled={disabled}
     >
       <SelectPrimitive.Trigger
+        aria-label={ariaLabel || placeholder}
         className={cn(
           "group inline-flex w-full items-center justify-between gap-2 rounded-lg border bg-white text-sm font-medium shadow-sm transition-all",
           "text-[var(--signal-fg-primary)]",
@@ -56,7 +60,11 @@ function Select({
         )}
       >
         <span className="flex items-center gap-2 truncate">
-          {icon && <span className="shrink-0 text-[var(--signal-fg-tertiary)]">{icon}</span>}
+          {icon && (
+            <span className="shrink-0 text-[var(--signal-fg-tertiary)]">
+              {icon}
+            </span>
+          )}
           <SelectPrimitive.Value placeholder={placeholder} />
         </span>
         <SelectPrimitive.Icon asChild>
@@ -89,10 +97,7 @@ function Select({
                 >
                   <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
                     <SelectPrimitive.ItemIndicator>
-                      <CheckIcon
-                        className="h-3.5 w-3.5 text-[var(--signal-fg-accent)]"
-                       
-                      />
+                      <CheckIcon className="h-3.5 w-3.5 text-[var(--signal-fg-accent)]" />
                     </SelectPrimitive.ItemIndicator>
                   </span>
                   <SelectPrimitive.ItemText>
