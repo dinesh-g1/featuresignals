@@ -51,6 +51,13 @@ import type {
   Webhook,
   WebhookDelivery,
 } from "./types";
+import type {
+  FeatureCardData,
+  ConsoleInsights,
+  IntegrationStatus,
+  HelpContext,
+  MaturityConfig,
+} from "@/lib/console-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -1204,6 +1211,89 @@ export const api = {
 
   disconnectRepository: (token: string, repoId: string) =>
     request(`/v1/janitor/repositories/${repoId}`, { method: "DELETE", token }),
+
+  // ── Console ─────────────────────────────────────────────────
+
+  console: {
+    listFlags: (
+      token: string,
+      params: {
+        limit?: number;
+        offset?: number;
+        stage?: string;
+        environment?: string;
+        projectId?: string;
+        sort?: string;
+      },
+    ) =>
+      requestListPaginated<FeatureCardData>(
+        `/v1/console/flags?${new URLSearchParams(
+          Object.entries(params).reduce<Record<string, string>>(
+            (acc, [k, v]) => {
+              if (v !== undefined && v !== null && v !== "") acc[k] = String(v);
+              return acc;
+            },
+            {},
+          ),
+        ).toString()}`,
+        { token },
+      ),
+
+    getFlag: (token: string, key: string) =>
+      request<FeatureCardData>(`/v1/console/flags/${key}`, { token }),
+
+    getInsights: (token: string) =>
+      request<ConsoleInsights>(`/v1/console/insights`, { token }),
+
+    getIntegrations: (token: string) =>
+      request<IntegrationStatus>(`/v1/console/integrations`, { token }),
+
+    getHelpContext: (token: string) =>
+      request<HelpContext>(`/v1/console/help`, { token }),
+
+    getMaturity: (token: string) =>
+      request<MaturityConfig>(`/v1/console/maturity`, { token }),
+
+    setMaturity: (token: string, level: number) =>
+      request<MaturityConfig>(`/v1/console/maturity`, {
+        method: "PUT",
+        body: { level },
+        token,
+      }),
+
+    advanceFlag: (
+      token: string,
+      key: string,
+      params: { environment: string },
+    ) =>
+      request<{ flag: FeatureCardData; new_stage: string }>(
+        `/v1/console/flags/${key}/advance`,
+        { method: "POST", body: params, token },
+      ),
+
+    shipFlag: (
+      token: string,
+      key: string,
+      params: { environment: string; target_percent: number },
+    ) =>
+      request<{ flag: FeatureCardData; live_eval_url: string }>(
+        `/v1/console/flags/${key}/ship`,
+        { method: "POST", body: params, token },
+      ),
+
+    toggleFlag: (token: string, key: string, action: "pause" | "resume") =>
+      request<FeatureCardData>(`/v1/console/flags/${key}/toggle`, {
+        method: "POST",
+        body: { action },
+        token,
+      }),
+
+    archiveFlag: (token: string, key: string) =>
+      request<{ status: string }>(`/v1/console/flags/${key}/archive`, {
+        method: "POST",
+        token,
+      }),
+  },
 
   // ── Code2Flag ──────────────────────────────────────────────
 

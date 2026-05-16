@@ -129,6 +129,41 @@ func LinksForAPIKeysCollection(envID string) Links {
 // Error context links
 // ────────────────────────────────────────────────────────────────────
 
+// LinksForMaturity returns HATEOAS links for the Console maturity config resource.
+func LinksForMaturity() Links {
+	return Links{
+		{Rel: "self", Href: "/v1/console/maturity", Method: "GET"},
+		{Rel: "update", Href: "/v1/console/maturity", Method: "PUT", Title: "Set maturity level"},
+	}
+}
+
+// LinksForConsoleFlags returns HATEOAS links for the Console flags collection.
+func LinksForConsoleFlags() Links {
+	return Links{
+		{Rel: "self", Href: "/v1/console/flags", Method: "GET"},
+		{Rel: "create-flag", Href: "/v1/console/flags", Method: "POST", Title: "Create a new flag"},
+	}
+}
+
+// LinksForConsoleFlag returns HATEOAS links for a single Console flag resource.
+func LinksForConsoleFlag(key string) Links {
+	base := fmt.Sprintf("/v1/console/flags/%s", key)
+	return Links{
+		{Rel: "self", Href: base, Method: "GET"},
+		{Rel: "advance", Href: base + "/advance", Method: "POST", Title: "Advance to next stage"},
+		{Rel: "ship", Href: base + "/ship", Method: "POST", Title: "Ship this flag"},
+		{Rel: "toggle", Href: base + "/toggle", Method: "POST", Title: "Pause or resume this flag"},
+		{Rel: "archive", Href: base + "/archive", Method: "POST", Title: "Archive this flag"},
+	}
+}
+
+// LinksForHelpContext returns HATEOAS links for the Console help context resource.
+func LinksForHelpContext() Links {
+	return Links{
+		{Rel: "self", Href: "/v1/console/help", Method: "GET"},
+	}
+}
+
 // LinksForError returns HATEOAS links that help a developer recover from an error.
 func LinksForError(docsURL string) Links {
 	links := Links{

@@ -35,6 +35,7 @@ type FlagStatus string
 
 const (
 	StatusActive     FlagStatus = "active"
+	StatusPaused     FlagStatus = "paused"
 	StatusRolledOut  FlagStatus = "rolled_out"
 	StatusDeprecated FlagStatus = "deprecated"
 	StatusArchived   FlagStatus = "archived"
