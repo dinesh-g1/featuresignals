@@ -123,3 +123,5 @@ ops-portal/*.db
 ops-portal/*.db-*
 /tmp/*
 testcluster
+server/fs-server-new
+server/fs-server
