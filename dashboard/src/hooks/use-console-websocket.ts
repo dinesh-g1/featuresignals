@@ -17,7 +17,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useAppStore } from "@/stores/app-store";
-import { transformKeys } from "@/lib/api";
 import type {
   FlagUpdatedPayload,
   FlagAdvancedPayload,
@@ -103,7 +102,7 @@ async function tryRefreshToken(): Promise<boolean> {
     });
     if (!res.ok) return false;
 
-    const data = transformKeys<any>(await res.json());
+    const data = await res.json();
     const user = data.user ?? useAppStore.getState().user;
     const org = data.organization ?? useAppStore.getState().organization;
     setAuth(data.access_token, data.refresh_token, user, org, data.expires_at);
