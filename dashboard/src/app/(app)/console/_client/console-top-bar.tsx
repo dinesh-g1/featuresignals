@@ -18,7 +18,7 @@
 
 import { useCallback, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useConsoleStore } from "@/stores/console-store";
+import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useAppStore } from "@/stores/app-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
 import { api } from "@/lib/api";
@@ -60,11 +60,14 @@ export function ConsoleTopBar() {
 
   // Projects are fetched once by useConsoleData and stored in console store (H4 fix)
   const projects = useConsoleStore((s) => s.projects);
+  const projectsLoading = useConsoleStore((s) => s.projectsLoading);
+  const projectsError = useConsoleStore((s) => s.projectsError);
 
   const [projectOpen, setProjectOpen] = useState(false);
   const [envOpen, setEnvOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [projectSearch, setProjectSearch] = useState("");
   const projectRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -75,11 +78,27 @@ export function ConsoleTopBar() {
   const currentProject = projects.find((p) => p.id === currentProjectId);
   const projectLabel = currentProject?.name ?? "Select project";
 
+  // Filtered projects for search
+  const filteredProjects = projectSearch.trim()
+    ? projects.filter((p) =>
+        p.name.toLowerCase().includes(projectSearch.toLowerCase()),
+      )
+    : projects;
+
+  // Reset project search when dropdown closes
+  const handleProjectOpen = useCallback(
+    (open: boolean) => {
+      setProjectOpen(open);
+      if (!open) setProjectSearch("");
+    },
+    [],
+  );
+
   // Click outside closes dropdowns
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (projectRef.current && !projectRef.current.contains(e.target as Node))
-        setProjectOpen(false);
+        handleProjectOpen(false);
       if (envRef.current && !envRef.current.contains(e.target as Node))
         setEnvOpen(false);
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node))
@@ -87,7 +106,7 @@ export function ConsoleTopBar() {
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
-  }, []);
+  }, [handleProjectOpen]);
 
   // Cmd+K
   useEffect(() => {
@@ -154,15 +173,16 @@ export function ConsoleTopBar() {
       <div className="relative shrink-0" ref={projectRef}>
         <button
           type="button"
-          onClick={() => setProjectOpen((o) => !o)}
+          onClick={() => handleProjectOpen(!projectOpen)}
           className={cn(
-            "inline-flex items-center gap-1 rounded px-1.5 py-0.5",
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1",
             "text-xs text-[var(--signal-fg-primary)] font-medium",
             "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+            projectOpen && "bg-[var(--signal-bg-secondary)]",
           )}
         >
-          <FolderIcon className="h-3 w-3 text-[var(--signal-fg-tertiary)]" />
-          <span className="max-w-[100px] truncate">{projectLabel}</span>
+          <FolderIcon className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
+          <span className="max-w-[120px] truncate">{projectLabel}</span>
           <ChevronDownIcon
             className={cn(
               "h-3 w-3 text-[var(--signal-fg-tertiary)] transition-transform",
@@ -173,42 +193,135 @@ export function ConsoleTopBar() {
         {projectOpen && (
           <div
             className={cn(
-              "absolute top-full left-0 mt-1 z-50 min-w-[180px]",
+              "absolute top-full left-0 mt-1 z-50 min-w-[220px]",
               "rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)]",
-              "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] py-1 animate-slide-up",
+              "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] animate-slide-up",
             )}
           >
-            {projects.length === 0 && (
-              <p className="px-3 py-2 text-xs text-[var(--signal-fg-tertiary)]">
-                No projects yet
-              </p>
-            )}
-            {projects.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => {
-                  setCurrentProject(p.id);
-                  setProjectOpen(false);
-                }}
+            {/* Search input */}
+            <div className="px-2 pt-2 pb-1">
+              <div
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
-                  "hover:bg-[var(--signal-bg-secondary)] transition-colors",
-                  p.id === currentProjectId &&
-                    "bg-[var(--signal-bg-secondary)]",
+                  "flex items-center gap-1.5 px-2 py-1 rounded-md",
+                  "border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]",
                 )}
               >
-                <FolderIcon className="h-3 w-3 text-[var(--signal-fg-tertiary)]" />
-                <span className="flex-1 text-[var(--signal-fg-primary)]">
-                  {p.name}
-                </span>
-                {p.id === currentProjectId && (
-                  <span className="text-[10px] font-medium text-[var(--signal-fg-accent)]">
-                    Active
-                  </span>
-                )}
-              </button>
-            ))}
+                <SearchIcon className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
+                <input
+                  type="text"
+                  value={projectSearch}
+                  onChange={(e) => setProjectSearch(e.target.value)}
+                  placeholder="Filter projects…"
+                  className={cn(
+                    "flex-1 bg-transparent border-none outline-none",
+                    "text-[11px] text-[var(--signal-fg-primary)]",
+                    "placeholder:text-[var(--signal-fg-tertiary)]",
+                  )}
+                  aria-label="Filter projects by name"
+                  // Stop click from closing the dropdown
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+
+            <div className="py-1">
+              {/* Loading state */}
+              {projectsLoading && (
+                <p className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)] italic">
+                  Loading projects…
+                </p>
+              )}
+
+              {/* Error state */}
+              {!projectsLoading && projectsError && (
+                <div className="px-3 py-2">
+                  <p className="text-[11px] text-[var(--signal-fg-danger)]">
+                    {projectsError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => consoleStore.getState().triggerRetry()}
+                    className="mt-1 text-[10px] text-[var(--signal-fg-accent)] hover:underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!projectsLoading && !projectsError && filteredProjects.length === 0 && (
+                <p className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)]">
+                  {projectSearch.trim() ? "No projects match your search" : "No projects yet"}
+                </p>
+              )}
+
+              {/* Project list */}
+              {!projectsLoading &&
+                !projectsError &&
+                filteredProjects.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setCurrentProject(p.id);
+                      handleProjectOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                      p.id === currentProjectId &&
+                        "bg-[var(--signal-bg-secondary)] font-medium",
+                    )}
+                  >
+                    <FolderIcon className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
+                    <span className="flex-1 text-[var(--signal-fg-primary)] truncate">
+                      {p.name}
+                    </span>
+                    {p.id === currentProjectId && (
+                      <span className="text-[10px] font-medium text-[var(--signal-fg-accent)] shrink-0">
+                        Active
+                      </span>
+                    )}
+                  </button>
+                ))}
+            </div>
+
+            {/* Footer: Manage projects */}
+            {!projectsLoading && !projectsError && (
+              <>
+                <div className="mx-3 h-px bg-[var(--signal-border-subtle)]" />
+                <div className="py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleProjectOpen(false);
+                      setCommandPaletteOpen(true);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                      "text-[var(--signal-fg-accent)]",
+                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                    )}
+                  >
+                    Manage projects…
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleProjectOpen(false);
+                      router.push("/projects");
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                      "text-[var(--signal-fg-secondary)]",
+                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                    )}
+                  >
+                    View all projects
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -219,16 +332,17 @@ export function ConsoleTopBar() {
           type="button"
           onClick={() => setEnvOpen((o) => !o)}
           className={cn(
-            "inline-flex items-center gap-1 rounded px-1.5 py-0.5",
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1",
             "text-xs text-[var(--signal-fg-secondary)]",
             "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+            envOpen && "bg-[var(--signal-bg-secondary)]",
           )}
         >
           <span
             className="h-2 w-2 rounded-full shrink-0"
             style={{ backgroundColor: envConfig.badge }}
           />
-          <span className="hidden sm:inline">{envConfig.label}</span>
+          <span className="hidden sm:inline font-medium text-[var(--signal-fg-primary)]">{envConfig.label}</span>
           <ChevronDownIcon
             className={cn(
               "h-3 w-3 text-[var(--signal-fg-tertiary)] transition-transform",
@@ -239,43 +353,64 @@ export function ConsoleTopBar() {
         {envOpen && (
           <div
             className={cn(
-              "absolute top-full left-0 mt-1 z-50 min-w-[140px]",
+              "absolute top-full left-0 mt-1 z-50 min-w-[160px]",
               "rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)]",
-              "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] py-1 animate-slide-up",
+              "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] animate-slide-up",
             )}
           >
-            {ENV_OPTIONS.map((env) => {
-              const info = ENV_COLORS[env];
-              const sel = env === selectedEnvironment;
-              return (
-                <button
-                  key={env}
-                  type="button"
-                  onClick={() => {
-                    setEnvironment(env);
-                    setEnvOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
-                    "hover:bg-[var(--signal-bg-secondary)] transition-colors",
-                    sel && "bg-[var(--signal-bg-secondary)]",
-                  )}
-                >
-                  <span
-                    className="h-2 w-2 rounded-full shrink-0"
-                    style={{ backgroundColor: info.badge }}
-                  />
-                  <span className="flex-1 text-[var(--signal-fg-primary)]">
-                    {info.label}
-                  </span>
-                  {sel && (
-                    <span className="text-[10px] text-[var(--signal-fg-accent)]">
-                      Active
+            <div className="py-1">
+              {ENV_OPTIONS.map((env) => {
+                const info = ENV_COLORS[env];
+                const sel = env === selectedEnvironment;
+                return (
+                  <button
+                    key={env}
+                    type="button"
+                    onClick={() => {
+                      setEnvironment(env);
+                      setEnvOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                      sel && "bg-[var(--signal-bg-secondary)] font-medium",
+                    )}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: info.badge }}
+                    />
+                    <span className="flex-1 text-[var(--signal-fg-primary)]">
+                      {info.label}
                     </span>
-                  )}
-                </button>
-              );
-            })}
+                    {sel && (
+                      <span className="text-[10px] text-[var(--signal-fg-accent)] shrink-0">
+                        Active
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer: View all environments */}
+            <div className="mx-3 h-px bg-[var(--signal-border-subtle)]" />
+            <div className="py-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setEnvOpen(false);
+                  router.push("/settings/environments");
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                  "text-[var(--signal-fg-secondary)]",
+                  "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                )}
+              >
+                View all environments
+              </button>
+            </div>
           </div>
         )}
       </div>

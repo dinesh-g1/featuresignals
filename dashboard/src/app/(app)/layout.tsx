@@ -18,7 +18,6 @@ import { useAxe } from "@/lib/axe";
 // ── Console-specific imports ────────────────────────────────────────
 import { ConsoleTopBar } from "@/app/(app)/console/_client/console-top-bar";
 import { ConsoleBottomBar } from "@/app/(app)/console/_client/console-bottom-bar";
-import { ContextStrip } from "@/components/console/context-strip";
 import { ConnectZone } from "@/components/console/connect-zone";
 import { LifecycleZone } from "@/app/(app)/console/_client/lifecycle-zone";
 import { LearnZone } from "@/components/console/learn-zone";
@@ -230,9 +229,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="h-12 shrink-0">
               <ConsoleTopBar />
             </div>
-
-            {/* Context Strip (28px) */}
-            <ContextStrip />
 
             {/* Main Area */}
             <div className="flex flex-1 overflow-hidden relative">
