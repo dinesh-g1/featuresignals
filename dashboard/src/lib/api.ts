@@ -118,7 +118,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
     const data = transformKeys<any>(await res.json());
     const user = data.user ?? useAppStore.getState().user;
     const org = data.organization ?? useAppStore.getState().organization;
-    setAuth(data.accessToken, data.refreshToken, user, org, data.expiresAt);
+    setAuth(data.access_token, data.refresh_token, user, org, data.expires_at);
     return true;
   } catch {
     return false;

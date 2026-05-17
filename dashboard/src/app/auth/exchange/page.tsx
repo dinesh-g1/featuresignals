@@ -26,13 +26,13 @@ function ExchangeContent() {
       .exchangeToken(token)
       .then((data) => {
         setAuth(
-          data.tokens.accessToken,
-          data.tokens.refreshToken,
+          data.tokens.access_token,
+          data.tokens.refresh_token,
           data.user,
           undefined,
-          data.tokens.expiresAt,
+          data.tokens.expires_at,
         );
-        router.replace("/projects");
+        router.replace("/console");
       })
       .catch((err: unknown) => {
         setError(

@@ -1,451 +1,399 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  BuildingIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  LoaderIcon,
-} from "@/components/icons/nav-icons";
-import { toast } from "@/components/toast";
-import { showFeedback } from "@/components/action-feedback";
-import { PageHeader } from "@/components/page-header";
+import { useConsoleStore } from "@/stores/console-store";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { CreateProjectDialog } from "@/components/console/create-project-dialog";
+import {
+  FolderIcon,
+  PlusIcon,
+  GlobeIcon,
+  RefreshCwIcon,
+  ChevronRightIcon,
+} from "lucide-react";
 import type { Project } from "@/lib/types";
+
+// ─── Skeleton Card ──────────────────────────────────────────────────
+
+function ProjectCardSkeleton() {
+  return (
+    <div
+      className={cn(
+        "rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)]",
+        "bg-[var(--signal-bg-primary)] p-5 animate-pulse",
+      )}
+      aria-hidden="true"
+    >
+      <div className="flex items-start gap-3">
+        <div className="h-9 w-9 rounded-[var(--signal-radius-md)] bg-[var(--signal-bg-secondary)]" />
+        <div className="flex-1 space-y-2 min-w-0">
+          <div className="h-4 w-2/3 rounded bg-[var(--signal-bg-secondary)]" />
+          <div className="h-3 w-1/3 rounded bg-[var(--signal-bg-secondary)]" />
+        </div>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <div className="h-6 w-20 rounded-full bg-[var(--signal-bg-secondary)]" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty State ────────────────────────────────────────────────────
+
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div
+        className={cn(
+          "flex h-16 w-16 items-center justify-center rounded-full",
+          "bg-[var(--signal-bg-secondary)] mb-5",
+        )}
+      >
+        <FolderIcon className="h-8 w-8 text-[var(--signal-fg-tertiary)]" />
+      </div>
+      <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
+        No projects yet
+      </h2>
+      <p className="mt-2 text-sm text-[var(--signal-fg-secondary)] max-w-sm">
+        Create your first project to start organizing feature flags,
+        environments, and rollout configurations.
+      </p>
+      <Button
+        variant="primary"
+        size="lg"
+        onClick={onCreate}
+        className="mt-6"
+      >
+        <PlusIcon className="h-4 w-4" />
+        Create your first project
+      </Button>
+    </div>
+  );
+}
+
+// ─── Error State ────────────────────────────────────────────────────
+
+function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div
+        className={cn(
+          "flex h-16 w-16 items-center justify-center rounded-full",
+          "bg-[var(--signal-bg-danger-muted)] mb-5",
+        )}
+      >
+        <RefreshCwIcon className="h-8 w-8 text-[var(--signal-fg-danger)]" />
+      </div>
+      <h2 className="text-lg font-semibold text-[var(--signal-fg-primary)]">
+        Failed to load projects
+      </h2>
+      <p className="mt-2 text-sm text-[var(--signal-fg-secondary)] max-w-sm">
+        {message}
+      </p>
+      <Button
+        variant="secondary"
+        size="lg"
+        onClick={onRetry}
+        className="mt-6"
+      >
+        <RefreshCwIcon className="h-4 w-4" />
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+// ─── Project Card ───────────────────────────────────────────────────
+
+function ProjectCard({
+  project,
+  isActive,
+  onSelect,
+  onEdit,
+}: {
+  project: Project;
+  isActive: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "group relative w-full rounded-[var(--signal-radius-lg)] border p-5 text-left",
+        "transition-all duration-[var(--signal-duration-fast)]",
+        "hover:shadow-[var(--signal-shadow-md)] hover:-translate-y-0.5",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal-fg-accent)]/40",
+        isActive
+          ? "border-[var(--signal-border-accent-emphasis)] bg-[var(--signal-bg-accent-muted)] shadow-[var(--signal-shadow-sm)]"
+          : "border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)] hover:border-[var(--signal-border-default)]",
+      )}
+      aria-label={`${project.name} project${isActive ? " (active)" : ""}`}
+    >
+      {/* Selection indicator */}
+      {isActive && (
+        <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-[var(--signal-fg-accent)]" />
+      )}
+
+      <div className="flex items-start gap-3">
+        {/* Project icon */}
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--signal-radius-md)]",
+            isActive
+              ? "bg-[var(--signal-bg-accent-emphasis)] text-white"
+              : "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
+            "group-hover:shadow-sm transition-shadow",
+          )}
+        >
+          <FolderIcon className="h-4 w-4" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)] truncate">
+              {project.name}
+            </h3>
+            {isActive && (
+              <span className="text-[10px] font-medium text-[var(--signal-fg-accent)] shrink-0">
+                Active
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-[var(--signal-fg-tertiary)] font-mono truncate">
+            {project.slug}
+          </p>
+        </div>
+
+        {/* Hover arrow */}
+        <ChevronRightIcon
+          className={cn(
+            "h-4 w-4 shrink-0 mt-2 transition-all",
+            "text-[var(--signal-fg-tertiary)] opacity-0 -translate-x-1",
+            "group-hover:opacity-100 group-hover:translate-x-0",
+          )}
+        />
+      </div>
+
+      {/* Footer: quick actions */}
+      <div className="mt-4 flex items-center gap-2">
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium",
+            "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
+            "border border-[var(--signal-border-subtle)]",
+          )}
+        >
+          <GlobeIcon className="h-2.5 w-2.5" />
+          Environments
+        </span>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className={cn(
+            "ml-auto px-2 py-0.5 rounded text-[10px] font-medium",
+            "text-[var(--signal-fg-tertiary)]",
+            "hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+            "opacity-0 group-hover:opacity-100 transition-all",
+          )}
+        >
+          Edit
+        </button>
+      </div>
+    </button>
+  );
+}
+
+// ─── Page Component ─────────────────────────────────────────────────
 
 export default function ProjectsPage() {
   const router = useRouter();
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.current_project_id);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const [projects, setProjects] = useState<Project[]>([]);
+
+  const projects = useConsoleStore((s) => s.projects);
+  const setProjects = useConsoleStore((s) => s.setProjects);
+  const projectsLoading = useConsoleStore((s) => s.projectsLoading);
+  const projectsError = useConsoleStore((s) => s.projectsError);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // Dialog state
+  const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editing, setEditing] = useState<Project | null>(null);
-  const [deleting, setDeleting] = useState<Project | null>(null);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [fieldError, setFieldError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [dialogStartInDelete, setDialogStartInDelete] = useState(false);
 
-  const loadProjects = useCallback(async () => {
-    if (!token) return;
+  // ── Fetch projects on mount if store is empty ──────────────────
+
+  const fetchProjects = useCallback(async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError("");
-      const list = await api.listProjects(token);
-      setProjects(list);
+      const result = await api.listProjects(token);
+      const arr: Project[] = Array.isArray(result)
+        ? result
+        : ((result as { data?: Project[] })?.data ?? []);
+      setProjects(arr);
+
+      if (!currentProjectId && arr.length > 0) {
+        setCurrentProject(arr[0].id);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load projects");
+      setError(
+        err instanceof Error ? err.message : "Failed to load projects",
+      );
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, setProjects, currentProjectId, setCurrentProject]);
 
   useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
-
-  // Auto-refresh when projects change
-  useEffect(() => {
-    function handleChange() {
-      loadProjects();
+    // Use cached projects from store if available; otherwise fetch
+    if (projects.length > 0) {
+      setLoading(false);
+    } else {
+      fetchProjects();
     }
-    window.addEventListener("fs:projects:changed", handleChange);
-    return () =>
-      window.removeEventListener("fs:projects:changed", handleChange);
-  }, [loadProjects]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function openCreate() {
-    setEditing(null);
-    setName("");
-    setSlug("");
-    setFieldError("");
+  // ── Handlers ──────────────────────────────────────────────────
+
+  const handleSelectProject = (id: string) => {
+    setCurrentProject(id);
+    router.push("/console");
+  };
+
+  const handleCreate = () => {
+    setEditingProject(null);
+    setDialogStartInDelete(false);
     setDialogOpen(true);
-  }
+  };
 
-  function openEdit(project: Project) {
-    setEditing(project);
-    setName(project.name);
-    setSlug(project.slug || "");
-    setFieldError("");
+  const handleEdit = (project: Project) => {
+    setEditingProject(project);
+    setDialogStartInDelete(false);
     setDialogOpen(true);
-  }
+  };
 
-  function openDelete(project: Project) {
-    setDeleting(project);
-    setDeleteConfirmed(false);
-    setDeleteOpen(true);
-  }
+  const isLoading = loading || (projectsLoading && projects.length === 0);
+  const displayError = error ?? projectsError;
+  const isEmpty = !isLoading && !displayError && projects.length === 0;
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) {
-      setFieldError("Project name is required");
-      return;
-    }
-    if (!token) return;
+  // ── Render ────────────────────────────────────────────────────
 
-    try {
-      setSubmitting(true);
-      setFieldError("");
-      if (editing) {
-        await api.updateProject(token, editing.id, {
-          name: name.trim(),
-          slug: slug.trim() || undefined,
-        });
-        showFeedback("Project updated.", "success");
-      } else {
-        const project = await api.createProject(token, {
-          name: name.trim(),
-          slug: slug.trim() || undefined,
-        });
-        setCurrentProject(project.id);
-        showFeedback("Project created.", "success");
-      }
-      window.dispatchEvent(new Event("fs:projects:changed"));
-      setDialogOpen(false);
-      loadProjects();
-    } catch (err) {
-      setFieldError(
-        err instanceof Error ? err.message : "Failed to save project",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  return (
+    <div className="max-w-5xl mx-auto">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-[var(--signal-fg-primary)]">
+            Projects
+          </h1>
+          {!isLoading && projects.length > 0 && (
+            <span
+              className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium",
+                "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-secondary)]",
+                "border border-[var(--signal-border-subtle)]",
+              )}
+            >
+              {projects.length}
+            </span>
+          )}
+        </div>
 
-  async function handleDelete() {
-    if (!deleting || !token) return;
-    try {
-      setSubmitting(true);
-      await api.deleteProject(token, deleting.id);
-      showFeedback("Project deleted.", "success");
-      if (projectId === deleting.id) {
-        setCurrentProject("");
-      }
-      window.dispatchEvent(new Event("fs:projects:changed"));
-      setDeleteOpen(false);
-      setDeleting(null);
-      loadProjects();
-    } catch (err) {
-      toast(
-        err instanceof Error ? err.message : "Failed to delete project",
-        "error",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
+        {!isEmpty && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleCreate}
+          >
+            <PlusIcon className="h-4 w-4" />
+            New project
+          </Button>
+        )}
+      </div>
 
-  function handleSelectProject(project: Project) {
-    setCurrentProject(project.id);
-    router.push(`/projects/${project.id}/dashboard`);
-  }
+      {/* ── Loading State ──────────────────────────────────────── */}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ProjectCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
 
-  // ── Loading ──
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="mb-8 h-8 w-48 animate-pulse rounded bg-[var(--signal-border-default)]" />
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-[120px] animate-pulse rounded-xl bg-[var(--signal-border-default)]"
+      {/* ── Error State ────────────────────────────────────────── */}
+      {displayError && !isLoading && (
+        <ErrorState
+          message={displayError}
+          onRetry={fetchProjects}
+        />
+      )}
+
+      {/* ── Empty State ────────────────────────────────────────── */}
+      {isEmpty && <EmptyState onCreate={handleCreate} />}
+
+      {/* ── Project Grid ───────────────────────────────────────── */}
+      {!isLoading && !displayError && projects.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((p) => (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              isActive={p.id === currentProjectId}
+              onSelect={() => handleSelectProject(p.id)}
+              onEdit={() => handleEdit(p)}
             />
           ))}
         </div>
-      </div>
-    );
-  }
-
-  // ── Error ──
-  if (error && projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="rounded-2xl border border-red-200 bg-[var(--signal-bg-danger-muted)] p-6 text-center max-w-md">
-          <h2 className="text-lg font-bold text-red-800 mb-1">
-            Failed to load projects
-          </h2>
-          <p className="text-sm text-red-600 mb-4">{error}</p>
-          <Button onClick={loadProjects} variant="secondary">
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Render ──
-  return (
-    <div className="p-6 sm:p-8 max-w-6xl">
-      {/* Empty state — centered in viewport */}
-      {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-220px)] text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--signal-bg-accent-muted)] to-[var(--signal-bg-accent-muted)]/50 ring-1 ring-[var(--signal-border-accent-muted)]/50 shadow-sm">
-            <BuildingIcon className="h-10 w-10 text-[var(--signal-fg-accent)]" />
-          </div>
-          <h2 className="text-xl font-bold text-[var(--signal-fg-primary)]">
-            No projects yet
-          </h2>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--signal-fg-secondary)]">
-            Create your first project to start managing feature flags,
-            environments, and segments — all in one place.
-          </p>
-          <Button
-            onClick={openCreate}
-            variant="primary"
-            size="lg"
-            className="mt-8"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Create your first project
-          </Button>
-        </div>
-      ) : (
-        <>
-          <PageHeader
-            title="Projects"
-            description="Projects group your flags, environments, and segments together."
-            primaryAction={
-              <Button onClick={openCreate} variant="primary">
-                <PlusIcon className="h-4 w-4 mr-1.5" />
-                Create project
-              </Button>
-            }
-            statusBadge={
-              <span className="inline-flex items-center rounded-full bg-[var(--signal-bg-secondary)] px-2.5 py-0.5 text-xs font-medium text-[var(--signal-fg-secondary)] ring-1 ring-inset ring-[var(--signal-border-default)]">
-                {projects.length} project{projects.length !== 1 ? "s" : ""}
-              </span>
-            }
-          />
-          {/* Project cards grid */}
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-            {projects.map((project) => {
-              const isActive = project.id === projectId;
-              return (
-                <Card
-                  key={project.id}
-                  className={cn(
-                    "group relative p-6 transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col items-center justify-center min-h-[120px]",
-                    isActive && "ring-2 ring-[var(--signal-fg-accent)]",
-                  )}
-                  onClick={() => handleSelectProject(project)}
-                >
-                  {/* Edit/Delete buttons - visible on hover */}
-                  <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEdit(project);
-                      }}
-                      className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-accent)]"
-                      title="Edit project"
-                      aria-label={`Edit ${project.name}`}
-                    >
-                      <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDelete(project);
-                      }}
-                      className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-danger)]"
-                      title="Delete project"
-                      aria-label={`Delete ${project.name}`}
-                    >
-                      <TrashIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
-                  </div>
-
-                  {/* Icon */}
-                  <div
-                    className={cn(
-                      "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-                      isActive
-                        ? "bg-[var(--signal-bg-accent-muted)]"
-                        : "bg-[var(--signal-bg-secondary)] group-hover:bg-[var(--signal-bg-accent-muted)]",
-                    )}
-                  >
-                    <BuildingIcon
-                      className={cn(
-                        "h-5 w-5",
-                        isActive
-                          ? "text-[var(--signal-fg-accent)]"
-                          : "text-[var(--signal-fg-secondary)] group-hover:text-[var(--signal-fg-accent)]",
-                      )}
-                    />
-                  </div>
-
-                  {/* Name */}
-                  <h3 className="font-semibold text-[var(--signal-fg-primary)] text-center truncate max-w-full">
-                    {project.name}
-                  </h3>
-                </Card>
-              );
-            })}
-
-            {/* Create Project card */}
-            <button
-              onClick={openCreate}
-              className="min-h-[120px] rounded-xl border-2 border-dashed border-[var(--signal-border-default)] flex flex-col items-center justify-center gap-2 text-[var(--signal-fg-secondary)] hover:border-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent)] transition-all duration-200"
-            >
-              <PlusIcon className="h-8 w-8" />
-              <span className="text-sm font-medium">Create project</span>
-            </button>
-          </div>
-        </>
       )}
 
-      {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)]">
-            <BuildingIcon className="h-6 w-6 text-[var(--signal-fg-accent)]" />
-          </div>
-          <DialogHeader className="text-center">
-            <DialogTitle>
-              {editing ? "Edit project" : "Create project"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-5">
-            <div>
-              <Label htmlFor="project-name">Project name</Label>
-              <Input
-                id="project-name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setFieldError("");
-                }}
-                placeholder="My Awesome App"
-                className="mt-1.5"
-                autoFocus
-              />
-              {fieldError && (
-                <p className="mt-1.5 text-xs text-[var(--signal-fg-danger)]">
-                  {fieldError}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="project-slug">Slug</Label>
-              <Input
-                id="project-slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="my-awesome-app"
-                className="mt-1.5 font-mono text-sm"
-              />
-              <p className="mt-1.5 text-xs text-[var(--signal-fg-secondary)]">
-                Used in API URLs. Leave blank to auto-generate from name.
-              </p>
-            </div>
-            <DialogFooter className="!justify-between">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setDialogOpen(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={submitting || !name.trim()}
-              >
-                {submitting ? (
-                  <>
-                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : editing ? (
-                  "Save changes"
-                ) : (
-                  "Create project"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete project</DialogTitle>
-            <div className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold text-[var(--signal-fg-primary)]">
-                {deleting?.name}
-              </span>
-              ? This will permanently delete all flags, environments, and
-              segments in this project.
-            </div>
-          </DialogHeader>
-          {/* Confirmation checkbox */}
-          <label className="flex items-start gap-3 px-1 py-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={deleteConfirmed}
-              onChange={(e) => setDeleteConfirmed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[var(--signal-border-default)] text-[var(--signal-fg-danger)] focus:ring-[var(--signal-fg-danger)]"
-            />
-            <span className="text-sm text-[var(--signal-fg-secondary)]">
-              I understand that deleting this project will permanently remove
-              all flags, environments, segments, and associated data. This
-              action cannot be undone.
-            </span>
-          </label>
-
-          <DialogFooter className="!justify-between">
-            <Button
-              variant="secondary"
-              onClick={() => setDeleteOpen(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              disabled={submitting || !deleteConfirmed}
-            >
-              {submitting ? (
-                <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete project"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ── Dialog ────────────────────────────────────────────── */}
+      <CreateProjectDialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setEditingProject(null);
+          setDialogStartInDelete(false);
+        }}
+        project={editingProject}
+        startInDelete={dialogStartInDelete}
+        onCreated={(project) => {
+          handleSelectProject(project.id);
+        }}
+        onUpdated={() => {
+          setEditingProject(null);
+        }}
+        onDeleted={(projectId) => {
+          if (currentProjectId === projectId) {
+            const remaining = projects.filter((p) => p.id !== projectId);
+            setCurrentProject(remaining[0]?.id ?? "");
+          }
+          setEditingProject(null);
+        }}
+      />
     </div>
   );
 }

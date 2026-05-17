@@ -27,16 +27,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     try {
       const data = await api.refresh(currentRefreshToken);
-      if (!data?.accessToken) return;
+      if (!data?.access_token) return;
       const user = data.user ?? useAppStore.getState().user;
       const org = data.organization ?? useAppStore.getState().organization;
       setAuth(
-        data.accessToken,
-        data.refreshToken,
+        data.access_token,
+        data.refresh_token,
         user,
         org,
-        data.expiresAt,
-        data.onboardingCompleted,
+        data.expires_at,
+        data.onboarding_completed,
       );
     } catch {
       logout();

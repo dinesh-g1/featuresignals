@@ -117,17 +117,17 @@ function LoginForm() {
       try {
         const data = await api.login({ email, password });
         setAuth(
-          data.tokens.accessToken,
-          data.tokens.refreshToken,
+          data.tokens.access_token,
+          data.tokens.refresh_token,
           data.user,
           data.organization,
-          data.tokens.expiresAt,
-          data.onboardingCompleted,
+          data.tokens.expires_at,
+          data.onboarding_completed,
         );
-        if (!data.onboardingCompleted) {
+        if (!data.onboarding_completed) {
           router.push("/onboarding");
         } else {
-          router.push("/projects");
+          router.push("/console");
         }
       } catch (err: unknown) {
         if (err instanceof APIError) {

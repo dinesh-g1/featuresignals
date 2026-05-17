@@ -116,17 +116,17 @@ function OnboardingContent() {
         api
           .refresh(refreshToken)
           .then((data) => {
-            if (data?.accessToken) {
+            if (data?.access_token) {
               const user = data.user ?? useAppStore.getState().user;
               const org =
                 data.organization ?? useAppStore.getState().organization;
               setAuth(
-                data.accessToken,
-                data.refreshToken,
+                data.access_token,
+                data.refresh_token,
                 user,
                 org,
-                data.expiresAt,
-                data.onboardingCompleted,
+                data.expires_at,
+                data.onboarding_completed,
               );
             }
           })

@@ -1,3 +1,25 @@
+## [2026-05-27 19:00] implementation | Projects Management — Native Console Integration
+
+### Context
+Replaced the bare `/projects` redirect with a fully native projects management experience integrated into the Console shell. The old standalone CRUD page was removed; project creation, editing, and deletion now flow through the TopBar dropdown and a proper `/projects` page.
+
+### Files changed (3 files)
+- `dashboard/src/components/console/create-project-dialog.tsx` — New dialog for create/edit/delete projects. Create mode with auto-slug generation, edit mode with pre-filled form, delete mode with name-confirmation guard. All states handled (loading, error, success with checkmark). Uses Signal UI tokens exclusively.
+- `dashboard/src/app/(app)/console/_client/console-top-bar.tsx` — Enhanced project dropdown: "+ New project" action at top, hover-visible edit/delete icons per project row, delete jumps directly to confirmation. Better visual hierarchy: create action above search, project list with grouped actions, footer with "View all projects".
+- `dashboard/src/app/(app)/projects/page.tsx` — Rewritten from bare redirect to full console page. Clean header with project count badge, responsive grid (1/2/3 col), project cards with name/slug/active indicator, hover states with slide-in arrow. All states: loading skeleton (6 cards), empty state with illustration + CTA, error state with retry. Click card → navigate to console. Create button opens dialog.
+
+### Design Principles Enforced
+- Zero hardcoded hex colors — all `var(--signal-*)` tokens
+- Zero old component imports (no PageHeader, no old Card, no old Button)
+- Every state handled: loading, empty, error, success
+- Keyboard accessible (Escape to close dialog, Enter to submit, focus management)
+- Dark mode compatible via Signal UI token system
+- Don Norman: visibility (count badge), feedback (success checkmark, selection highlight), forgiveness (delete name-confirmation, undo via project recreation)
+
+### Verification
+- `npx tsc --noEmit` — ✅ 0 errors in changed files
+- `npx eslint` — ✅ clean (0 errors, 0 warnings)
+
 ## [2026-05-17 07:16] implementation | Console End-to-End Overhaul — Phase 2 Complete
 
 ### Context

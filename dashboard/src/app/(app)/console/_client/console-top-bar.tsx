@@ -10,7 +10,7 @@
  * Each context segment is a dropdown for switching.
  *
  * Navigation icons (right side):
- *   ⚙️ Settings dropdown → Settings, Billing, Team, API Keys, Webhooks, Integrations, SSO
+ *   ⚙️ Settings dropdown → Org (General, Billing, Team, SSO, Notifications) | Project (Integrations) | Env (API Keys, Webhooks)
  *   🔔 Activity bell → /activity
  *   ?  Help → /support
  *   👤 User menu → profile, sign out, etc.
@@ -26,7 +26,9 @@ import { ENV_COLORS } from "@/lib/console-constants";
 import { cn } from "@/lib/utils";
 import { MaturityBadge } from "@/components/console/maturity-badge";
 import { UserMenu } from "@/components/user-menu";
+import { CreateProjectDialog } from "@/components/console/create-project-dialog";
 import type { MaturityLevel, EnvironmentType } from "@/lib/console-types";
+import type { Project } from "@/lib/types";
 import {
   ChevronDownIcon,
   SearchIcon,
@@ -41,6 +43,9 @@ import {
   ShieldIcon,
   UsersIcon,
   CreditCardIcon,
+  PlusIcon,
+  PencilIcon,
+  Trash2Icon,
 } from "lucide-react";
 
 const ENV_OPTIONS: EnvironmentType[] = ["production", "staging", "development"];
@@ -68,6 +73,9 @@ export function ConsoleTopBar() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [dialogStartInDelete, setDialogStartInDelete] = useState(false);
   const projectRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -224,6 +232,29 @@ export function ConsoleTopBar() {
               </div>
             </div>
 
+            {/* New project action */}
+            <div className="px-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleProjectOpen(false);
+                  setEditingProject(null);
+                  setDialogStartInDelete(false);
+                  setCreateDialogOpen(true);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs text-left",
+                  "text-[var(--signal-fg-accent)] font-medium",
+                  "hover:bg-[var(--signal-bg-accent-muted)] transition-colors",
+                )}
+              >
+                <PlusIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>New project</span>
+              </button>
+            </div>
+
+            <div className="mx-2 h-px bg-[var(--signal-border-subtle)]" />
+
             <div className="py-1">
               {/* Loading state */}
               {projectsLoading && (
@@ -259,52 +290,87 @@ export function ConsoleTopBar() {
               {!projectsLoading &&
                 !projectsError &&
                 filteredProjects.map((p) => (
-                  <button
+                  <div
                     key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setCurrentProject(p.id);
-                      handleProjectOpen(false);
-                    }}
                     className={cn(
-                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
-                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                      "group flex items-center",
                       p.id === currentProjectId &&
-                        "bg-[var(--signal-bg-secondary)] font-medium",
+                        "bg-[var(--signal-bg-secondary)]",
                     )}
                   >
-                    <FolderIcon className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
-                    <span className="flex-1 text-[var(--signal-fg-primary)] truncate">
-                      {p.name}
-                    </span>
-                    {p.id === currentProjectId && (
-                      <span className="text-[10px] font-medium text-[var(--signal-fg-accent)] shrink-0">
-                        Active
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentProject(p.id);
+                        handleProjectOpen(false);
+                      }}
+                      className={cn(
+                        "flex flex-1 items-center gap-2 px-3 py-1.5 text-xs text-left min-w-0",
+                        "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                        p.id === currentProjectId && "font-medium",
+                      )}
+                    >
+                      <FolderIcon className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
+                      <span className="flex-1 text-[var(--signal-fg-primary)] truncate">
+                        {p.name}
                       </span>
-                    )}
-                  </button>
+                      {p.id === currentProjectId && (
+                        <span className="text-[10px] font-medium text-[var(--signal-fg-accent)] shrink-0">
+                          Active
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Edit / Delete actions — visible on hover */}
+                    <div className="flex items-center shrink-0 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingProject(p);
+                          setDialogStartInDelete(false);
+                          setCreateDialogOpen(true);
+                        }}
+                        className={cn(
+                          "p-1 rounded",
+                          "text-[var(--signal-fg-tertiary)]",
+                          "hover:bg-[var(--signal-bg-primary)] hover:text-[var(--signal-fg-primary)]",
+                          "transition-colors",
+                        )}
+                        aria-label={`Edit ${p.name}`}
+                        title="Edit project"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingProject(p);
+                          setDialogStartInDelete(true);
+                          setCreateDialogOpen(true);
+                        }}
+                        className={cn(
+                          "p-1 rounded",
+                          "text-[var(--signal-fg-tertiary)]",
+                          "hover:bg-[var(--signal-bg-danger-muted)] hover:text-[var(--signal-fg-danger)]",
+                          "transition-colors",
+                        )}
+                        aria-label={`Delete ${p.name}`}
+                        title="Delete project"
+                      >
+                        <Trash2Icon className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
                 ))}
             </div>
 
-            {/* Footer: Manage projects */}
+            {/* Footer: View all */}
             {!projectsLoading && !projectsError && (
               <>
                 <div className="mx-3 h-px bg-[var(--signal-border-subtle)]" />
                 <div className="py-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleProjectOpen(false);
-                      setCommandPaletteOpen(true);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
-                      "text-[var(--signal-fg-accent)]",
-                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
-                    )}
-                  >
-                    Manage projects…
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -484,14 +550,73 @@ export function ConsoleTopBar() {
             )}
             role="menu"
           >
+            {/* Organization section */}
+            <div className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+              Organization
+            </div>
             {[
-              { label: "Settings", href: "/settings/general", icon: SettingsIcon },
+              { label: "General", href: "/settings/general", icon: SettingsIcon },
               { label: "Billing", href: "/settings/billing", icon: CreditCardIcon },
               { label: "Team", href: "/settings/team", icon: UsersIcon },
+              { label: "SSO", href: "/settings/sso", icon: ShieldIcon },
+              { label: "Notifications", href: "/settings/notifications", icon: BellIcon },
+            ].map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  router.push(item.href);
+                  setSettingsOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                  "text-[var(--signal-fg-primary)]",
+                  "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                )}
+              >
+                <item.icon className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+
+            <div className="my-1 border-t border-[var(--signal-border-subtle)]" />
+
+            {/* Project section */}
+            <div className="px-3 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+              Project
+            </div>
+            {[
+              { label: "Integrations", href: "/settings/integrations", icon: PlugIcon },
+            ].map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  router.push(item.href);
+                  setSettingsOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                  "text-[var(--signal-fg-primary)]",
+                  "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                )}
+              >
+                <item.icon className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+
+            <div className="my-1 border-t border-[var(--signal-border-subtle)]" />
+
+            {/* Environment section */}
+            <div className="px-3 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+              Environment
+            </div>
+            {[
               { label: "API Keys", href: "/settings/api-keys", icon: KeyIcon },
               { label: "Webhooks", href: "/settings/webhooks", icon: WebhookIcon },
-              { label: "Integrations", href: "/settings/integrations", icon: PlugIcon },
-              { label: "SSO", href: "/settings/sso", icon: ShieldIcon },
             ].map((item) => (
               <button
                 key={item.href}
@@ -547,6 +672,35 @@ export function ConsoleTopBar() {
 
       {/* User */}
       <UserMenu />
+
+      {/* Create / Edit / Delete Project Dialog */}
+      <CreateProjectDialog
+        open={createDialogOpen}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          setEditingProject(null);
+          setDialogStartInDelete(false);
+        }}
+        project={editingProject}
+        startInDelete={dialogStartInDelete}
+        onCreated={(project) => {
+          setCurrentProject(project.id);
+          setEditingProject(null);
+          setDialogStartInDelete(false);
+        }}
+        onUpdated={() => {
+          setEditingProject(null);
+          setDialogStartInDelete(false);
+        }}
+        onDeleted={(projectId) => {
+          if (currentProjectId === projectId) {
+            const remaining = projects.filter((p) => p.id !== projectId);
+            setCurrentProject(remaining[0]?.id ?? "");
+          }
+          setEditingProject(null);
+          setDialogStartInDelete(false);
+        }}
+      />
     </header>
   );
 }
