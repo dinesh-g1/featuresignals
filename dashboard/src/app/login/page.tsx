@@ -117,14 +117,14 @@ function LoginForm() {
       try {
         const data = await api.login({ email, password });
         setAuth(
-          data.tokens.access_token,
-          data.tokens.refresh_token,
+          data.tokens.accessToken,
+          data.tokens.refreshToken,
           data.user,
           data.organization,
-          data.tokens.expires_at,
-          data.onboarding_completed,
+          data.tokens.expiresAt,
+          data.onboardingCompleted,
         );
-        if (!data.onboarding_completed) {
+        if (!data.onboardingCompleted) {
           router.push("/onboarding");
         } else {
           router.push("/projects");

@@ -68,17 +68,17 @@ function BillingContent() {
         api
           .refresh(refreshToken)
           .then((data) => {
-            if (data?.access_token) {
+            if (data?.accessToken) {
               const user = data.user ?? useAppStore.getState().user;
               const org =
                 data.organization ?? useAppStore.getState().organization;
               setAuth(
-                data.access_token,
-                data.refresh_token,
+                data.accessToken,
+                data.refreshToken,
                 user,
                 org,
-                data.expires_at,
-                data.onboarding_completed,
+                data.expiresAt,
+                data.onboardingCompleted,
               );
             }
           })
@@ -623,7 +623,7 @@ function BillingContent() {
                       >
                         <XIcon
                           className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
-                         
+
                         />
                         {feature}
                       </li>
@@ -838,7 +838,7 @@ function PlanCard({
           <li key={f} className="flex items-start gap-2 text-sm text-[var(--signal-fg-secondary)]">
             <CheckIcon
               className="mt-0.5 h-4 w-4 shrink-0 text-[var(--signal-fg-accent)]"
-             
+
             />
             {f}
           </li>

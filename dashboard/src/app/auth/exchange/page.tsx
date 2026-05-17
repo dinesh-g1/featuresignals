@@ -26,11 +26,11 @@ function ExchangeContent() {
       .exchangeToken(token)
       .then((data) => {
         setAuth(
-          data.tokens.access_token,
-          data.tokens.refresh_token,
+          data.tokens.accessToken,
+          data.tokens.refreshToken,
           data.user,
           undefined,
-          data.tokens.expires_at,
+          data.tokens.expiresAt,
         );
         router.replace("/projects");
       })

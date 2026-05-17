@@ -417,12 +417,12 @@ function RegisterForm() {
     try {
       const data = await api.completeSignup({ email: form.email, otp });
       setAuth(
-        data.tokens.access_token,
-        data.tokens.refresh_token,
+        data.tokens.accessToken,
+        data.tokens.refreshToken,
         data.user,
         data.organization,
-        data.tokens.expires_at,
-        data.onboarding_completed,
+        data.tokens.expiresAt,
+        data.onboardingCompleted,
       );
       router.push("/onboarding");
     } catch (err: unknown) {

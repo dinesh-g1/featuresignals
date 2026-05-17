@@ -374,32 +374,32 @@ export interface EnvComparisonResponse {
 }
 
 export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
 
 export interface LoginResponse {
   user: User;
   organization: Organization;
   tokens: AuthTokens;
-  onboarding_completed: boolean;
+  onboardingCompleted: boolean;
 }
 
 export interface SignupResponse {
   user: User;
   organization: Organization;
   tokens: AuthTokens;
-  onboarding_completed: boolean;
+  onboardingCompleted: boolean;
 }
 
 export interface RefreshResponse {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
   organization?: Organization;
   user?: User;
-  onboarding_completed?: boolean;
+  onboardingCompleted?: boolean;
 }
 
 export interface TokenExchangeResponse {

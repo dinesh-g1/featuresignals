@@ -72,7 +72,7 @@ function toCamelCase(str: string): string {
   return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-function transformKeys<T>(obj: unknown): T {
+export function transformKeys<T>(obj: unknown): T {
   if (Array.isArray(obj)) return obj.map(transformKeys) as T;
   if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
     const result: Record<string, unknown> = {};
@@ -118,7 +118,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
     const data = transformKeys<any>(await res.json());
     const user = data.user ?? useAppStore.getState().user;
     const org = data.organization ?? useAppStore.getState().organization;
-    setAuth(data.access_token, data.refresh_token, user, org, data.expires_at);
+    setAuth(data.accessToken, data.refreshToken, user, org, data.expiresAt);
     return true;
   } catch {
     return false;
