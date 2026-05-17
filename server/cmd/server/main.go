@@ -605,6 +605,17 @@ func main() {
 	impStore := postgres.NewImpactStore(pool, logger)
 	impHandler := handlers.NewImpactHandler(impStore, impStore, store, c2fStore, logger)
 
+	// ── Console (3-zone surface) ──────────────────────────────
+	wsHub := sse.NewWSHub(logger)
+	consoleStore := postgres.NewConsoleStore(pool, logger)
+	consoleSuggester := agent.NewRuleBasedConsoleSuggester(logger)
+	consoleH := handlers.NewConsoleHandler(consoleStore, consoleSuggester, wsHub, logger)
+	consoleWSH := handlers.NewConsoleWSHandler(wsHub, jwtMgr, logger)
+
+	// ── Maturity ──────────────────────────────────────────────
+	maturityStore := postgres.NewMaturityStore(pool, logger)
+	maturityH := handlers.NewMaturityHandler(maturityStore, logger)
+
 	// ── GitHub Integration: Scanner, PR Creator, Webhook ──────
 	providerFactory := func(orgID string) (janitor.GitProvider, error) {
 		janitorLogger := logger.With("component", "provider_factory", "org_id", orgID)
@@ -669,7 +680,7 @@ func main() {
 		Registry:     paymentRegistry,
 		DashboardURL: cfg.DashboardURL,
 		AppBaseURL:   cfg.AppBaseURL,
-	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler, pflHandler, incHandler, impHandler, ghWebhookHandler)
+	}, otpSender, cfg.AppBaseURL, cfg.DashboardURL, statusH, cfg.DeploymentMode, cfg.BillingEnabled(), regionsEnabled, eventEmitter, lifecycleProcessor, cfg, lifecycleMailer, cfg.SalesNotifyEmail, janitorH, c2fHandler, pflHandler, incHandler, impHandler, ghWebhookHandler, consoleH, consoleWSH, maturityH)
 
 	// Server
 	srv := &http.Server{

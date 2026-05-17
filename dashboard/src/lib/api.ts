@@ -63,6 +63,27 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 
+// ─── Key Transformation ─────────────────────────────────────────────
+// The Go backend returns snake_case JSON keys. This utility recursively
+// converts them to camelCase so TypeScript interfaces can use idiomatic
+// camelCase property names.
+
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function transformKeys<T>(obj: unknown): T {
+  if (Array.isArray(obj)) return obj.map(transformKeys) as T;
+  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      result[toCamelCase(key)] = transformKeys(value);
+    }
+    return result as T;
+  }
+  return obj as T;
+}
+
 interface RequestOptions {
   method?: string;
   body?: unknown;
@@ -94,7 +115,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
     });
     if (!res.ok) return false;
 
-    const data = await res.json();
+    const data = transformKeys<any>(await res.json());
     const user = data.user ?? useAppStore.getState().user;
     const org = data.organization ?? useAppStore.getState().organization;
     setAuth(data.access_token, data.refresh_token, user, org, data.expires_at);
@@ -363,7 +384,8 @@ async function requestWithRetry<T>(
       }
 
       if (res.status === 204) return undefined as T;
-      return res.json();
+      const raw = await res.json();
+      return transformKeys<T>(raw);
     } catch (error) {
       lastError = error as Error;
 

@@ -76,6 +76,9 @@ func NewRouter(
 		incHandler *handlers.IncidentHandler,
 		impHandler *handlers.ImpactHandler,
 		ghWebhookHandler *handlers.GitHubWebhookHandler,
+		consoleH *handlers.ConsoleHandler,
+		consoleWSH *handlers.ConsoleWSHandler,
+		maturityH *handlers.MaturityHandler,
 	) http.Handler {
 	r := chi.NewRouter()
 
@@ -948,6 +951,51 @@ func NewRouter(
 				r.Get("/learnings", impHandler.GetOrgLearnings)
 			})
 		})
+	}
+
+	// ── Console (3-zone surface) ────────────────────────────────────
+	if consoleH != nil {
+		r.Route("/v1/console", func(r chi.Router) {
+			// Read endpoints (viewer+)
+			r.Group(func(r chi.Router) {
+				r.Use(jwtAuth)
+				r.Use(middleware.RequireRole(allRoles...))
+				r.Get("/flags", consoleH.ListFlags)
+				r.Get("/flags/{key}", consoleH.GetFlag)
+				r.Get("/insights", consoleH.GetInsights)
+				r.Get("/integrations", consoleH.GetIntegrations)
+				r.Get("/help/context", consoleH.GetHelpContext)
+			})
+
+			// Write endpoints (developer+)
+			r.Group(func(r chi.Router) {
+				r.Use(jwtAuth)
+				r.Use(middleware.RequireRole(writers...))
+				r.Post("/flags/{key}/advance", consoleH.AdvanceStage)
+				r.Post("/flags/{key}/ship", consoleH.Ship)
+				r.Post("/flags/{key}/toggle", consoleH.ToggleFlag)
+				r.Delete("/flags/{key}", consoleH.ArchiveFlag)
+			})
+		})
+	}
+
+	// ── Maturity ─────────────────────────────────────────────────────
+	if maturityH != nil {
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Use(middleware.RequireRole(allRoles...))
+			r.Get("/v1/console/maturity", maturityH.GetConfig)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(jwtAuth)
+			r.Use(middleware.RequireRole(ownerAdmin...))
+			r.Put("/v1/console/maturity", maturityH.SetLevel)
+		})
+	}
+
+	// ── Console WebSocket (no JWT middleware, token in query param) ──
+	if consoleWSH != nil {
+		r.Get("/v1/console/live", consoleWSH.ServeHTTP)
 	}
 
 	// ═══════════════════════════════════════════════════════════════════
