@@ -1,3 +1,71 @@
+## [2026-05-28 20:00] implementation | Console Unification Complete — Single Shell, Sidebar Removed, snake_case, All States
+
+### Context
+Completed the multi-phase console overhaul that transformed the dashboard from a sidebar-based layout into a single unified console shell. This was the culmination of work spanning console shell deployment, LifecycleZone redesign, Projects page rewrite, Settings pages rewrite, snake_case standardization, transformKeys removal, and comprehensive state handling. The old sidebar (NavList, ContextBar, EnvColorBar, Breadcrumb, DashboardFooter, IconRail, FloatingPanel, ConsoleShell stub) has been COMPLETELY REMOVED.
+
+### What Was Implemented
+
+**Console Shell Layout:**
+- TopBar (48px): [FS logo] [Maturity badge] | [Org selector] [Project▼] [Env▼] | [Search ⌘K] [⚙️Settings] [?Help] [👤User]
+- Main Area: CONNECT zone (left, collapsible) | LifecycleZone (center) | LEARN zone (right, collapsible)
+- ContextPanel (right overlay, 380px): 6 panel types all wired (flag-detail, ship-wizard, incident, preflight, janitor, approval)
+- BottomBar (32px): Status indicator, connection status, feature count
+
+**LifecycleZone Redesign:**
+- Replaced 3-row, 14-stage horizontal strip with 4 product cards in flow
+- Product cards: Code2Flag → Preflight → IncidentFlag → Impact Analyzer
+- Each card expands to reveal internal stages as mini-kanban columns
+- SVG arrow connectors between product cards
+- framer-motion spring animations (respects prefersReducedMotion)
+
+**Projects Page Rewritten:**
+- Native console integration — no more bare redirect
+- Responsive grid (1/2/3 col), project cards with name/slug/active indicator
+- Create/edit/delete via dialog from TopBar dropdown
+- All states: loading skeleton (6 cards), empty with illustration + CTA, error with retry
+
+**Settings Pages Rewritten:**
+- Hierarchy: Organization (General, Billing, Team, SSO, Notifications) | Project (Integrations) | Environment (API Keys, Webhooks)
+- Accessible via TopBar gear dropdown
+- Console design language applied throughout
+
+**snake_case Standardization:**
+- All TypeScript types, API responses, store fields, property access now snake_case
+- `transformKeys` REMOVED from API client — wire format matches types exactly
+- Zero client-side key conversion anywhere
+
+**Navigation Scheme:**
+- `/console` — Main console (default authenticated route)
+- `/console/settings/*` — Settings pages (console design)
+- `/projects` — Project management page (console design)
+- `/activity`, `/usage`, `/limits` — Rendered in center zone
+- `/onboarding`, `/pricing`, `/support` — Minimal layout (outside console)
+- Old sidebar routes — COMPLETELY REMOVED
+
+**Data Flow:**
+- ConsoleStore (Zustand vanilla): features, integrations, insights, UI state
+- AppStore (Zustand + persist): auth, user, org, project/env selection
+- API layer: `requestWithRetry` with token refresh, no transformKeys
+- WebSocket: Auto-reconnecting with JWT refresh
+- URL sync: Bidirectional (stage, env, search, feature params)
+
+**Dropdown z-index Fix:**
+- Settings and project dropdowns now render above all content with proper z-index stacking
+
+**Design Principles Enforced:**
+- Zero hardcoded hex colors — `var(--signal-*)` tokens exclusively
+- All states handled on every page: loading, empty, error, success, filtered-empty
+- Don Norman principles applied to every component
+- Keyboard accessible throughout
+- Dark mode via Signal UI token system
+
+### Verification
+- `npx tsc --noEmit` — ✅ 0 errors
+- `npx eslint` — ✅ 0 errors, 0 warnings
+- All 6 ContextPanel types wired and functional
+- Console shell is DEFAULT layout for all authenticated routes
+- Old sidebar code fully deleted (not just unreferenced)
+
 ## [2026-05-28 14:30] redesign | LifecycleZone — Product Card Flow Redesign
 
 ### Context

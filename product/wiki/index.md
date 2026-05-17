@@ -1,7 +1,7 @@
 # FeatureSignals Product Wiki — Master Index
 
-> **Updated:** 2026-05-23
-> **Total pages:** 37 (10 public, 24 private, 4 internal, 0 archive)
+> **Updated:** 2026-05-28
+> **Total pages:** 38 (11 public, 24 private, 4 internal, 0 archive)
 
 ---
 
@@ -58,9 +58,10 @@
 
 | Page | Status | Summary | Inbound Links |
 |------|--------|---------|---------------|
-| [[UX_STRATEGY.md]] | `current` | Don Norman-inspired UX strategy — 5 design principles (Close the Gulfs, Error Prevention, Knowledge in the World, Emotional Design, Progressive Disclosure), heuristic compliance checklist, 8-phase implementation roadmap, competitive UX differentiators | 0 |
-| [[UNIFIED_OVERHAUL_PLAN.md]] | `current` | Phase-by-phase plan for: (1) Docs migration Docusaurus→Next.js MDX (99 pages), (2) Dashboard rebrand to FlagEngine (app.featuresignals.com→/flagengine), (3) FlagEngine-docs contextual integration (inline docs panels). All grounded in Norman principles. Ready for agentic execution with 17 parallel agent prompts specified. | 0 |
-| [[../private/UI_UX_SPECIFICATION.md]] | `current` | **v1 Complete UI/UX Specification** — 4,392 lines, 21 sections. Every page (7 nav sections + settings), every component (12 new, 6 existing modified), every state (13 universal rules), full accessibility requirements (WCAG 2.1 AA), responsive strategy, dark mode implementation, performance budgets, 6-persona matrix, 6-phase implementation plan. Grounded in Don Norman's 10 design principles applied per-page. Aligned with DASHBOARD_AUDIT.md findings. | 1 |
+| [[UX_STRATEGY.md]] | `current` | Don Norman-inspired UX strategy — 5 design principles (Close the Gulfs, Error Prevention, Knowledge in the World, Emotional Design, Progressive Disclosure), heuristic compliance checklist, 8-phase implementation roadmap, competitive UX differentiators. **Implementation §1-6 complete (sidebar→console shell) as of 2026-05-28.** | 0 |
+| [[UNIFIED_OVERHAUL_PLAN.md]] | `superseded` | Phase-by-phase plan for: (1) Docs migration Docusaurus→Next.js MDX (99 pages), (2) Dashboard rebrand to FlagEngine, (3) FlagEngine-docs contextual integration. **§2-3 (sidebar overhaul) superseded by CONSOLE_ARCHITECTURE.md — the sidebar has been replaced by a unified console shell.** Docs migration portion remains relevant for future reference. | 0 |
+| [[CONSOLE_ARCHITECTURE.md]] | `current` | **Console Shell Architecture Reference.** Documents the unified console layout that replaced the old sidebar-based navigation: TopBar (48px), 3-zone main area (Connect | LifecycleZone | Learn), ContextPanel (380px overlay, 6 panel types), BottomBar (32px). Covers resource hierarchy (Org→Project→Env), product card flow, settings hierarchy, panel system, navigation scheme, Signal UI design tokens, and universal state handling patterns. | 0 |
+| [[../private/UI_UX_SPECIFICATION.md]] | `current` | **v1 Complete UI/UX Specification** — 4,392 lines, 21 sections. Every page (7 nav sections + settings), every component (12 new, 6 existing modified), every state (13 universal rules), full accessibility requirements (WCAG 2.1 AA), responsive strategy, dark mode implementation, performance budgets, 6-persona matrix, 6-phase implementation plan. Grounded in Don Norman's 10 design principles applied per-page. Aligned with DASHBOARD_AUDIT.md findings. **⚠️ UPDATE NOTE (2026-05-28): §2.2 sidebar-based navigation has been replaced by the unified console shell. See CONSOLE_ARCHITECTURE.md for current layout.** | 1 |
 
 ---
 
@@ -184,6 +185,7 @@ Pages with no inbound links from other wiki pages (potential orphans):
 |---------|---------|
 | `cat product/wiki/index.md` | See all pages and their status |
 | `grep "^## \[" product/wiki/log.md \| tail -5` | See last 5 operations |
+| `open product/wiki/public/CONSOLE_ARCHITECTURE.md` | View the console shell architecture reference |
 | `find product/wiki -name "*.md" \| wc -l` | Count total wiki pages |
 | `grep -r "\[\[" product/wiki/public/ \| grep -o "\[\[[^]]*\]\]" \| sort -u` | List all wikilinks |
 | `open product/wiki/private/FEATURESIGNALS_PRODUCT_REQUIREMENTS_SPECIFICATION.docx` | Open the canonical PRS |
