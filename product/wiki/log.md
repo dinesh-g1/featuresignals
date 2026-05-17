@@ -1,3 +1,29 @@
+## [2026-05-28 14:30] redesign | LifecycleZone — Product Card Flow Redesign
+
+### Context
+Redesigned the LifecycleZone from a 3-row, 14-stage horizontal strip layout to a 4-product card flow with progressive disclosure. The old layout showed all 14 stages as individual columns across 3 horizontal strips (PLAN, BUILD, OPERATE) with vertical text labels that overlapped feature cards. The new design groups stages by product (Code2Flag → Preflight → IncidentFlag → Impact Analyzer) and shows only 4 product cards by default. Clicking a product card expands it to reveal its internal stages as mini-kanban columns.
+
+### Files changed (5 files)
+- `dashboard/src/lib/console-types.ts` — Added `ProductId` type, `ProductDefinition` interface, updated `StageDefinition.product` from `string | null` to `ProductId | null`
+- `dashboard/src/lib/console-constants.ts` — Added `PRODUCTS` array (4 products), `PRODUCT_BY_ID` lookup, `PRODUCT_BY_STAGE` mapping; updated all `LIFECYCLE_STAGES` product field values to typed IDs
+- `dashboard/src/app/(app)/console/_client/lifecycle-zone.tsx` — Complete rewrite: replaced 3-row `LifecycleRow` layout with `ProductFlow` (horizontal product cards with SVG arrow connectors), `ProductCard` (clickable card with icon/name/phase/count), `ExpandedProductView` (animated expand section with mini `StageColumn` columns), `ProductIcon` (maps product ID to lucide icon), `ProductConnector` (SVG arrow between product cards). Removed `LifecycleRow`, `ROWS`, `StageConnector` (old row-based). Updated skeleton to show 4 product card placeholders. Stage zoom auto-expands parent product.
+- `dashboard/src/app/(app)/console/_client/stage-column.tsx` — Unchanged (reused as-is for mini-columns in expanded view)
+
+### Design Principles Enforced
+- Zero hardcoded hex colors — all `var(--signal-*)` tokens
+- Don Norman progressive disclosure: 4 products instead of 14 stages
+- Visibility: feature counts on each product card
+- Feedback: framer-motion spring animations for expand/collapse, respects `prefersReducedMotion`
+- Product colors use semantic Signal UI tokens (blue=accent, amber=warning, red=danger, green=success)
+- All states: loading (4 card skeletons), empty (welcome CTA), filtered-empty, error with retry
+- Keyboard accessible (Enter/Space to toggle products, focus-visible outlines)
+- Dark mode compatible via Signal UI token system
+
+### Verification
+- `npx tsc --noEmit` — ✅ 0 errors
+- `npx eslint` — ✅ clean (0 errors, 0 warnings)
+- Pre-existing test failures in api.test.ts remain unrelated
+
 ## [2026-05-27 19:00] implementation | Projects Management — Native Console Integration
 
 ### Context

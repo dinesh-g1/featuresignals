@@ -682,12 +682,28 @@ function getSuggestedFix(statusCode: number, endpoint: string): string | null {
   return null;
 }
 
+// ─── HelpWidget Props ─────────────────────────────────────────────────
+
+interface HelpWidgetProps {
+  /** When true, the ContextPanel is open (380px right overlay); help button shifts left */
+  contextPanelOpen?: boolean;
+  /** When true, the Learn panel is expanded (380px right panel); help button shifts left */
+  learnPanelExpanded?: boolean;
+}
+
 // ─── Main Export ──────────────────────────────────────────────────────
 
-export function HelpWidget() {
+export function HelpWidget({
+  contextPanelOpen = false,
+  learnPanelExpanded = false,
+}: HelpWidgetProps = {}) {
   const helpOpen = useConsoleStore((s) => s.helpOpen);
   const setHelpOpen = useConsoleStore((s) => s.setHelpOpen);
   const proactiveAlert = useConsoleStore((s) => s.proactiveAlert);
+  const activePanel = useConsoleStore((s) => s.activePanel);
+
+  // ContextPanel is open when activePanel is non-null (or prop override)
+  const isContextPanelOpen = contextPanelOpen || activePanel !== null;
 
   const alertPriority: "red" | "amber" | null = proactiveAlert
     ? proactiveAlert.priority
@@ -701,10 +717,20 @@ export function HelpWidget() {
     setHelpOpen(false);
   }, [setHelpOpen]);
 
+  // Shift help button left when right-side panels are open to avoid overlap.
+  // ContextPanel = 380px, LearnZone expanded = 380px. Add 16px gap.
+  const rightOffset =
+    20 +
+    (isContextPanelOpen ? 380 + 16 : 0) +
+    (learnPanelExpanded ? 380 + 16 : 0);
+
   return (
     <>
       {/* ── Help Button (fixed bottom-right) ────────────────────── */}
-      <div className="fixed z-40" style={{ bottom: "80px", right: "20px" }}>
+      <div
+        className="fixed z-40 transition-all duration-[var(--signal-duration-normal)]"
+        style={{ bottom: "80px", right: `${rightOffset}px` }}
+      >
         <HelpButton alertPriority={alertPriority} onClick={togglePanel} />
       </div>
 
@@ -713,7 +739,7 @@ export function HelpWidget() {
         {helpOpen && (
           <div
             className="fixed z-50"
-            style={{ bottom: "140px", right: "20px" }}
+            style={{ bottom: "140px", right: `${rightOffset}px` }}
           >
             <HelpChatPanel onClose={closePanel} onMinimize={closePanel} />
           </div>

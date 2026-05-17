@@ -146,18 +146,17 @@ export function UserMenu() {
         </div>
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — rendered with z-50 inside the TopBar z-30 stacking context.
+          The click-outside handler (mousedown listener) handles closing, so no
+          fixed backdrop is needed (and a fixed backdrop would create z-index
+          conflicts with the TopBar container). */}
       {open && (
-        <>
-          {/* Backdrop for click-outside */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-
-          <div
-            ref={menuRef}
-            className="absolute right-0 top-full mt-2 z-50 w-56 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-lg animate-in fade-in slide-in-from-top-2 duration-150"
-            role="menu"
-            aria-orientation="vertical"
-          >
+        <div
+          ref={menuRef}
+          className="absolute right-0 top-full mt-2 z-50 w-56 rounded-xl border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] shadow-lg animate-in fade-in slide-in-from-top-2 duration-150"
+          role="menu"
+          aria-orientation="vertical"
+        >
             {/* User info header */}
             <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
               <p className="text-sm font-semibold text-[var(--signal-fg-primary)] truncate">
@@ -237,7 +236,6 @@ export function UserMenu() {
               })}
             </div>
           </div>
-        </>
       )}
     </div>
   );

@@ -3,38 +3,52 @@
 /**
  * LifecycleZone — Center zone of the FeatureSignals Console.
  *
- * Renders the 14-stage feature flow in 3 rows:
- *   Row 1 (PLAN):    Plan → Spec → Design → Flag
- *   Row 2 (BUILD):   Implement → Test → Configure → Approve → Ship
- *   Row 3 (OPERATE): Monitor → Decide → Analyze → Learn
+ * Renders the 4 product cards in a connected horizontal flow:
+ *   [Code2Flag] → [Preflight] → [IncidentFlag] → [Impact Analyzer]
  *
- * Each row has a label on the left, stage columns with feature cards,
- * and subtle SVG arrow connectors between stages.
+ * Each product card shows its icon, name, phase label, and a count of
+ * features currently in that product's stages. Clicking a product card
+ * expands it to reveal its internal lifecycle stages as mini-kanban
+ * columns (StageColumn components).
  *
  * Progressive Disclosure (L1–L5): The org maturity level controls which
- * stages are visible. At L1 Solo, only 4 stages are shown (Flag, Ship,
- * Monitor, Analyze). A "Show advanced stages" toggle temporarily reveals
- * hidden stages without changing the maturity level.
+ * stages are visible. At L1 Solo, only 4 stages are shown. A "Show all"
+ * toggle temporarily reveals hidden stages. When a product is expanded,
+ * only its visible stages are shown as columns.
+ *
+ * Don Norman's principles:
+ *  - Progressive disclosure: 4 product cards instead of 14 stage columns
+ *  - Visibility: feature counts on each product card
+ *  - Feedback: smooth expand/collapse with spring animation
+ *  - Consistency: same FeatureCard pattern as the rest of the console
  *
  * Includes a FilterBar (search, project, type, sort) at the top.
  * Handles all states: loading, empty, filtered-empty, error, success.
- * When a stage is selected, zooms to that single stage row.
+ * Stage zoom (selecting a stage) auto-expands the containing product.
  *
  * Signal UI tokens only. Zero hardcoded hex colors. Zero `any`.
  */
 
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   LIFECYCLE_STAGES,
   STAGE_BY_ID,
   STAGE_ORDER,
+  PRODUCTS,
+  PRODUCT_BY_ID,
+  PRODUCT_BY_STAGE,
   SORT_OPTIONS,
   TYPE_OPTIONS,
 } from "@/lib/console-constants";
-import type { LifecycleStage, FeatureCardData } from "@/lib/console-types";
+import type {
+  LifecycleStage,
+  ProductId,
+  FeatureCardData,
+} from "@/lib/console-types";
 import { StageColumn } from "./stage-column";
 import { MaturityBanner } from "@/components/console/maturity-banner";
 import { CreateFlagDialog } from "@/components/console/create-flag-dialog";
@@ -48,44 +62,53 @@ import {
   Plus,
   Rocket,
   Eye,
+  TrendingUp,
+  ShieldCheck,
 } from "lucide-react";
 
-// ─── Row Definitions ─────────────────────────────────────────────────
+// ─── Product Color Tokens ────────────────────────────────────────────
 
-interface RowDefinition {
-  key: string;
-  label: string;
-  stages: LifecycleStage[];
-}
-
-const ROWS: RowDefinition[] = [
-  {
-    key: "plan",
-    label: "PLAN",
-    stages: ["plan", "spec", "design", "flag"],
+const PRODUCT_COLORS: Record<
+  ProductId,
+  { bg: string; fg: string; border: string; muted: string }
+> = {
+  "code2flag": {
+    bg: "var(--signal-bg-accent-muted)",
+    fg: "var(--signal-fg-accent)",
+    border: "var(--signal-border-accent-muted)",
+    muted: "var(--signal-bg-accent-muted)",
   },
-  {
-    key: "build",
-    label: "BUILD",
-    stages: ["implement", "test", "configure", "approve", "ship"],
+  "preflight": {
+    bg: "var(--signal-bg-warning-muted)",
+    fg: "var(--signal-fg-warning)",
+    border: "var(--signal-border-warning-muted)",
+    muted: "var(--signal-bg-warning-muted)",
   },
-  {
-    key: "operate",
-    label: "OPERATE",
-    stages: ["monitor", "decide", "analyze", "learn"],
+  "incidentflag": {
+    bg: "var(--signal-bg-danger-muted)",
+    fg: "var(--signal-fg-danger)",
+    border: "var(--signal-border-danger-emphasis)",
+    muted: "var(--signal-bg-danger-muted)",
   },
-];
+  "impact-analyzer": {
+    bg: "var(--signal-bg-success-muted)",
+    fg: "var(--signal-fg-success)",
+    border: "var(--signal-border-success-muted)",
+    muted: "var(--signal-bg-success-muted)",
+  },
+};
 
 // =====================================================================
 // LifecycleZone — Main Export
 // =====================================================================
 
 export function LifecycleZone() {
+  const prefersReducedMotion = useReducedMotion();
+
   // ── Maturity / Progressive Disclosure ────────────────────────────
   const { isL1, visibleStages } = useConsoleMaturity();
   const [showAllStages, setShowAllStages] = useState(false);
 
-  // Determine which stage IDs are currently visible
   const effectiveVisibleStages = useMemo<Set<LifecycleStage>>(() => {
     if (showAllStages) {
       return new Set(LIFECYCLE_STAGES.map((s) => s.id));
@@ -93,12 +116,11 @@ export function LifecycleZone() {
     return new Set(visibleStages);
   }, [showAllStages, visibleStages]);
 
-  // Whether any stages are currently hidden (for showing the toggle)
   const hasHiddenStages = useMemo(() => {
     return visibleStages.length < LIFECYCLE_STAGES.length;
   }, [visibleStages]);
 
-  // ── Store Selectors ────────────────────────────────────────────────
+  // ── Store Selectors ──────────────────────────────────────────────
   const features = useConsoleStore((s) => s.features);
   const selectedStage = useConsoleStore((s) => s.selectedStage);
   const selectedFeature = useConsoleStore((s) => s.selectedFeature);
@@ -117,11 +139,27 @@ export function LifecycleZone() {
   const setTypeFilter = useConsoleStore((s) => s.setTypeFilter);
   const setProjectFilter = useConsoleStore((s) => s.setProjectFilter);
 
+  // ── Expanded Product State ─────────────────────────────────────
+  const [expandedProduct, setExpandedProduct] = useState<ProductId | null>(
+    null,
+  );
+
+  // Auto-expand the parent product when a stage is selected (zoom mode)
+  useEffect(() => {
+    if (selectedStage) {
+      const productId = PRODUCT_BY_STAGE[selectedStage];
+      setExpandedProduct(productId);
+    } else {
+      // When stage filter is cleared, keep expanded product but allow
+      // the user to collapse manually. We don't auto-collapse here
+      // because the user may have explicitly expanded a product.
+    }
+  }, [selectedStage]);
+
   // ── Create Flag Dialog State ──────────────────────────────────
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const createTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cleanup timeout on unmount to prevent state updates after unmount
   useEffect(() => {
     return () => {
       if (createTimeoutRef.current !== null) {
@@ -130,12 +168,10 @@ export function LifecycleZone() {
     };
   }, []);
 
-  // ── Filtered & Sorted Features ─────────────────────────────────────
-
+  // ── Filtered & Sorted Features ─────────────────────────────────
   const filteredFeatures = useMemo(() => {
     let result = [...features];
 
-    // Apply search filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -144,23 +180,18 @@ export function LifecycleZone() {
       );
     }
 
-    // Apply type filter
     if (typeFilter) {
       result = result.filter((f) => f.type === typeFilter);
     }
 
-    // Apply environment filter
     if (selectedEnvironment) {
       result = result.filter((f) => f.environment === selectedEnvironment);
     }
 
-    // Apply project filter (placeholder: FeatureCardData doesn't have project,
-    // but the store supports it for future use)
     if (projectFilter) {
       // Future: filter by project when FeatureCardData gains a project field
     }
 
-    // Apply sort
     result.sort((a, b) => {
       switch (sortBy) {
         case "name":
@@ -190,14 +221,12 @@ export function LifecycleZone() {
     sortBy,
   ]);
 
-  // ── Group Features by Stage ────────────────────────────────────────
-
+  // ── Features by Stage ──────────────────────────────────────────
   const featuresByStage = useMemo(() => {
     const map = new Map<LifecycleStage, FeatureCardData[]>();
     for (const stage of LIFECYCLE_STAGES.map((s) => s.id)) {
       map.set(stage, []);
     }
-    // Catch-all for features with unknown stages (stages not in the 14 known lifecycle stages)
     const unknownFeatures: FeatureCardData[] = [];
     for (const feature of filteredFeatures) {
       const bucket = map.get(feature.stage);
@@ -207,52 +236,62 @@ export function LifecycleZone() {
         unknownFeatures.push(feature);
         if (typeof window !== "undefined") {
           console.warn(
-            `[LifecycleZone] Unknown stage "${feature.stage}" for feature "${feature.key}". Feature added to catch-all bucket.`,
+            `[LifecycleZone] Unknown stage "${feature.stage}" for feature "${feature.key}".`,
           );
         }
       }
     }
-    // Store unknown features under a special key for rendering in a catch-all column
     (map as Map<string, FeatureCardData[]>).set("__unknown__", unknownFeatures);
     return map;
   }, [filteredFeatures]);
 
-  // ── Rows filtered by maturity visibility ───────────────────────────
-  // Each row includes only stages that are visible at the current
-  // maturity level (or all stages if showAllStages is toggled).
-
-  const visibleRows = useMemo(() => {
-    if (selectedStage) {
-      // Zoom mode: find which row contains this stage
-      const row = ROWS.find((r) => r.stages.includes(selectedStage));
-      if (row) {
-        return [
-          {
-            ...row,
-            stages: row.stages.filter((s) => effectiveVisibleStages.has(s)),
-          },
-        ];
+  // ── Features count per product ─────────────────────────────────
+  const productFeatureCounts = useMemo(() => {
+    const counts: Record<ProductId, number> = {
+      "code2flag": 0,
+      "preflight": 0,
+      "incidentflag": 0,
+      "impact-analyzer": 0,
+    };
+    for (const feature of filteredFeatures) {
+      const productId = PRODUCT_BY_STAGE[feature.stage];
+      if (productId) {
+        counts[productId]++;
       }
     }
-    // Filter each row to only include visible stages
-    return ROWS.map((row) => ({
-      ...row,
-      stages: row.stages.filter((s) => effectiveVisibleStages.has(s)),
-    })).filter((row) => row.stages.length > 0);
-  }, [selectedStage, effectiveVisibleStages]);
+    return counts;
+  }, [filteredFeatures]);
 
-  // ── Derived State ──────────────────────────────────────────────────
+  // ── Products filtered by maturity visibility ───────────────────
+  const visibleProducts = useMemo(() => {
+    return PRODUCTS.map((product) => ({
+      ...product,
+      stages: product.stages.filter((s) => effectiveVisibleStages.has(s)),
+    })).filter((product) => product.stages.length > 0);
+  }, [effectiveVisibleStages]);
 
+  // ── Derived State ──────────────────────────────────────────────
   const totalFiltered = filteredFeatures.length;
   const isEmpty = !loading && !error && features.length === 0;
   const isFilteredEmpty =
     !loading && !error && features.length > 0 && totalFiltered === 0;
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // ── Callbacks ──────────────────────────────────────────────────
+  const handleProductClick = useCallback(
+    (productId: ProductId) => {
+      setExpandedProduct((prev) => (prev === productId ? null : productId));
+    },
+    [],
+  );
 
+  const handleClearStage = useCallback(() => {
+    selectStage(null);
+  }, [selectStage]);
+
+  // ── Render ─────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full bg-[var(--signal-bg-secondary)]">
-      {/* ── Maturity Banner (L1 only, dismissible) ─────────────────── */}
+      {/* ── Maturity Banner (L1 only, dismissible) ─────────────── */}
       {isL1 && (
         <MaturityBanner
           showAllStages={showAllStages}
@@ -261,7 +300,7 @@ export function LifecycleZone() {
         />
       )}
 
-      {/* ── Filter Bar ──────────────────────────────────────────────── */}
+      {/* ── Filter Bar ──────────────────────────────────────────── */}
       <FilterBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -273,12 +312,12 @@ export function LifecycleZone() {
         onCreateFlag={() => setShowCreateDialog(true)}
       />
 
-      {/* ── Selected Stage Header (zoom mode) ───────────────────────── */}
+      {/* ── Selected Stage Header (zoom mode) ───────────────────── */}
       {selectedStage && (
         <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]">
           <button
             type="button"
-            onClick={() => selectStage(null)}
+            onClick={handleClearStage}
             className={cn(
               "inline-flex items-center gap-1.5",
               "text-xs font-medium",
@@ -288,15 +327,18 @@ export function LifecycleZone() {
             )}
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            All stages
+            All products
           </button>
           <span className="text-xs text-[var(--signal-fg-tertiary)]">
             Viewing: {STAGE_BY_ID[selectedStage]?.label ?? selectedStage}
+            {" "}·{" "}
+            {PRODUCT_BY_ID[PRODUCT_BY_STAGE[selectedStage]]?.name ??
+              "Unknown product"}
           </span>
         </div>
       )}
 
-      {/* ── Content Area (relative for detail panel overlay) ──────── */}
+      {/* ── Content Area ────────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden relative">
         {loading ? (
           <LifecycleSkeleton />
@@ -318,35 +360,44 @@ export function LifecycleZone() {
             }}
           />
         ) : (
-          /* ── Lifecycle Rows ──────────────────────────────────────── */
-          <div className="flex flex-col gap-0 h-full overflow-y-auto overflow-x-auto">
-            {visibleRows.map((row, rowIdx) => (
-              <LifecycleRow
-                key={row.key}
-                row={row}
-                featuresByStage={featuresByStage}
-                selectedFeature={selectedFeature}
-                selectedStage={selectedStage}
-                onFeatureClick={selectFeature}
-                onSelectStage={selectStage}
-                isLastRow={rowIdx === visibleRows.length - 1}
-                onShowAllStages={
-                  hasHiddenStages
-                    ? () => setShowAllStages((v) => !v)
-                    : undefined
-                }
-                showAllStages={showAllStages}
-              />
-            ))}
-          </div>
-        )}
+          /* ── Product Flow + Expanded View ────────────────────── */
+          <div className="flex flex-col h-full overflow-y-auto">
+            {/* Product Cards Row */}
+            <ProductFlow
+              products={visibleProducts}
+              featureCounts={productFeatureCounts}
+              expandedProduct={expandedProduct}
+              hasHiddenStages={hasHiddenStages}
+              showAllStages={showAllStages}
+              onProductClick={handleProductClick}
+              onToggleShowAll={() => setShowAllStages((v) => !v)}
+              prefersReducedMotion={prefersReducedMotion ?? false}
+            />
 
-        {/* ── Feature detail: click a feature card to open the detail panel on the right ── */}
-        {!selectedFeature && !loading && !error && !isEmpty && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-sm text-[var(--signal-fg-tertiary)] select-none">
-              Select a feature to view details
-            </p>
+            {/* Expanded Product View */}
+            <AnimatePresence mode="wait">
+              {expandedProduct && (
+                <ExpandedProductView
+                  key={expandedProduct}
+                  product={PRODUCT_BY_ID[expandedProduct]}
+                  featuresByStage={featuresByStage}
+                  visibleStages={effectiveVisibleStages}
+                  selectedFeature={selectedFeature}
+                  onFeatureClick={selectFeature}
+                  onSelectStage={selectStage}
+                  prefersReducedMotion={prefersReducedMotion ?? false}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Select hint when nothing expanded */}
+            {!expandedProduct && !selectedFeature && (
+              <div className="flex items-center justify-center py-8 pointer-events-none">
+                <p className="text-sm text-[var(--signal-fg-tertiary)] select-none">
+                  Select a product to view its stages
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -357,27 +408,452 @@ export function LifecycleZone() {
         onClose={() => setShowCreateDialog(false)}
         onCreated={(newFlag) => {
           setShowCreateDialog(false);
-          // Add the new flag to the store immediately (optimistic update)
           const currentFeatures = consoleStore.getState().features;
           consoleStore.getState().setFeatures(
             [newFlag, ...currentFeatures],
             currentFeatures.length + 1,
           );
-          // Navigate to the flag's stage so user sees it
           selectStage(newFlag.stage);
-          // Then clear stage filter after a moment so all stages show.
-          // Use ref to track the timeout so we can clear it on unmount.
           if (createTimeoutRef.current !== null) {
             clearTimeout(createTimeoutRef.current);
           }
           createTimeoutRef.current = setTimeout(() => {
             createTimeoutRef.current = null;
             selectStage(null);
-            // Trigger API refetch to synchronize with server state
             consoleStore.getState().triggerRetry();
           }, 600);
         }}
       />
+    </div>
+  );
+}
+
+// =====================================================================
+// ProductFlow — Horizontal row of product cards with arrow connectors
+// =====================================================================
+
+interface ProductFlowProps {
+  products: typeof PRODUCTS;
+  featureCounts: Record<ProductId, number>;
+  expandedProduct: ProductId | null;
+  hasHiddenStages: boolean;
+  showAllStages: boolean;
+  onProductClick: (productId: ProductId) => void;
+  onToggleShowAll: () => void;
+  prefersReducedMotion: boolean;
+}
+
+function ProductFlow({
+  products,
+  featureCounts,
+  expandedProduct,
+  hasHiddenStages,
+  showAllStages,
+  onProductClick,
+  onToggleShowAll,
+  prefersReducedMotion,
+}: ProductFlowProps) {
+  return (
+    <div className="flex items-stretch gap-0 px-4 py-4 shrink-0">
+      {products.map((product, idx) => {
+        const isLast = idx === products.length - 1;
+        const isExpanded = expandedProduct === product.id;
+        const count = featureCounts[product.id] ?? 0;
+        const colors = PRODUCT_COLORS[product.id];
+
+        return (
+          <div key={product.id} className="flex items-stretch">
+            <ProductCard
+              product={product}
+              count={count}
+              isExpanded={isExpanded}
+              colors={colors}
+              onClick={onProductClick}
+              prefersReducedMotion={prefersReducedMotion}
+            />
+            {!isLast && <ProductConnector />}
+          </div>
+        );
+      })}
+
+      {/* ── "Show All Stages" toggle (compact, at end of product row) ── */}
+      {hasHiddenStages && (
+        <div className="flex items-center shrink-0 pl-4">
+          <button
+            type="button"
+            onClick={onToggleShowAll}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5",
+              "text-[10px] font-medium",
+              "border border-dashed border-[var(--signal-border-subtle)]",
+              "text-[var(--signal-fg-tertiary)]",
+              "hover:border-[var(--signal-border-accent-muted)]",
+              "hover:text-[var(--signal-fg-accent)]",
+              "hover:bg-[var(--signal-bg-accent-muted)]/30",
+              "transition-all duration-[var(--signal-duration-fast)]",
+              showAllStages &&
+                "border-[var(--signal-border-accent-muted)] text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)]/20",
+            )}
+            aria-label={
+              showAllStages
+                ? "Hide advanced stages"
+                : "Show all lifecycle stages"
+            }
+          >
+            <Eye className="h-3 w-3" aria-hidden="true" />
+            <span className="whitespace-nowrap">
+              {showAllStages ? "Hide advanced" : "Show all stages"}
+            </span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================================
+// ProductCard — Single product card in the flow
+// =====================================================================
+
+interface ProductCardProps {
+  product: (typeof PRODUCTS)[number];
+  count: number;
+  isExpanded: boolean;
+  colors: { bg: string; fg: string; border: string; muted: string };
+  onClick: (productId: ProductId) => void;
+  prefersReducedMotion: boolean;
+}
+
+function ProductCard({
+  product,
+  count,
+  isExpanded,
+  colors,
+  onClick,
+  prefersReducedMotion,
+}: ProductCardProps) {
+  const handleClick = useCallback(() => {
+    onClick(product.id);
+  }, [onClick, product.id]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onClick(product.id);
+      }
+    },
+    [onClick, product.id],
+  );
+
+  return (
+    <motion.div
+      layout={!prefersReducedMotion}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : { type: "spring", stiffness: 200, damping: 28, mass: 0.8 }
+      }
+      className={cn(
+        "group relative flex flex-col gap-2",
+        "rounded-[var(--signal-radius-lg)]",
+        "border",
+        "cursor-pointer select-none",
+        "transition-shadow duration-[var(--signal-duration-fast)]",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal-fg-accent)]",
+      )}
+      style={{
+        minWidth: 180,
+        maxWidth: 240,
+        flex: "1 1 0",
+        backgroundColor: isExpanded ? colors.bg : "var(--signal-bg-primary)",
+        borderColor: isExpanded ? colors.border : "var(--signal-border-subtle)",
+        boxShadow: isExpanded
+          ? "var(--signal-shadow-md)"
+          : "var(--signal-shadow-xs)",
+      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isExpanded}
+      aria-label={`${product.name}: ${count} feature${count !== 1 ? "s" : ""}, ${product.phase} phase`}
+    >
+      {/* Header: icon + name */}
+      <div className="flex items-center gap-2 px-4 pt-4">
+        <ProductIcon productId={product.id} color={colors.fg} />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold text-[var(--signal-fg-primary)] block truncate">
+            {product.name}
+          </span>
+          <span
+            className="text-[10px] font-semibold tracking-wider uppercase"
+            style={{ color: colors.fg }}
+          >
+            {product.phase}
+          </span>
+        </div>
+      </div>
+
+      {/* Feature count */}
+      <div className="flex items-center gap-2 px-4 pb-4">
+        <span
+          className={cn(
+            "inline-flex items-center justify-center min-w-[28px] h-6 px-1.5",
+            "text-xs font-semibold tabular-nums",
+            "rounded-full",
+            "transition-all duration-[var(--signal-duration-fast)]",
+          )}
+          style={{
+            backgroundColor: isExpanded ? "var(--signal-bg-primary)" : colors.muted,
+            color: colors.fg,
+          }}
+        >
+          {count}
+        </span>
+        <span className="text-xs text-[var(--signal-fg-secondary)]">
+          feature{count !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Selected indicator */}
+      {isExpanded && (
+        <div
+          className="absolute bottom-0 left-4 right-4 h-[2px] rounded-full"
+          style={{ backgroundColor: colors.fg }}
+        />
+      )}
+    </motion.div>
+  );
+}
+
+// =====================================================================
+// ProductIcon — Maps product ID to lucide icon
+// =====================================================================
+
+function ProductIcon({
+  productId,
+  color,
+}: {
+  productId: ProductId;
+  color: string;
+}) {
+  const iconClass = "h-5 w-5 shrink-0";
+  switch (productId) {
+    case "code2flag":
+      return (
+        <Search className={iconClass} style={{ color }} aria-hidden="true" />
+      );
+    case "preflight":
+      return (
+        <Rocket className={iconClass} style={{ color }} aria-hidden="true" />
+      );
+    case "incidentflag":
+      return (
+        <ShieldCheck
+          className={iconClass}
+          style={{ color }}
+          aria-hidden="true"
+        />
+      );
+    case "impact-analyzer":
+      return (
+        <TrendingUp
+          className={iconClass}
+          style={{ color }}
+          aria-hidden="true"
+        />
+      );
+  }
+}
+
+// =====================================================================
+// ProductConnector — SVG arrow between product cards
+// =====================================================================
+
+function ProductConnector() {
+  return (
+    <div
+      className="flex items-center shrink-0 px-1"
+      aria-hidden="true"
+    >
+      <svg
+        width="28"
+        height="16"
+        viewBox="0 0 28 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4 8L22 8"
+          stroke="var(--signal-border-subtle)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M19 4L24 8L19 12"
+          stroke="var(--signal-border-subtle)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+// =====================================================================
+// ExpandedProductView — Shows internal stages as mini-kanban columns
+// =====================================================================
+
+interface ExpandedProductViewProps {
+  product: (typeof PRODUCTS)[number];
+  featuresByStage: Map<LifecycleStage, FeatureCardData[]>;
+  visibleStages: Set<LifecycleStage>;
+  selectedFeature: string | null;
+  onFeatureClick: (key: string) => void;
+  onSelectStage: (stage: LifecycleStage | null) => void;
+  prefersReducedMotion: boolean;
+}
+
+function ExpandedProductView({
+  product,
+  featuresByStage,
+  visibleStages,
+  selectedFeature,
+  onFeatureClick,
+  onSelectStage,
+  prefersReducedMotion,
+}: ExpandedProductViewProps) {
+  const visibleProductStages = product.stages.filter((s) =>
+    visibleStages.has(s),
+  );
+
+  if (visibleProductStages.length === 0) {
+    return (
+      <motion.div
+        initial={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, height: "auto" }}
+        exit={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
+        transition={{ duration: 0.2 }}
+        className="border-t border-[var(--signal-border-subtle)] px-4 py-6"
+      >
+        <p className="text-xs text-[var(--signal-fg-tertiary)] text-center">
+          No stages available at your current maturity level.{" "}
+          <button
+            type="button"
+            className="underline text-[var(--signal-fg-accent)]"
+          >
+            Upgrade to unlock.
+          </button>
+        </p>
+      </motion.div>
+    );
+  }
+
+  const colors = PRODUCT_COLORS[product.id];
+
+  return (
+    <motion.div
+      key={product.id}
+      initial={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
+      animate={prefersReducedMotion ? undefined : { opacity: 1, height: "auto" }}
+      exit={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
+      transition={{
+        duration: 0.25,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="border-t border-[var(--signal-border-subtle)] overflow-hidden"
+    >
+      {/* Product header in expanded section */}
+      <div
+        className="flex items-center gap-2 px-4 py-2.5"
+        style={{ backgroundColor: colors.muted }}
+      >
+        <ProductIcon productId={product.id} color={colors.fg} />
+        <span
+          className="text-xs font-semibold"
+          style={{ color: colors.fg }}
+        >
+          {product.name}
+        </span>
+        <span className="text-[11px] text-[var(--signal-fg-tertiary)]">
+          {product.description}
+        </span>
+      </div>
+
+      {/* Mini stage columns */}
+      <div className="flex gap-0 overflow-x-auto">
+        {visibleProductStages.map((stageId, idx) => {
+          const stageDef = STAGE_BY_ID[stageId];
+          if (!stageDef) return null;
+          const stageFeatures = featuresByStage.get(stageId) ?? [];
+          const isLast = idx === visibleProductStages.length - 1;
+
+          return (
+            <div key={stageId} className="flex items-stretch flex-1 min-w-[220px]">
+              <div
+                className="flex-1 cursor-pointer"
+                onClick={() => onSelectStage(stageId)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectStage(stageId);
+                  }
+                }}
+                aria-label={`Zoom to ${stageDef.label} stage`}
+              >
+                <StageColumn
+                  stage={stageDef}
+                  features={stageFeatures}
+                  isDropTarget={false}
+                  selectedFeature={selectedFeature}
+                  onFeatureClick={onFeatureClick}
+                />
+              </div>
+              {!isLast && <StageConnector />}
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+// =====================================================================
+// StageConnector — Subtle SVG arrow between stage columns
+// =====================================================================
+
+function StageConnector() {
+  return (
+    <div
+      className="flex items-center shrink-0"
+      style={{ width: 24 }}
+      aria-hidden="true"
+    >
+      <svg
+        width="24"
+        height="20"
+        viewBox="0 0 24 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4 10L16 10"
+          stroke="var(--signal-border-subtle)"
+          strokeWidth="1"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14 6L18 10L14 14"
+          stroke="var(--signal-border-subtle)"
+          strokeWidth="1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
     </div>
   );
 }
@@ -410,7 +886,6 @@ function FilterBar({
   const [localQuery, setLocalQuery] = useState(searchQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync local state with store when store changes externally
   useEffect(() => {
     setLocalQuery(searchQuery);
   }, [searchQuery]);
@@ -425,7 +900,6 @@ function FilterBar({
     }, 300);
   };
 
-  // Cleanup debounce on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
@@ -554,193 +1028,6 @@ function FilterBar({
 }
 
 // =====================================================================
-// LifecycleRow
-// =====================================================================
-
-interface LifecycleRowProps {
-  row: RowDefinition;
-  featuresByStage: Map<LifecycleStage, FeatureCardData[]>;
-  selectedFeature: string | null;
-  selectedStage: LifecycleStage | null;
-  onFeatureClick: (key: string) => void;
-  onSelectStage: (stage: LifecycleStage | null) => void;
-  isLastRow: boolean;
-  /** Called to toggle showing all stages */
-  onShowAllStages?: () => void;
-  /** Whether all stages are currently shown */
-  showAllStages: boolean;
-}
-
-function LifecycleRow({
-  row,
-  featuresByStage,
-  selectedFeature,
-  selectedStage: _selectedStage,
-  onFeatureClick,
-  onSelectStage,
-  isLastRow,
-  onShowAllStages,
-  showAllStages,
-}: LifecycleRowProps) {
-  // Track whether this specific row has hidden stages
-  const allRowStages = ROWS.find((r) => r.key === row.key)?.stages ?? [];
-  const hiddenInRow = allRowStages.filter((s) => !row.stages.includes(s));
-  const rowHasHidden = hiddenInRow.length > 0;
-
-  return (
-    <div
-      className={cn(
-        "flex flex-1 min-h-0",
-        !isLastRow && "border-b border-[var(--signal-border-subtle)]",
-      )}
-    >
-      {/* ── Row Label ──────────────────────────────────────────────── */}
-      <div
-        className={cn(
-          "flex items-start justify-center pt-3",
-          "w-10 shrink-0",
-          "select-none",
-        )}
-      >
-        <span
-          className={cn(
-            "text-[11px] font-semibold uppercase tracking-wider",
-            "text-[var(--signal-fg-tertiary)]",
-          )}
-          style={{ writingMode: "vertical-lr", letterSpacing: "0.08em" }}
-        >
-          {row.label}
-        </span>
-      </div>
-
-      {/* ── Stage Columns ───────────────────────────────────────────── */}
-      <div className="flex flex-1 gap-0">
-        {row.stages.map((stageId, idx) => {
-          const stageDef = STAGE_BY_ID[stageId];
-          // Guard against invalid/unknown stage IDs that may come from external data
-          if (!stageDef) return null;
-          const stageFeatures = featuresByStage.get(stageId) ?? [];
-          // If there are hidden stages after this one in the full row,
-          // we show the connector only if there are more stages in the
-          // visible set OR if there are hidden stages and the toggle exists
-          const isLastVisible = idx === row.stages.length - 1;
-          const hasMoreInFullRow =
-            allRowStages.indexOf(stageId) < allRowStages.length - 1;
-
-          return (
-            <div key={stageId} className="flex items-stretch flex-1">
-              {/* Stage Column */}
-              <div
-                className="flex-1"
-                onClick={() => onSelectStage(stageId)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onSelectStage(stageId);
-                  }
-                }}
-                aria-label={`Zoom to ${stageDef?.label ?? stageId} stage`}
-              >
-                <StageColumn
-                  stage={stageDef}
-                  features={stageFeatures}
-                  isDropTarget={false}
-                  selectedFeature={selectedFeature}
-                  onFeatureClick={onFeatureClick}
-                />
-              </div>
-
-              {/* ── Stage Connector Arrow ────────────────────────────── */}
-              {!isLastVisible && hasMoreInFullRow && <StageConnector />}
-
-              {/* ── Hidden Stages Indicator ──────────────────────────── */}
-              {isLastVisible && hasMoreInFullRow && rowHasHidden && (
-                <StageConnector />
-              )}
-            </div>
-          );
-        })}
-
-        {/* ── "Show Hidden Stages" Toggle ────────────────────────────── */}
-        {rowHasHidden && onShowAllStages && (
-          <div className="flex items-center shrink-0 px-2">
-            <button
-              type="button"
-              onClick={onShowAllStages}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5",
-                "text-[10px] font-medium",
-                "border border-dashed border-[var(--signal-border-subtle)]",
-                "text-[var(--signal-fg-tertiary)]",
-                "hover:border-[var(--signal-border-accent-muted)]",
-                "hover:text-[var(--signal-fg-accent)]",
-                "hover:bg-[var(--signal-bg-accent-muted)]/30",
-                "transition-all duration-[var(--signal-duration-fast)]",
-                showAllStages &&
-                  "border-[var(--signal-border-accent-muted)] text-[var(--signal-fg-accent)] bg-[var(--signal-bg-accent-muted)]/20",
-              )}
-              aria-label={
-                showAllStages
-                  ? "Hide advanced stages"
-                  : `Show ${hiddenInRow.length} advanced stage${hiddenInRow.length !== 1 ? "s" : ""}`
-              }
-              title={
-                showAllStages
-                  ? "Hide advanced stages"
-                  : `Show hidden stages: ${hiddenInRow.map((s) => STAGE_BY_ID[s]?.label ?? s).join(", ")}`
-              }
-            >
-              <Eye className="h-3 w-3" aria-hidden="true" />
-              <span className="whitespace-nowrap">
-                {showAllStages ? "Hide advanced" : `+${hiddenInRow.length}`}
-              </span>
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// =====================================================================
-// StageConnector — Subtle SVG arrow between stage columns
-// =====================================================================
-
-function StageConnector() {
-  return (
-    <div
-      className="flex items-center shrink-0"
-      style={{ width: 24 }}
-      aria-hidden="true"
-    >
-      <svg
-        width="24"
-        height="20"
-        viewBox="0 0 24 20"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M4 10L16 10"
-          stroke="var(--signal-border-subtle)"
-          strokeWidth="1"
-          strokeLinecap="round"
-        />
-        <path
-          d="M14 6L18 10L14 14"
-          stroke="var(--signal-border-subtle)"
-          strokeWidth="1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
-
-// =====================================================================
 // Empty State — No features at all
 // =====================================================================
 
@@ -766,8 +1053,8 @@ function LifecycleEmpty({ onCreateFlag }: { onCreateFlag: () => void }) {
             Welcome to the Lifecycle Canvas
           </h2>
           <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed max-w-sm mx-auto">
-            Your features flow through 14 lifecycle stages — from planning to
-            shipping to learning. Create your first feature flag to get started.
+            Your features flow through 4 products — from planning to shipping
+            to learning. Create your first feature flag to get started.
           </p>
         </div>
         <div className="grid gap-2.5 text-left">
@@ -946,57 +1233,50 @@ function LifecycleError({ message, onRetry }: LifecycleErrorProps) {
 }
 
 // =====================================================================
-// Loading Skeleton
+// Loading Skeleton — 4 product card placeholders
 // =====================================================================
 
 function LifecycleSkeleton() {
   return (
-    <div className="flex flex-col gap-0 h-full" aria-hidden="true">
-      {ROWS.map((row) => (
-        <div
-          key={row.key}
-          className="flex flex-1 border-b border-[var(--signal-border-subtle)]"
-        >
-          {/* Row label skeleton */}
-          <div className="w-10 shrink-0 flex items-start justify-center pt-3">
-            <div className="h-14 w-2 rounded-full animate-pulse bg-[var(--signal-border-default)]" />
-          </div>
-
-          {/* Stage column skeletons */}
-          <div className="flex flex-1 gap-0">
-            {row.stages.map((stageId, idx) => {
-              const isLast = idx === row.stages.length - 1;
-              return (
-                <div key={stageId} className="flex items-stretch min-w-0">
-                  <div className="flex flex-col flex-1 min-w-[220px]">
-                    {/* Header skeleton */}
-                    <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[var(--signal-border-subtle)]">
-                      <div className="h-3 w-16 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
-                      <div className="h-4 w-5 rounded-full ml-auto animate-pulse bg-[var(--signal-border-default)]" />
-                    </div>
-                    {/* Card skeletons */}
-                    <div className="flex flex-col gap-2 p-2">
-                      {Array.from({ length: 2 }).map((_, i) => (
-                        <div
-                          key={`sk-${stageId}-${i}`}
-                          className="h-[100px] rounded-[var(--signal-radius-md)] animate-pulse bg-[var(--signal-border-default)]"
-                          style={{ opacity: 0.5 + i * 0.15 }}
-                        />
-                      ))}
-                    </div>
+    <div className="flex flex-col h-full" aria-hidden="true">
+      {/* Product cards skeleton row */}
+      <div className="flex items-stretch gap-0 px-4 py-4 shrink-0">
+        {PRODUCTS.map((product, idx) => {
+          const isLast = idx === PRODUCTS.length - 1;
+          return (
+            <div key={product.id} className="flex items-stretch flex-1">
+              <div
+                className="flex flex-col gap-2 rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]"
+                style={{ minWidth: 180, maxWidth: 240, flex: "1 1 0" }}
+              >
+                {/* Header skeleton */}
+                <div className="flex items-center gap-2 px-4 pt-4">
+                  <div className="h-5 w-5 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 w-20 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
+                    <div className="h-2 w-10 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
                   </div>
-                  {!isLast && (
-                    <div
-                      className="flex items-center shrink-0"
-                      style={{ width: 24 }}
-                    />
-                  )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+                {/* Count skeleton */}
+                <div className="flex items-center gap-2 px-4 pb-4">
+                  <div className="h-6 w-8 rounded-full animate-pulse bg-[var(--signal-border-default)]" />
+                  <div className="h-2 w-14 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
+                </div>
+              </div>
+              {!isLast && (
+                <div className="flex items-center shrink-0 px-1">
+                  <div className="h-4 w-7 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Expanded area skeleton placeholder */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="h-4 w-40 rounded-sm animate-pulse bg-[var(--signal-border-default)]" />
+      </div>
     </div>
   );
 }

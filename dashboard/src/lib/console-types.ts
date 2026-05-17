@@ -23,13 +23,25 @@ export type LifecycleStage =
 
 export type LifecycleRow = "plan" | "build" | "operate";
 
+export type ProductId = "code2flag" | "preflight" | "incidentflag" | "impact-analyzer";
+
+export interface ProductDefinition {
+  id: ProductId;
+  name: string;
+  icon: string; // lucide-react icon name
+  phase: "PLAN" | "BUILD" | "OPERATE";
+  stages: LifecycleStage[];
+  color: "blue" | "amber" | "red" | "green";
+  description: string;
+}
+
 export interface StageDefinition {
   id: LifecycleStage;
   label: string;
   row: LifecycleRow;
   icon: string; // lucide-react icon name
   description: string;
-  product: string | null; // Code2Flag | Preflight | IncidentFlag | Impact Analyzer
+  product: ProductId | null; // code2flag | preflight | incidentflag | impact-analyzer
 }
 
 export type FeatureStatus =

@@ -224,9 +224,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <>
           {sharedBanners}
 
-          <div className="flex flex-col h-screen overflow-hidden bg-[var(--signal-bg-secondary)]">
-            {/* Top Bar (48px) */}
-            <div className="h-12 shrink-0">
+          <div className="flex flex-col h-screen bg-[var(--signal-bg-secondary)]">
+            {/* Top Bar (48px) — z-30 ensures dropdowns paint above the main area */}
+            <div className="h-12 shrink-0 relative z-30">
               <ConsoleTopBar />
             </div>
 
@@ -300,7 +300,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Console overlays */}
           <ConsoleCommandPalette />
-          <HelpWidget />
+          <HelpWidget learnPanelExpanded={learnExpanded} />
           <UndoToastContainer />
         </>
       )}

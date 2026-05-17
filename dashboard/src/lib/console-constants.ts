@@ -9,6 +9,8 @@
 
 import type {
   StageDefinition,
+  ProductDefinition,
+  ProductId,
   MaturityLevel,
   MaturityLevelInfo,
   LifecycleStage,
@@ -53,7 +55,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "plan",
     icon: "Lightbulb",
     description: "Discover and plan new features",
-    product: "Code2Flag",
+    product: "code2flag",
   },
   {
     id: "spec",
@@ -61,7 +63,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "plan",
     icon: "FileText",
     description: "Write feature specifications",
-    product: "Code2Flag",
+    product: "code2flag",
   },
   {
     id: "design",
@@ -69,7 +71,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "plan",
     icon: "PencilRuler",
     description: "Design feature architecture",
-    product: "Code2Flag",
+    product: "code2flag",
   },
   {
     id: "flag",
@@ -77,7 +79,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "plan",
     icon: "Flag",
     description: "Create feature flags",
-    product: "Code2Flag",
+    product: "code2flag",
   },
   {
     id: "implement",
@@ -85,7 +87,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "build",
     icon: "Code",
     description: "Implement feature code",
-    product: "Code2Flag",
+    product: "code2flag",
   },
   {
     id: "test",
@@ -93,7 +95,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "build",
     icon: "Beaker",
     description: "Test feature behavior",
-    product: "Code2Flag",
+    product: "code2flag",
   },
   {
     id: "configure",
@@ -101,7 +103,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "build",
     icon: "Sliders",
     description: "Configure targeting and rollout",
-    product: "Preflight",
+    product: "preflight",
   },
   {
     id: "approve",
@@ -109,7 +111,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "build",
     icon: "ShieldCheck",
     description: "Approve changes for release",
-    product: "Preflight",
+    product: "preflight",
   },
   {
     id: "ship",
@@ -117,7 +119,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "build",
     icon: "Rocket",
     description: "Ship features to production",
-    product: "Preflight",
+    product: "preflight",
   },
   {
     id: "monitor",
@@ -125,7 +127,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "operate",
     icon: "Activity",
     description: "Monitor feature health",
-    product: "IncidentFlag",
+    product: "incidentflag",
   },
   {
     id: "decide",
@@ -133,7 +135,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "operate",
     icon: "Brain",
     description: "Decide on feature actions",
-    product: "IncidentFlag",
+    product: "incidentflag",
   },
   {
     id: "analyze",
@@ -141,7 +143,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "operate",
     icon: "TrendingUp",
     description: "Analyze feature impact",
-    product: "Impact Analyzer",
+    product: "impact-analyzer",
   },
   {
     id: "learn",
@@ -149,7 +151,7 @@ export const LIFECYCLE_STAGES: StageDefinition[] = [
     row: "operate",
     icon: "BookOpen",
     description: "Capture organizational learnings",
-    product: "Impact Analyzer",
+    product: "impact-analyzer",
   },
 ];
 
@@ -176,6 +178,68 @@ export const STAGE_ORDER: Record<LifecycleStage, number> = {
   analyze: 11,
   learn: 12,
 };
+
+// ─── Products ────────────────────────────────────────────────────────
+//
+// The 4+1 product taxonomy maps lifecycle stages to unified products:
+//   Code2Flag:       CONCEIVE SPECIFY DESIGN FLAGIFY (PLAN + IMPLEMENT)
+//   Preflight:       CONFIGURE APPROVE EXECUTE (BUILD right side)
+//   IncidentFlag:    OBSERVE DECIDE (OPERATE left side)
+//   Impact Analyzer: ANALYZE LEARN (OPERATE right side)
+//   ABM:             Agent Behavior Mesh (standalone, separate lifecycle)
+
+export const PRODUCTS: ProductDefinition[] = [
+  {
+    id: "code2flag",
+    name: "Code2Flag",
+    icon: "Search",
+    phase: "PLAN",
+    stages: ["plan", "spec", "design", "flag", "implement", "test"],
+    color: "blue",
+    description: "Discover, specify, implement, and create feature flags",
+  },
+  {
+    id: "preflight",
+    name: "Preflight",
+    icon: "Rocket",
+    phase: "BUILD",
+    stages: ["configure", "approve", "ship"],
+    color: "amber",
+    description: "Configure targeting, approve changes, and ship to production",
+  },
+  {
+    id: "incidentflag",
+    name: "IncidentFlag",
+    icon: "ShieldCheck",
+    phase: "OPERATE",
+    stages: ["monitor", "decide"],
+    color: "red",
+    description: "Monitor feature health and decide on actions",
+  },
+  {
+    id: "impact-analyzer",
+    name: "Impact Analyzer",
+    icon: "TrendingUp",
+    phase: "OPERATE",
+    stages: ["analyze", "learn"],
+    color: "green",
+    description: "Analyze impact and capture organizational learnings",
+  },
+];
+
+// ─── Product Lookup Maps ────────────────────────────────────────────
+
+export const PRODUCT_BY_ID: Record<ProductId, ProductDefinition> =
+  Object.fromEntries(PRODUCTS.map((p) => [p.id, p])) as Record<
+    ProductId,
+    ProductDefinition
+  >;
+
+/** Map from any lifecycle stage to its parent product ID */
+export const PRODUCT_BY_STAGE: Record<LifecycleStage, ProductId> =
+  Object.fromEntries(
+    LIFECYCLE_STAGES.map((s) => [s.id, s.product]),
+  ) as Record<LifecycleStage, ProductId>;
 
 // ─── Sort Options ────────────────────────────────────────────────────
 
