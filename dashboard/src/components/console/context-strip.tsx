@@ -28,7 +28,6 @@ import {
   Building2,
   Folder,
 } from "lucide-react";
-import type { Project } from "@/lib/types";
 import type { EnvironmentType } from "@/lib/console-types";
 
 // ─── Constants ─────────────────────────────────────────────────────
@@ -41,7 +40,7 @@ const ENV_OPTIONS: EnvironmentType[] = ["production", "staging", "development"];
 function MiniDropdown({
   open,
   onOpenChange,
-  align = "left",
+  align: _align = "left",
   children,
 }: {
   open: boolean;

@@ -41,7 +41,6 @@ import type {
   TeamVelocity,
   OrgLearning,
   ActivityEntry,
-  MetricChange,
 } from "@/lib/console-types";
 import type { ImpactReportResponse } from "@/lib/types";
 

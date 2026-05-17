@@ -81,7 +81,7 @@ export function ShipWizard() {
     setShipError(null);
 
     try {
-      const result = await api.console.shipFlag(token, feature.key, {
+      const _result = await api.console.shipFlag(token, feature.key, {
         target_percent: targetPercent,
         environment: selectedEnvironment,
       });

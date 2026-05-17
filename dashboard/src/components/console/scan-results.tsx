@@ -24,14 +24,10 @@ import {
   Sparkles,
   Plus,
   ChevronRight,
-  CheckCircle2,
-  AlertTriangle,
   ArrowRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import type { Code2FlagReference } from "@/lib/types";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -84,32 +80,6 @@ function conditionalIcon(type: string) {
     default:
       return <Code className="h-3 w-3" />;
   }
-}
-
-// ─── Section Header ──────────────────────────────────────────────────
-
-function SectionHeader({
-  icon: Icon,
-  title,
-  count,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  count?: number;
-}) {
-  return (
-    <div className="flex items-center gap-2 mb-2">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-secondary)]" />
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
-        {title}
-      </span>
-      {count !== undefined && count > 0 && (
-        <span className="inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-[var(--signal-bg-accent-muted)] text-[10px] font-semibold text-[var(--signal-fg-accent)]">
-          {count}
-        </span>
-      )}
-    </div>
-  );
 }
 
 // ─── Skeleton ────────────────────────────────────────────────────────

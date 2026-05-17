@@ -27,7 +27,6 @@ import {
   AlertCircle,
   Lightbulb,
   Mail,
-  MessageSquareText,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

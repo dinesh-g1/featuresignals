@@ -28,10 +28,8 @@ import {
   Undo2,
   Clock,
   GitBranch,
-  ArrowRight,
   Siren,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";

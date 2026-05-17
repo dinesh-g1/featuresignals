@@ -10,7 +10,7 @@
  * Design tokens defined in signal.css (`[data-theme="dark"]` block).
  */
 
-import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ function applyTheme(resolved: ResolvedTheme): void {
 
 // ─── Module-level state (for external reads without hook) ────────────
 
-let currentTheme: Theme = "system";
+let _currentTheme: Theme = "system";
 const listeners: Array<() => void> = [];
 
 function notifyListeners(): void {
@@ -105,7 +105,7 @@ export function useTheme() {
 
   // Sync module-level state
   useEffect(() => {
-    currentTheme = theme;
+    _currentTheme = theme;
     notifyListeners();
   }, [theme]);
 

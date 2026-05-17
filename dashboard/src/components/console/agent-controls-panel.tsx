@@ -15,7 +15,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Bot,
   Activity,
   Clock,
   Wrench,
@@ -23,11 +22,9 @@ import {
   ChevronRight,
   Settings,
   ExternalLink,
-  RefreshCw,
   Shield,
   Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { AgentStatus } from "@/lib/console-types";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -52,40 +49,6 @@ function formatRelativeTime(isoString?: string): string {
   const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 7) return `${diffDay}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function maturityLabel(level?: number): string {
-  switch (level) {
-    case 5:
-      return "Autonomous";
-    case 4:
-      return "Proactive";
-    case 3:
-      return "Supervised";
-    case 2:
-      return "Assistive";
-    case 1:
-      return "Basic";
-    default:
-      return "Unknown";
-  }
-}
-
-function maturityColor(level?: number): string {
-  switch (level) {
-    case 5:
-      return "var(--signal-fg-success)";
-    case 4:
-      return "var(--signal-fg-accent)";
-    case 3:
-      return "var(--signal-fg-warning)";
-    case 2:
-      return "var(--signal-fg-info)";
-    case 1:
-      return "var(--signal-fg-tertiary)";
-    default:
-      return "var(--signal-fg-tertiary)";
-  }
 }
 
 // ─── Skeleton ────────────────────────────────────────────────────────

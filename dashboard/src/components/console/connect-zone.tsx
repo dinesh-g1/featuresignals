@@ -24,7 +24,6 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
-  ExternalLink,
   RefreshCw,
   Copy,
   Check,
@@ -45,7 +44,6 @@ import { api } from "@/lib/api";
 import type {
   RepoStatus,
   SdkStatus,
-  AgentStatus,
   ApiKeyStatus,
 } from "@/lib/console-types";
 
@@ -411,83 +409,6 @@ function SdksSection({
             </div>
           )}
         </>
-      )}
-    </CollapsibleSection>
-  );
-}
-
-// ─── Sub-components: Your Agents ─────────────────────────────────────
-
-function AgentItem({ agent }: { agent: AgentStatus }) {
-  const state = (agent.status as keyof typeof DOT_COLORS) ?? "offline";
-  const isOnline = agent.status === "online";
-  const isDegraded = agent.status === "degraded";
-
-  return (
-    <div className="flex items-center gap-2 py-1.5">
-      <StatusDot state={state} pulse={isOnline} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium text-[var(--signal-fg-primary)] truncate">
-            {agent.name}
-          </span>
-        </div>
-        <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
-          {agent.type}
-          {isOnline && agent.last_heartbeat && (
-                      <> · {formatRelativeTime(agent.last_heartbeat)}</>
-          )}
-          {isDegraded && (
-            <span className="text-[var(--signal-fg-warning)] ml-1">
-              · Degraded
-            </span>
-          )}
-          {!isOnline && !isDegraded && <> · Offline</>}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function AgentsSection({
-  agents,
-  showAgentPreview = false,
-}: {
-  agents: AgentStatus[];
-  showAgentPreview?: boolean;
-}) {
-  return (
-    <CollapsibleSection
-      icon={Bot}
-      label="Your Agents"
-      count={agents.filter((a) => a.status === "online").length}
-      defaultOpen={agents.length > 0}
-    >
-      {agents.length === 0 ? (
-        <div className="py-3 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--signal-bg-accent-muted)] ring-1 ring-[var(--signal-border-accent-muted)] mb-2.5">
-            <Bot className="h-5 w-5 text-[var(--signal-fg-accent)]" />
-          </div>
-          <p className="text-xs font-medium text-[var(--signal-fg-primary)] mb-1">
-            No agents registered
-          </p>
-          <p className="text-[10px] text-[var(--signal-fg-secondary)] mb-2.5 leading-relaxed max-w-[180px] mx-auto">
-            Register your own AI agents to automate flag lifecycle
-            operations. Agents run tasks like cleanup, monitoring, and impact
-            analysis.
-          </p>
-          {showAgentPreview && (
-            <p className="text-[10px] text-[var(--signal-fg-tertiary)]">
-              Agent registration is available via the Settings page.
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-0.5">
-          {agents.map((agent) => (
-            <AgentItem key={agent.id} agent={agent} />
-          ))}
-        </div>
       )}
     </CollapsibleSection>
   );

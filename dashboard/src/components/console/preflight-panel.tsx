@@ -209,7 +209,7 @@ export function PreflightPanel({
   const [approval, setApproval] = useState<ApprovalResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [assessing, setAssessing] = useState(false);
+  const [_assessing, setAssessing] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
   // ── Fetch assessment ─────────────────────────────────────────────

@@ -680,7 +680,6 @@ export function FeatureDetailPanel() {
             if (!token || actionLoading) return;
             setActionLoading(true);
             setActionError(null);
-            const prevFeatures = [...features];
             try {
               await api.console.archiveFlag(token, feature.key);
               // Remove from store on success

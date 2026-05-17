@@ -74,7 +74,6 @@ export function useConsoleData() {
     selectedEnvironment,
     sortBy,
     projectFilter,
-    retryTrigger,
     setFeatures,
     setZoneLoading,
     setZoneError,
@@ -85,6 +84,11 @@ export function useConsoleData() {
   useEffect(() => {
     fetch();
   }, [fetch]);
+
+  // Refetch on manual retry
+  useEffect(() => {
+    if (retryTrigger > 0) fetch();
+  }, [retryTrigger, fetch]);
 
   // Poll every 30 seconds
   useEffect(() => {

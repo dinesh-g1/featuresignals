@@ -12,7 +12,6 @@ import {
   ShieldIcon,
   BuildingIcon,
   ArrowLeftIcon,
-  LoaderIcon,
   ExternalLinkIcon,
   AlertIcon,
 } from "@/components/icons/nav-icons";
@@ -79,7 +78,7 @@ export default function SSOPage() {
   const [orgSlug, setOrgSlug] = useState("");
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, _setLoading] = useState(false);
   const [discovering, setDiscovering] = useState(false);
   const [discoveryResult, setDiscoveryResult] = useState<{
     ssoEnabled: boolean;

@@ -496,7 +496,7 @@ export function CommandPalette() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [open, setOpen]);
 
   // ── Auto-focus input on open ───────────────────────────────────────
   useEffect(() => {
@@ -527,7 +527,7 @@ export function CommandPalette() {
 
   const close = useCallback(() => {
     setOpen(false);
-  }, []);
+  }, [setOpen]);
 
   const execute = useCallback(
     (item: PaletteItem) => {

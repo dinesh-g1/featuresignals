@@ -13,8 +13,8 @@ import { api } from "@/lib/api";
  */
 export function useConsoleInsights() {
   const token = useAppStore((s) => s.token);
-  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
 
+  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
   const setInsights = useConsoleStore((s) => s.setInsights);
   const setZoneLoading = useConsoleStore((s) => s.setZoneLoading);
   const setZoneError = useConsoleStore((s) => s.setZoneError);
@@ -40,12 +40,17 @@ export function useConsoleInsights() {
     } finally {
       setZoneLoading("insights", false);
     }
-  }, [token, retryTrigger, setInsights, setZoneLoading, setZoneError]);
+  }, [token, setInsights, setZoneLoading, setZoneError]);
 
-  // Fetch on mount and when retryTrigger changes
+  // Fetch on mount
   useEffect(() => {
     fetch();
   }, [fetch]);
+
+  // Refetch on manual retry
+  useEffect(() => {
+    if (retryTrigger > 0) fetch();
+  }, [retryTrigger, fetch]);
 
   // Poll every 60 seconds (insights change less frequently)
   useEffect(() => {

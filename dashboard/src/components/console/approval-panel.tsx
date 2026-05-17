@@ -16,22 +16,18 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
-  ShieldAlert,
   CheckCircle2,
   XCircle,
   Clock,
-  User,
   MessageSquare,
   RefreshCw,
   ThumbsUp,
   ThumbsDown,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import type { ApprovalRequest } from "@/lib/types";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -293,8 +289,8 @@ function ApprovalItem({
 
 export function ApprovalPanel({
   flagKey,
-  flagName,
-  environment,
+  flagName: _flagName,
+  environment: _environment,
 }: ApprovalPanelProps) {
   const token = useAppStore((s) => s.token);
 

@@ -23,7 +23,6 @@ import { useConsoleStore } from "@/stores/console-store";
 import type {
   StageDefinition,
   FeatureCardData,
-  FeatureStatus,
 } from "@/lib/console-types";
 import { ENV_COLORS, STATUS_STYLES } from "@/lib/console-constants";
 import {

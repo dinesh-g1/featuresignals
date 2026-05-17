@@ -8,7 +8,7 @@
  * Feature-level language: "Get started with Go" not "Copy Go snippet".
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy,
@@ -17,7 +17,7 @@ import {
   Terminal,
   Package,
   Play,
-  ChevronDown,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
@@ -132,7 +132,7 @@ const SDK_META: Record<SdkLanguage, SdkMeta> = {
 function SnippetBlock({
   label,
   code,
-  language,
+  language: _language,
   icon: Icon,
 }: {
   label: string;
