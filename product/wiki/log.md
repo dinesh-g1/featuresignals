@@ -1,3 +1,51 @@
+## [2026-05-17 07:16] implementation | Console End-to-End Overhaul — Phase 2 Complete
+
+### Context
+Continuation of the Console End-to-End Overhaul. Deep audit performed across 87+ files. 30+ bugs fixed across 3 parallel workstreams:
+- Critical runtime bugs (C1, P0-2 through P0-6)
+- Data flow bugs (P0-1, C2, H2, H3, H4)
+- UX issues (P1-1, P1-2, P1-4, P1-5, P2-1, P2-2)
+- Console shell made DEFAULT layout for all authenticated routes
+- Power tool panels wired (Incident, Preflight, Janitor, Approval)
+- Stub fixes (guard metrics, compliance cards, SDK install button)
+- Dead code removal (IconRail, FloatingPanel, ConsoleShell stub)
+- OrgLearningsResponse camelCase fix
+- CreateFlagDialog timeout race fix
+
+### Files changed (30+ files)
+- `dashboard/src/app/(app)/layout.tsx` — Console shell as default, route-aware center zone
+- `dashboard/src/app/(app)/console/_client/console-top-bar.tsx` — Navigation dropdowns added
+- `dashboard/src/stores/console-store.ts` — advanceFeature improved, featuresTotal added, projects state, triggerRetry all zones
+- `dashboard/src/components/console/context-panel.tsx` — All 6 panel types wired, close-without-deselect
+- `dashboard/src/components/console/feature-detail-panel.tsx` — HoldToConfirm, full feature update on advance, undo callbacks fixed
+- `dashboard/src/components/console/learn-zone.tsx` — ImpactReport key fix, Compliance/Auditor preview badges, empty state improved
+- `dashboard/src/components/console/connect-zone.tsx` — SDK "Install another" button, hardcoded color fix
+- `dashboard/src/components/console/ship-wizard.tsx` — Guard metrics stub replaced with functional panel
+- `dashboard/src/components/console/console-data-layer.tsx` — Route guard for hooks
+- `dashboard/src/hooks/use-console-url-sync.ts` — Bidirectional URL sync with feature param
+- `dashboard/src/hooks/use-console-data.ts` — Projects fetched once, stored in console store
+- `dashboard/src/hooks/use-console-integrations.ts` — Watches retryTrigger
+- `dashboard/src/hooks/use-console-insights.ts` — Watches retryTrigger
+- `dashboard/src/app/(app)/console/_client/lifecycle-zone.tsx` — Stage validation guard, unknown stage bucket, timeout cleanup
+- `dashboard/src/lib/types.ts` — ImpactReportResponse + OrgLearningsResponse camelCase fix
+- `dashboard/src/lib/console-constants.ts` — STATUS_STYLES extracted
+- Deleted: `icon-rail.tsx`, `floating-panel.tsx`, `console-shell.tsx` (dead code)
+
+### Architecture
+- Console shell now DEFAULT for all authenticated routes (`/(app)/*`)
+- Route-aware center zone: `/console/*` → LifecycleZone, others → `{children}` full-page
+- Excluded routes (onboarding, pricing, support) use minimal layout
+- Old sidebar layout completely removed (NavList, ContextBar, EnvColorBar, Breadcrumb, DashboardFooter)
+- All 6 ContextPanel types wired: flag-detail, ship-wizard, incident, preflight, janitor, approval
+- Bidirectional URL sync: stage, environment, search, feature params persist in URL
+- Project list centralized in console store (single fetch, shared by TopBar + ContextStrip)
+
+### Verification
+- `npx tsc --noEmit` — ✅ 0 errors
+- `go vet ./...` — ✅ clean
+- Backend API endpoints verified: `/v1/console/flags` (7 features), `/v1/console/insights` (5 reports), `/v1/console/integrations` (2 API keys)
+- Next.js dev server compiles in ~651ms
+
 ## [2026-05-24 04:10] governance | Comprehensive Status Update — All wiki docs synced to current state
 
 ### Context

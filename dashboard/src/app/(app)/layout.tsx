@@ -4,25 +4,15 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { path } from "@/lib/paths";
 import { cn } from "@/lib/utils";
-import { NavList } from "@/components/nav-list";
-import { ContextBar } from "@/components/context-bar";
 import { AuthGuard } from "@/components/auth-guard";
-import { CommandPalette as OldCommandPalette } from "@/components/command-palette";
 import { toast, ToastContainer } from "@/components/toast";
 import { ActionFeedbackContainer } from "@/components/action-feedback";
-import { EnvColorBar } from "@/components/env-color-bar";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { VerificationBanner } from "@/components/verification-banner";
 import { TrialBanner } from "@/components/trial-banner";
 import { UpgradeBanner } from "@/components/upgrade-banner";
 import { ProductTour } from "@/components/product-tour";
-import { DashboardFooter } from "@/components/dashboard-footer";
-import { FeedbackWidget } from "@/components/feedback-widget";
-import { SuperMode } from "@/components/super-mode";
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 import { useAppStore } from "@/stores/app-store";
-import { useSidebarStore } from "@/stores/sidebar-store";
-import { Logo } from "@/components/logo";
 import { useAxe } from "@/lib/axe";
 
 // ── Console-specific imports ────────────────────────────────────────
@@ -55,31 +45,7 @@ function UpgradeRequiredListener() {
   return null;
 }
 
-// ─── Mobile Header ─────────────────────────────────────────────────
 
-function MobileHeader() {
-  const open = useSidebarStore((s) => s.open);
-  return (
-    <div className="flex h-14 items-center border-b border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]/90 backdrop-blur-md px-4 md:hidden sticky top-0 z-40">
-      <button
-        onClick={open}
-        className="rounded-md p-1.5 text-[var(--signal-fg-secondary)] transition-colors hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
-        aria-label="Open sidebar"
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M1 2.75A.75.75 0 0 1 1.75 2h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 5A.75.75 0 0 1 1.75 7h12.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 7.75ZM1.75 12a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H1.75Z" />
-        </svg>
-      </button>
-      <Logo size="sm" variant="minimal" className="ml-2" />
-    </div>
-  );
-}
 
 // ─── Tour Gate ─────────────────────────────────────────────────────
 
@@ -196,7 +162,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [connectExpanded, setConnectExpanded] = useState(false);
   const [learnExpanded, setLearnExpanded] = useState(false);
 
-  const isConsole = pathname?.startsWith("/console");
+  // Routes excluded from the Console Shell (use minimal layout)
+  const isExcluded =
+    pathname?.startsWith("/onboarding") ||
+    pathname?.startsWith("/pricing") ||
+    pathname?.startsWith("/support");
+
+  const isConsoleRoute = pathname?.startsWith("/console");
 
   // Redirect project-scoped pages when no project is selected
   useEffect(() => {
@@ -206,7 +178,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [currentProjectId, pathname, router]);
 
-  // ── Shared banners (both layouts) ────────────────────────────────
+  // ── Shared banners (all layouts) ─────────────────────────────────
   const sharedBanners = (
     <>
       <TrialBanner />
@@ -225,9 +197,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         Skip to main content
       </a>
 
-      {isConsole ? (
+      {isExcluded ? (
         // ═══════════════════════════════════════════════════════════
-        // CONSOLE SHELL — 3-zone layout with top/bottom bars
+        // MINIMAL LAYOUT — onboarding, pricing, support
+        // ═══════════════════════════════════════════════════════════
+        <>
+          {sharedBanners}
+
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="min-h-screen bg-[var(--signal-bg-secondary)]"
+          >
+            <Suspense fallback={<div className="p-6" />}>
+              {children}
+            </Suspense>
+          </main>
+
+          {/* Console overlays still available for support/help access */}
+          <ConsoleCommandPalette />
+          <HelpWidget />
+        </>
+      ) : (
+        // ═══════════════════════════════════════════════════════════
+        // CONSOLE SHELL — default layout for all authenticated routes
         // ═══════════════════════════════════════════════════════════
         <>
           {sharedBanners}
@@ -259,13 +252,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 />
               </div>
 
-              {/* LIFECYCLE Zone — center canvas */}
+              {/* CENTER Zone — shows LifecycleZone for /console, {children} for other routes */}
               <div className="flex-1 min-w-0 overflow-hidden">
-                <LifecycleZone />
+                {isConsoleRoute ? (
+                  <LifecycleZone />
+                ) : (
+                  <div
+                    id="main-content"
+                    tabIndex={-1}
+                    className="h-full overflow-y-auto"
+                  >
+                    <div className="p-6">
+                      <Suspense fallback={<div className="p-6" />}>
+                        {children}
+                      </Suspense>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* ContextPanel — right slide-in overlay (380px) */}
-              <ContextPanel />
+              {/* ContextPanel — right slide-in overlay (380px), absolute so it doesn't crush LifecycleZone when LearnZone is open */}
+              <div className="absolute right-0 top-0 bottom-0 z-20">
+                <ContextPanel />
+              </div>
 
               {/* LEARN Zone — collapsible right panel */}
               <div className="relative shrink-0">
@@ -290,7 +299,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Data fetching layer — only active on console route */}
+          {/* Data fetching layer — only active on console routes */}
           <ConsoleDataLayer />
 
           {/* Console overlays */}
@@ -298,50 +307,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <HelpWidget />
           <UndoToastContainer />
         </>
-      ) : (
-        // ═══════════════════════════════════════════════════════════
-        // SIDEBAR LAYOUT — classic dashboard for settings, billing, etc.
-        // ═══════════════════════════════════════════════════════════
-        <>
-          {sharedBanners}
-
-          <div className="flex h-screen flex-col md:flex-row bg-[var(--signal-bg-secondary)]">
-            {/* Sidebar — always visible, content adapts to context */}
-            <NavList />
-
-            <div className="flex min-h-0 flex-1 flex-col">
-              <MobileHeader />
-
-              {/* Top bar: Logo + Project/Env + Search + Bell + User — identical everywhere */}
-              <ContextBar />
-
-              <main
-                id="main-content"
-                tabIndex={-1}
-                className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6"
-              >
-                <EnvColorBar />
-                {/* Breadcrumb — contextual hierarchy: Org > Project > Page */}
-                <div className="mb-4">
-                  <Breadcrumb />
-                </div>
-                <Suspense fallback={<div className="p-6" />}>
-                  {children}
-                </Suspense>
-              </main>
-
-              <DashboardFooter />
-            </div>
-          </div>
-
-          {/* Old layout overlays */}
-          <OldCommandPalette />
-          <FeedbackWidget />
-          <SuperMode />
-        </>
       )}
 
-      {/* ── Shared overlays (both layouts) ──────────────────────────── */}
+      {/* ── Shared overlays (all layouts) ──────────────────────────── */}
       <ToastContainer />
       <ActionFeedbackContainer />
       <UpgradeRequiredListener />

@@ -116,7 +116,7 @@ function ConfidenceBadge({ confidence }: { confidence: number }) {
 
 interface LearnCardProps {
   icon: React.ComponentType<{ className?: string }>;
-  title: string;
+  title: ReactNode;
   accentBorder?: string;
   children: ReactNode;
 }
@@ -276,29 +276,29 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                                 className="inline-flex items-center px-1.5 py-px rounded text-[9px] font-semibold"
                                 style={{
                                   backgroundColor:
-                                    reportDetail.business_impact === "positive"
+                                    reportDetail.businessImpact === "positive"
                                       ? "var(--signal-bg-success-muted)"
-                                      : reportDetail.business_impact ===
+                                      : reportDetail.businessImpact ===
                                           "negative"
                                         ? "var(--signal-bg-danger-muted)"
                                         : "var(--signal-bg-secondary)",
                                   color:
-                                    reportDetail.business_impact === "positive"
+                                    reportDetail.businessImpact === "positive"
                                       ? "var(--signal-fg-success)"
-                                      : reportDetail.business_impact ===
+                                      : reportDetail.businessImpact ===
                                           "negative"
                                         ? "var(--signal-fg-danger)"
                                         : "var(--signal-fg-tertiary)",
                                 }}
                               >
-                                {reportDetail.business_impact}
+                                {reportDetail.businessImpact}
                               </span>
                             </div>
-                            {reportDetail.metrics_summary && (
+                            {reportDetail.metricsSummary && (
                               <div className="grid grid-cols-3 gap-1.5 text-center">
                                 <div>
                                   <div className="text-xs font-bold font-mono text-[var(--signal-fg-primary)]">
-                                    {reportDetail.metrics_summary.total_evaluations.toLocaleString()}
+                                    {reportDetail.metricsSummary.totalEvaluations.toLocaleString()}
                                   </div>
                                   <p className="text-[8px] text-[var(--signal-fg-tertiary)]">
                                     Evals
@@ -307,8 +307,8 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                                 <div>
                                   <div className="text-xs font-bold font-mono text-[var(--signal-fg-primary)]">
                                     {
-                                      reportDetail.metrics_summary
-                                        .avg_latency_us
+                                      reportDetail.metricsSummary
+                                        .avgLatencyUs
                                     }
                                     µs
                                   </div>
@@ -319,7 +319,7 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                                 <div>
                                   <div className="text-xs font-bold font-mono text-[var(--signal-fg-primary)]">
                                     {(
-                                      reportDetail.metrics_summary.error_rate *
+                                      reportDetail.metricsSummary.errorRate *
                                       100
                                     ).toFixed(2)}
                                     %
@@ -330,13 +330,13 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                                 </div>
                               </div>
                             )}
-                            {reportDetail.cost_attribution !== undefined && (
+                            {reportDetail.costAttribution !== undefined && (
                               <div className="flex items-center justify-between">
                                 <span className="text-[9px] text-[var(--signal-fg-tertiary)]">
                                   Cost
                                 </span>
                                 <span className="text-[10px] font-medium text-[var(--signal-fg-primary)]">
-                                  ${reportDetail.cost_attribution.toFixed(2)}
+                                  ${reportDetail.costAttribution.toFixed(2)}
                                 </span>
                               </div>
                             )}
@@ -685,7 +685,14 @@ function ComplianceReportCard() {
   return (
     <LearnCard
       icon={ShieldCheck}
-      title="Compliance Report"
+      title={
+        <span className="inline-flex items-center gap-1.5">
+          Compliance Report
+          <span className="inline-flex items-center h-4 px-1.5 rounded text-[9px] font-semibold bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]">
+            Preview
+          </span>
+        </span>
+      }
       accentBorder="var(--signal-fg-success)"
     >
       <div className="py-2 text-center">
@@ -694,7 +701,7 @@ function ComplianceReportCard() {
           governance gates.
         </p>
         <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-1.5">
-          Available at L4+ Enterprise
+          L4+ Enterprise — full reports coming soon
         </p>
       </div>
     </LearnCard>
@@ -707,16 +714,23 @@ function AuditorAccessCard() {
   return (
     <LearnCard
       icon={FileSearch}
-      title="Auditor Access"
+      title={
+        <span className="inline-flex items-center gap-1.5">
+          Auditor Access
+          <span className="inline-flex items-center h-4 px-1.5 rounded text-[9px] font-semibold bg-[var(--signal-bg-warning-muted)] text-[var(--signal-fg-warning)]">
+            Preview
+          </span>
+        </span>
+      }
       accentBorder="var(--signal-fg-warning)"
     >
       <div className="py-2 text-center">
         <p className="text-xs text-[var(--signal-fg-secondary)] leading-relaxed">
-          Read-only auditor access is enabled. All feature changes are recorded
-          with 7-year retention.
+          Read-only auditor access with 7-year retention for regulated
+          environments.
         </p>
         <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-1.5">
-          L5 Regulated mode
+          L5 Regulated mode — full access coming soon
         </p>
       </div>
     </LearnCard>
@@ -811,7 +825,7 @@ function LearnError({ message }: { message: string }) {
       </p>
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 rounded-[var(--signal-radius-sm)] bg-[var(--signal-bg-secondary)] px-3 py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] border border-[var(--signal-border-default)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[#e8eaed] hover:text-[var(--signal-fg-primary)]"
+        className="inline-flex items-center gap-1.5 rounded-[var(--signal-radius-sm)] bg-[var(--signal-bg-secondary)] px-3 py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] border border-[var(--signal-border-default)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
         onClick={() => window.location.reload()}
       >
         <RefreshCw className="h-3 w-3" />
@@ -830,12 +844,12 @@ function LearnEmpty() {
         <TrendingUp className="h-6 w-6 text-[var(--signal-fg-accent)]" />
       </div>
       <h3 className="text-sm font-semibold text-[var(--signal-fg-primary)]">
-        Your outcomes
+        Feature insights
       </h3>
-      <p className="mt-1.5 text-xs text-[var(--signal-fg-secondary)] leading-relaxed max-w-[220px]">
-        Impact reports, cost tracking, team velocity, AI-generated
-        learnings, and activity will appear here as features move
-        through the lifecycle.
+      <p className="mt-1.5 text-xs text-[var(--signal-fg-secondary)] leading-relaxed max-w-[240px]">
+        Create your first feature flag to start seeing impact reports,
+        cost attribution, team velocity, and AI-generated learnings
+        powered by your team&apos;s release data.
       </p>
     </div>
   );

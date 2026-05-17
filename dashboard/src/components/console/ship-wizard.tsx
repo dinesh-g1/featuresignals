@@ -311,17 +311,35 @@ export function ShipWizard() {
           </div>
         </div>
 
-        {/* ── Guard Metrics Placeholder ───────────────────────────── */}
-        <div className="p-3 rounded-md border border-dashed border-[var(--signal-border-subtle)]">
-          <div className="flex items-center gap-2">
-            <Sliders className="h-4 w-4 text-[var(--signal-fg-tertiary)]" />
-            <span className="text-xs text-[var(--signal-fg-tertiary)]">
-              Guard metrics (coming soon)
+        {/* ── Guard Metrics ──────────────────────────────────────── */}
+        <div className="p-3 rounded-md bg-[var(--signal-bg-secondary)] border border-[var(--signal-border-subtle)]">
+          <div className="flex items-center gap-2 mb-2">
+            <Sliders className="h-4 w-4 text-[var(--signal-fg-accent)]" />
+            <span className="text-xs font-medium text-[var(--signal-fg-primary)]">
+              Guard Metrics
             </span>
           </div>
-          <p className="text-xs text-[var(--signal-fg-tertiary)] mt-1">
-            Auto-rollback will be triggered if guard metrics degrade below
-            threshold.
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-[var(--signal-fg-secondary)]">
+                {feature.name}
+              </span>
+              <span className="font-mono tabular-nums text-[var(--signal-fg-primary)]">
+                {targetPercent}% rollout
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-[var(--signal-fg-tertiary)]">
+                Environment
+              </span>
+              <span className="text-[var(--signal-fg-secondary)]">
+                {envConfig.label}
+              </span>
+            </div>
+          </div>
+          <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-2 leading-relaxed">
+            Guard metrics monitoring will activate after shipping. Auto-rollback
+            triggers if metrics degrade below defined thresholds.
           </p>
         </div>
 

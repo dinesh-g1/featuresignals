@@ -4,10 +4,16 @@
  * ConsoleTopBar — 48px horizontal bar with full context hierarchy.
  *
  * Layout:
- *   [FS] [Maturity] | [Org] [Project ▼] [● Env ▼]  ...  [🔍 ⌘K] [⚙️] [👤]
+ *   [FS] [Maturity] | [Org] [Project ▼] [● Env ▼]  ...  [🔍 ⌘K] [⚙️] [🔔] [?] [👤]
  *
  * Shows the user EXACTLY where they are: Organization → Project → Environment.
  * Each context segment is a dropdown for switching.
+ *
+ * Navigation icons (right side):
+ *   ⚙️ Settings dropdown → Settings, Billing, Team, API Keys, Webhooks, Integrations, SSO
+ *   🔔 Activity bell → /activity
+ *   ?  Help → /support
+ *   👤 User menu → profile, sign out, etc.
  */
 
 import { useCallback, useState, useRef, useEffect } from "react";
@@ -27,15 +33,17 @@ import {
   Building2Icon,
   FolderIcon,
   SettingsIcon,
+  BellIcon,
+  HelpCircleIcon,
+  KeyIcon,
+  WebhookIcon,
+  PlugIcon,
+  ShieldIcon,
+  UsersIcon,
+  CreditCardIcon,
 } from "lucide-react";
 
 const ENV_OPTIONS: EnvironmentType[] = ["production", "staging", "development"];
-
-interface ProjectItem {
-  id: string;
-  name: string;
-  slug: string;
-}
 
 export function ConsoleTopBar() {
   const router = useRouter();
@@ -45,52 +53,27 @@ export function ConsoleTopBar() {
   const setSearchQuery = useConsoleStore((s) => s.setSearchQuery);
   const setCommandPaletteOpen = useConsoleStore((s) => s.setCommandPaletteOpen);
   const token = useAppStore((s) => s.token);
-  const expiresAt = useAppStore((s) => s.expiresAt);
   const organization = useAppStore((s) => s.organization);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const { level, refetch } = useConsoleMaturity();
 
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  // Projects are fetched once by useConsoleData and stored in console store (H4 fix)
+  const projects = useConsoleStore((s) => s.projects);
+
   const [projectOpen, setProjectOpen] = useState(false);
   const [envOpen, setEnvOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const projectRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const envConfig = ENV_COLORS[selectedEnvironment];
   const orgName = organization?.name ?? "Loading...";
   const currentProject = projects.find((p) => p.id === currentProjectId);
   const projectLabel = currentProject?.name ?? "Select project";
-
-  // Load projects on mount — with expiry guard to prevent 401 storms
-  useEffect(() => {
-    // Don't call if token is missing or already expired (prevents 401 cascade)
-    if (!token) return;
-    if (expiresAt && Date.now() >= expiresAt * 1000) {
-      // Token is expired — let requestWithRetry handle the refresh.
-      // We still make the call because the retry logic will refresh.
-    }
-    api
-      .listProjects(token)
-      .then((result) => {
-        const arr = Array.isArray(result)
-          ? result
-          : ((result as { data?: ProjectItem[] })?.data ?? []);
-        setProjects(arr);
-        if (!currentProjectId && arr.length > 0) {
-          setCurrentProject(arr[0].id);
-        }
-      })
-      .catch((err) => {
-        // Silently handle — the user will see "Select project" if this fails.
-        // The retry logic in requestWithRetry already handles token refresh.
-        if (process.env.NODE_ENV === "development") {
-          console.debug("[console-top-bar] listProjects failed:", err);
-        }
-      });
-  }, [token, expiresAt, currentProjectId, setCurrentProject]);
 
   // Click outside closes dropdowns
   useEffect(() => {
@@ -99,6 +82,8 @@ export function ConsoleTopBar() {
         setProjectOpen(false);
       if (envRef.current && !envRef.current.contains(e.target as Node))
         setEnvOpen(false);
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node))
+        setSettingsOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -337,19 +322,92 @@ export function ConsoleTopBar() {
         </button>
       </div>
 
-      {/* Settings */}
+      {/* Settings Dropdown */}
+      <div className="relative shrink-0" ref={settingsRef}>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen((o) => !o)}
+          className={cn(
+            "shrink-0 p-1 rounded-md",
+            "text-[var(--signal-fg-tertiary)]",
+            "hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+            "transition-colors",
+            settingsOpen && "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]",
+          )}
+          aria-label="Settings menu"
+          aria-expanded={settingsOpen}
+          aria-haspopup="true"
+        >
+          <SettingsIcon className="h-4 w-4" />
+        </button>
+        {settingsOpen && (
+          <div
+            className={cn(
+              "absolute top-full right-0 mt-1 z-50 min-w-[180px]",
+              "rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)]",
+              "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] py-1 animate-slide-up",
+            )}
+            role="menu"
+          >
+            {[
+              { label: "Settings", href: "/settings/general", icon: SettingsIcon },
+              { label: "Billing", href: "/settings/billing", icon: CreditCardIcon },
+              { label: "Team", href: "/settings/team", icon: UsersIcon },
+              { label: "API Keys", href: "/settings/api-keys", icon: KeyIcon },
+              { label: "Webhooks", href: "/settings/webhooks", icon: WebhookIcon },
+              { label: "Integrations", href: "/settings/integrations", icon: PlugIcon },
+              { label: "SSO", href: "/settings/sso", icon: ShieldIcon },
+            ].map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  router.push(item.href);
+                  setSettingsOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                  "text-[var(--signal-fg-primary)]",
+                  "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                )}
+              >
+                <item.icon className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Activity Bell */}
       <button
         type="button"
-        onClick={() => router.push("/settings/general")}
+        onClick={() => router.push("/activity")}
         className={cn(
           "shrink-0 p-1 rounded-md",
           "text-[var(--signal-fg-tertiary)]",
           "hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
           "transition-colors",
         )}
-        aria-label="Settings"
+        aria-label="Activity feed"
       >
-        <SettingsIcon className="h-4 w-4" />
+        <BellIcon className="h-4 w-4" />
+      </button>
+
+      {/* Help / Support */}
+      <button
+        type="button"
+        onClick={() => router.push("/support")}
+        className={cn(
+          "shrink-0 p-1 rounded-md",
+          "text-[var(--signal-fg-tertiary)]",
+          "hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+          "transition-colors",
+        )}
+        aria-label="Help & Support"
+      >
+        <HelpCircleIcon className="h-4 w-4" />
       </button>
 
       {/* User */}

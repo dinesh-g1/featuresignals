@@ -119,6 +119,16 @@ export function LifecycleZone() {
 
   // ── Create Flag Dialog State ──────────────────────────────────
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const createTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount to prevent state updates after unmount
+  useEffect(() => {
+    return () => {
+      if (createTimeoutRef.current !== null) {
+        clearTimeout(createTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // ── Filtered & Sorted Features ─────────────────────────────────────
 
@@ -187,12 +197,23 @@ export function LifecycleZone() {
     for (const stage of LIFECYCLE_STAGES.map((s) => s.id)) {
       map.set(stage, []);
     }
+    // Catch-all for features with unknown stages (stages not in the 14 known lifecycle stages)
+    const unknownFeatures: FeatureCardData[] = [];
     for (const feature of filteredFeatures) {
       const bucket = map.get(feature.stage);
       if (bucket) {
         bucket.push(feature);
+      } else {
+        unknownFeatures.push(feature);
+        if (typeof window !== "undefined") {
+          console.warn(
+            `[LifecycleZone] Unknown stage "${feature.stage}" for feature "${feature.key}". Feature added to catch-all bucket.`,
+          );
+        }
       }
     }
+    // Store unknown features under a special key for rendering in a catch-all column
+    (map as Map<string, FeatureCardData[]>).set("__unknown__", unknownFeatures);
     return map;
   }, [filteredFeatures]);
 
@@ -344,8 +365,13 @@ export function LifecycleZone() {
           );
           // Navigate to the flag's stage so user sees it
           selectStage(newFlag.stage);
-          // Then clear stage filter after a moment so all stages show
-          setTimeout(() => {
+          // Then clear stage filter after a moment so all stages show.
+          // Use ref to track the timeout so we can clear it on unmount.
+          if (createTimeoutRef.current !== null) {
+            clearTimeout(createTimeoutRef.current);
+          }
+          createTimeoutRef.current = setTimeout(() => {
+            createTimeoutRef.current = null;
             selectStage(null);
             // Trigger API refetch to synchronize with server state
             consoleStore.getState().triggerRetry();
@@ -591,6 +617,8 @@ function LifecycleRow({
       <div className="flex flex-1 gap-0">
         {row.stages.map((stageId, idx) => {
           const stageDef = STAGE_BY_ID[stageId];
+          // Guard against invalid/unknown stage IDs that may come from external data
+          if (!stageDef) return null;
           const stageFeatures = featuresByStage.get(stageId) ?? [];
           // If there are hidden stages after this one in the full row,
           // we show the connector only if there are more stages in the

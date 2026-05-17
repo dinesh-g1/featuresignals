@@ -13,6 +13,7 @@ import type {
   MaturityLevelInfo,
   LifecycleStage,
   EnvironmentType,
+  FeatureStatus,
 } from "./console-types";
 
 // ─── Environment Colors ──────────────────────────────────────────────
@@ -243,6 +244,44 @@ export const MATURITY_LEVELS: Record<MaturityLevel, MaturityLevelInfo> = {
 };
 
 export const MATURITY_LEVEL_OPTIONS = Object.values(MATURITY_LEVELS);
+
+// ─── Status Badge Styles ────────────────────────────────────────────
+
+export const STATUS_STYLES: Record<
+  FeatureStatus,
+  { bg: string; fg: string; label: string }
+> = {
+  live: {
+    bg: "var(--signal-bg-success-muted)",
+    fg: "var(--signal-fg-success)",
+    label: "Live",
+  },
+  paused: {
+    bg: "var(--signal-bg-warning-muted)",
+    fg: "var(--signal-fg-warning)",
+    label: "Paused",
+  },
+  retired: {
+    bg: "var(--signal-bg-secondary)",
+    fg: "var(--signal-fg-tertiary)",
+    label: "Retired",
+  },
+  partial: {
+    bg: "var(--signal-bg-accent-muted)",
+    fg: "var(--signal-fg-accent)",
+    label: "Partial",
+  },
+  scheduled: {
+    bg: "var(--signal-bg-info-muted)",
+    fg: "var(--signal-fg-info)",
+    label: "Scheduled",
+  },
+  needs_attention: {
+    bg: "var(--signal-bg-danger-muted)",
+    fg: "var(--signal-fg-danger)",
+    label: "Needs Attention",
+  },
+};
 
 // ─── Hold-to-Confirm Duration (per environment) ─────────────────────
 

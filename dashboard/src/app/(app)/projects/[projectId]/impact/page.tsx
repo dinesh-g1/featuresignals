@@ -208,34 +208,34 @@ function ImpactInner() {
   const statItems = [
     {
       label: "Flags Analyzed",
-      value: l.total_flags_analyzed,
+      value: l.totalFlagsAnalyzed,
       icon: FlagIcon,
     },
     {
       label: "Cleanup Candidates",
-      value: l.cleanup_candidates,
+      value: l.cleanupCandidates,
       icon: SparklesIcon,
-      trend: l.cleanup_candidates > 0 ? ("up" as const) : ("neutral" as const),
+      trend: l.cleanupCandidates > 0 ? ("up" as const) : ("neutral" as const),
     },
     {
       label: "Stale Flags",
-      value: l.stale_flags,
+      value: l.staleFlags,
       icon: AlertIcon,
-      trend: l.stale_flags > 0 ? ("up" as const) : ("neutral" as const),
+      trend: l.staleFlags > 0 ? ("up" as const) : ("neutral" as const),
     },
     {
       label: "Avg Risk Score",
-      value: l.avg_risk_score.toFixed(1),
+      value: l.avgRiskScore.toFixed(1),
       icon: TrendingUpIcon,
     },
     {
       label: "Flags Without Owners",
-      value: l.flags_without_owners,
+      value: l.flagsWithoutOwners,
       icon: AlertIcon,
     },
     {
       label: "Avg Time to Full Rollout",
-      value: `${l.avg_time_to_full_rollout_hours.toFixed(1)}h`,
+      value: `${l.avgTimeToFullRolloutHours.toFixed(1)}h`,
       icon: TrendingUpIcon,
     },
   ];
@@ -274,20 +274,20 @@ function ImpactInner() {
             Organization Learnings
           </CardTitle>
           <CardDescription>
-            {l.top_insights.length === 0
+            {l.topInsights.length === 0
               ? "No insights yet"
-              : `${l.top_insights.length} top insight${l.top_insights.length > 1 ? "s" : ""}`}
+              : `${l.topInsights.length} top insight${l.topInsights.length > 1 ? "s" : ""}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {l.top_insights.length === 0 ? (
+          {l.topInsights.length === 0 ? (
             <p className="text-sm text-[var(--signal-fg-tertiary)] py-4 text-center">
               No insights generated yet. Insights appear as flags accumulate
               evaluation data.
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {l.top_insights.map((insight, i) => (
+              {l.topInsights.map((insight, i) => (
                 <div
                   key={i}
                   className="flex items-start gap-3 rounded-lg border border-[var(--signal-border-default)] bg-[var(--signal-bg-secondary)] p-4 dark:bg-[var(--signal-bg-tertiary)]"
@@ -381,9 +381,9 @@ function ImpactInner() {
                         <TableCell>
                           {report ? (
                             <Badge
-                              variant={impactBadge(report.business_impact)}
+                              variant={impactBadge(report.businessImpact)}
                             >
-                              {impactLabel(report.business_impact)}
+                              {impactLabel(report.businessImpact)}
                             </Badge>
                           ) : (
                             <span className="text-xs text-[var(--signal-fg-tertiary)]">
@@ -393,7 +393,7 @@ function ImpactInner() {
                         </TableCell>
                         <TableCell className="text-sm">
                           {report
-                            ? `$${report.cost_attribution.toFixed(2)}`
+                            ? `$${report.costAttribution.toFixed(2)}`
                             : "—"}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-[var(--signal-fg-secondary)] max-w-[300px] truncate">
@@ -418,7 +418,7 @@ function ImpactInner() {
               {filteredFlags.length !== 1 ? "s" : ""}
               {flagFilter ? " (filtered)" : ""}
               &middot; Generated{" "}
-              {l.generated_at ? timeAgo(l.generated_at) : "recently"}
+              {l.generatedAt ? timeAgo(l.generatedAt) : "recently"}
             </p>
           )}
         </CardContent>

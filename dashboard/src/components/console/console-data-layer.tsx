@@ -6,11 +6,12 @@
  *
  * Extracted from AppLayout to prevent data fetching, polling, and
  * WebSocket connections from firing on non-console routes like
- * /settings, /billing, etc.
+ * /settings, /billing, /activity, /usage, /limits, /projects.
  *
  * Renders nothing visually — this is a side-effect-only component.
  */
 
+import { usePathname } from "next/navigation";
 import { useConsoleData } from "@/hooks/use-console-data";
 import { useConsoleInsights } from "@/hooks/use-console-insights";
 import { useConsoleIntegrations } from "@/hooks/use-console-integrations";
@@ -19,7 +20,12 @@ import { useProactiveDetection } from "@/hooks/use-proactive-detection";
 import { useConsoleWebSocket } from "@/hooks/use-console-websocket";
 import { useConsoleUrlSync } from "@/hooks/use-console-url-sync";
 
-export function ConsoleDataLayer() {
+/**
+ * Internal component that holds all the hooks.
+ * Only rendered when pathname starts with /console, so hooks
+ * are only called on console routes (respects React rules of hooks).
+ */
+function ConsoleHooks() {
   // ── Data fetching hooks ────────────────────────────────────────
   useConsoleData();
   useConsoleInsights();
@@ -36,4 +42,16 @@ export function ConsoleDataLayer() {
   useConsoleUrlSync();
 
   return null;
+}
+
+export function ConsoleDataLayer() {
+  const pathname = usePathname();
+  const isConsoleRoute = pathname?.startsWith("/console");
+
+  // Only mount hook-bearing component on console routes.
+  // This prevents data fetching, polling, WebSocket connections,
+  // and URL↔store sync from firing on non-console pages.
+  if (!isConsoleRoute) return null;
+
+  return <ConsoleHooks />;
 }

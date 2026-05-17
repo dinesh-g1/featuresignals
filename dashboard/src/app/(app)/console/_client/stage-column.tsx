@@ -25,7 +25,7 @@ import type {
   FeatureCardData,
   FeatureStatus,
 } from "@/lib/console-types";
-import { ENV_COLORS } from "@/lib/console-constants";
+import { ENV_COLORS, STATUS_STYLES } from "@/lib/console-constants";
 import {
   Lightbulb,
   FileText,
@@ -64,43 +64,7 @@ const STAGE_ICONS: Record<
   BookOpen,
 };
 
-// ─── Status Badge Config ─────────────────────────────────────────────
-
-const STATUS_STYLES: Record<
-  FeatureStatus,
-  { bg: string; fg: string; label: string }
-> = {
-  live: {
-    bg: "var(--signal-bg-success-muted)",
-    fg: "var(--signal-fg-success)",
-    label: "Live",
-  },
-  paused: {
-    bg: "var(--signal-bg-warning-muted)",
-    fg: "var(--signal-fg-warning)",
-    label: "Paused",
-  },
-  retired: {
-    bg: "var(--signal-bg-secondary)",
-    fg: "var(--signal-fg-tertiary)",
-    label: "Retired",
-  },
-  partial: {
-    bg: "var(--signal-bg-accent-muted)",
-    fg: "var(--signal-fg-accent)",
-    label: "Partial",
-  },
-  scheduled: {
-    bg: "var(--signal-bg-info-muted)",
-    fg: "var(--signal-fg-info)",
-    label: "Scheduled",
-  },
-  needs_attention: {
-    bg: "var(--signal-bg-danger-muted)",
-    fg: "var(--signal-fg-danger)",
-    label: "Needs Attention",
-  },
-};
+// STATUS_STYLES imported from @/lib/console-constants
 
 // ─── Props ───────────────────────────────────────────────────────────
 

@@ -8,11 +8,12 @@ import { api } from "@/lib/api";
 /**
  * useConsoleInsights — fetches Console insights for the LEARN Zone.
  *
- * Fetches on mount and polls every 60 seconds (insights change less
- * frequently than flag state).
+ * Fetches on mount, on retryTrigger change, and polls every 60 seconds
+ * (insights change less frequently than flag state).
  */
 export function useConsoleInsights() {
   const token = useAppStore((s) => s.token);
+  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
 
   const setInsights = useConsoleStore((s) => s.setInsights);
   const setZoneLoading = useConsoleStore((s) => s.setZoneLoading);
@@ -39,9 +40,9 @@ export function useConsoleInsights() {
     } finally {
       setZoneLoading("insights", false);
     }
-  }, [token, setInsights, setZoneLoading, setZoneError]);
+  }, [token, retryTrigger, setInsights, setZoneLoading, setZoneError]);
 
-  // Fetch on mount
+  // Fetch on mount and when retryTrigger changes
   useEffect(() => {
     fetch();
   }, [fetch]);

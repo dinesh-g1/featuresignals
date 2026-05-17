@@ -9,6 +9,7 @@ import type {
   LifecycleStage,
   EnvironmentType,
 } from "@/lib/console-types";
+import type { Project } from "@/lib/types";
 
 // ─── Proactive Alert ─────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ export type ActivePanel =
   | "incident"
   | "preflight"
   | "janitor"
+  | "approval"
   | null;
 
 export type FloatingPanelType = "connect" | "learn" | null;
@@ -41,8 +43,12 @@ export type FloatingPanelType = "connect" | "learn" | null;
 export interface ConsoleState {
   // ── Data ────────────────────────────────────────────────────────────
   features: FeatureCardData[];
+  featuresTotal: number;
   integrations: IntegrationStatus | null;
   insights: ConsoleInsights | null;
+  projects: Project[];
+  projectsLoading: boolean;
+  projectsError: string | null;
 
   // ── UI State ────────────────────────────────────────────────────────
   selectedStage: LifecycleStage | null;
@@ -98,6 +104,9 @@ export interface ConsoleState {
   setFeatures: (features: FeatureCardData[], total: number) => void;
   setIntegrations: (integrations: IntegrationStatus) => void;
   setInsights: (insights: ConsoleInsights) => void;
+  setProjects: (projects: Project[]) => void;
+  setProjectsLoading: (loading: boolean) => void;
+  setProjectsError: (error: string | null) => void;
   selectStage: (stage: LifecycleStage | null) => void;
   selectFeature: (key: string | null) => void;
   setEnvironment: (env: EnvironmentType) => void;
@@ -120,7 +129,7 @@ export interface ConsoleState {
   setCreateDialogOpen: (open: boolean) => void;
   setZoneLoading: (zone: Zone, loading: boolean) => void;
   setZoneError: (zone: Zone, error: string | null) => void;
-  advanceFeature: (key: string, newStage: LifecycleStage) => void;
+  advanceFeature: (key: string, newStage: LifecycleStage, updatedFeature?: FeatureCardData) => void;
   reset: () => void;
 }
 
@@ -128,8 +137,12 @@ export interface ConsoleState {
 
 const initialState = {
   features: [] as FeatureCardData[],
+  featuresTotal: 0,
   integrations: null as IntegrationStatus | null,
   insights: null as ConsoleInsights | null,
+  projects: [] as Project[],
+  projectsLoading: false,
+  projectsError: null as string | null,
 
   selectedStage: null as LifecycleStage | null,
   selectedFeature: null as string | null,
@@ -178,12 +191,21 @@ export const consoleStore = createStore<ConsoleState>()((set) => ({
 
   // ── Data Setters ────────────────────────────────────────────────────
 
-  setFeatures: (features, _total) => set((state) => ({ ...state, features })),
+  setFeatures: (features, total) =>
+    set((state) => ({ ...state, features, featuresTotal: total })),
 
   setIntegrations: (integrations) =>
     set((state) => ({ ...state, integrations })),
 
   setInsights: (insights) => set((state) => ({ ...state, insights })),
+
+  setProjects: (projects) => set((state) => ({ ...state, projects })),
+
+  setProjectsLoading: (loading) =>
+    set((state) => ({ ...state, projectsLoading: loading })),
+
+  setProjectsError: (error) =>
+    set((state) => ({ ...state, projectsError: error })),
 
   // ── UI Setters ──────────────────────────────────────────────────────
 
@@ -234,8 +256,8 @@ export const consoleStore = createStore<ConsoleState>()((set) => ({
     set((state) => ({
       ...state,
       retryTrigger: state.retryTrigger + 1,
-      loading: { ...state.loading, features: true },
-      errors: { ...state.errors, features: null },
+      loading: { features: true, integrations: true, insights: true },
+      errors: { features: null, integrations: null, insights: null },
     })),
 
   // ── Zoom ────────────────────────────────────────────────────────────
@@ -296,11 +318,19 @@ export const consoleStore = createStore<ConsoleState>()((set) => ({
 
   // ── Optimistic Update ───────────────────────────────────────────────
 
-  advanceFeature: (key, newStage) =>
+  advanceFeature: (key, newStage, updatedFeature) =>
     set((state) => ({
       ...state,
       features: state.features.map((f) =>
-        f.key === key ? { ...f, stage: newStage } : f,
+        f.key === key
+          ? updatedFeature ?? {
+              ...f,
+              stage: newStage,
+              lastAction: `Advanced to ${newStage}`,
+              lastActionAt: new Date().toISOString(),
+              lastActionBy: "You",
+            }
+          : f,
       ),
       lastAdvancedKey: key,
       lastAdvancedAt: Date.now(),

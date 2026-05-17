@@ -21,8 +21,9 @@ export function ConsoleBottomBar() {
   const lastUpdated = useConsoleStore((s) => s.lastUpdated);
   const wsConnected = useConsoleStore((s) => s.wsConnected);
   const wsOffline = useConsoleStore((s) => s.wsOffline);
-  const featureCount = useConsoleStore((s) => s.features.length);
+  const featuresTotal = useConsoleStore((s) => s.featuresTotal);
   const triggerWsRetry = useConsoleStore((s) => s.triggerWsRetry);
+  const triggerRetry = useConsoleStore((s) => s.triggerRetry);
 
   const lastUpdatedLabel = useMemo(() => {
     if (!lastUpdated) return "just now";
@@ -31,7 +32,8 @@ export function ConsoleBottomBar() {
 
   const handleRetry = useCallback(() => {
     triggerWsRetry();
-  }, [triggerWsRetry]);
+    triggerRetry();
+  }, [triggerWsRetry, triggerRetry]);
 
   // Connection status: connected → green "Live"
   //                    offline   → red "Offline" + Retry button
@@ -66,9 +68,9 @@ export function ConsoleBottomBar() {
       {/* ── Center: Feature Count ───────────────────────────────────── */}
       <span className="shrink-0 text-center">
         <span className="font-medium text-[var(--signal-fg-secondary)]">
-          {featureCount}
+          {featuresTotal}
         </span>{" "}
-        feature{featureCount !== 1 ? "s" : ""} flowing
+        feature{featuresTotal !== 1 ? "s" : ""} flowing
       </span>
 
       {/* ── Right: Connection Status ────────────────────────────────── */}

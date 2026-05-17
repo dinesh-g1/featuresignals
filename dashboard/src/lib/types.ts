@@ -650,17 +650,17 @@ export interface RemediateResponse {
 // ── Impact Analyzer Types ──────────────────────────────────────────
 
 export interface ImpactReportResponse {
-  report_id: string;
-  flag_key: string;
-  business_impact: "positive" | "negative" | "neutral";
-  cost_attribution: number;
-  metrics_summary: {
-    total_evaluations: number;
-    avg_latency_us: number;
-    error_rate: number;
+  reportId: string;
+  flagKey: string;
+  businessImpact: "positive" | "negative" | "neutral";
+  costAttribution: number;
+  metricsSummary: {
+    totalEvaluations: number;
+    avgLatencyUs: number;
+    errorRate: number;
   };
   recommendations: string[];
-  generated_at: string;
+  generatedAt: string;
 }
 
 export interface TopInsight {
@@ -669,12 +669,12 @@ export interface TopInsight {
 }
 
 export interface OrgLearningsResponse {
-  total_flags_analyzed: number;
-  cleanup_candidates: number;
-  stale_flags: number;
-  flags_without_owners: number;
-  avg_risk_score: number;
-  avg_time_to_full_rollout_hours: number;
-  top_insights: TopInsight[];
-  generated_at: string;
+  totalFlagsAnalyzed: number;
+  cleanupCandidates: number;
+  staleFlags: number;
+  flagsWithoutOwners: number;
+  avgRiskScore: number;
+  avgTimeToFullRolloutHours: number;
+  topInsights: TopInsight[];
+  generatedAt: string;
 }

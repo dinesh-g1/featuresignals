@@ -18,10 +18,9 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useAppStore } from "@/stores/app-store";
-import { useConsoleStore } from "@/stores/console-store";
+import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
 import { ENV_COLORS } from "@/lib/console-constants";
 import {
   ChevronRight,
@@ -144,60 +143,22 @@ export function ContextStrip() {
   // ── App Store ────────────────────────────────────────────────────
   const organization = useAppStore((s) => s.organization);
   const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const token = useAppStore((s) => s.token);
-  const expiresAt = useAppStore((s) => s.expiresAt);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
 
   // ── Console Store ────────────────────────────────────────────────
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
   const setEnvironment = useConsoleStore((s) => s.setEnvironment);
   const setCommandPaletteOpen = useConsoleStore((s) => s.setCommandPaletteOpen);
+  const projects = useConsoleStore((s) => s.projects);
+  const projectsLoading = useConsoleStore((s) => s.projectsLoading);
+  const projectsError = useConsoleStore((s) => s.projectsError);
 
   // ── Maturity ─────────────────────────────────────────────────────
   const { isL1 } = useConsoleMaturity();
 
   // ── Local State ──────────────────────────────────────────────────
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(true);
-  const [projectsError, setProjectsError] = useState<string | null>(null);
   const [projectOpen, setProjectOpen] = useState(false);
   const [envOpen, setEnvOpen] = useState(false);
-
-  // ── Load Projects ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!token) {
-      setProjectsLoading(false);
-      return;
-    }
-
-    setProjectsLoading(true);
-    setProjectsError(null);
-
-    api
-      .listProjects(token)
-      .then((result) => {
-        const arr: Project[] = Array.isArray(result)
-          ? result
-          : ((result as { data?: Project[] })?.data ?? []);
-        setProjects(arr);
-
-        // Auto-select first project if none selected
-        if (!currentProjectId && arr.length > 0) {
-          setCurrentProject(arr[0].id);
-        }
-      })
-      .catch((err) => {
-        setProjectsError(
-          err instanceof Error ? err.message : "Failed to load projects",
-        );
-      })
-      .finally(() => {
-        setProjectsLoading(false);
-      });
-    // Intentionally exclude currentProjectId & setCurrentProject from deps
-    // to avoid re-fetch loop. They're stable references from Zustand.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, expiresAt]);
 
   // ── Derived ──────────────────────────────────────────────────────
   const currentProject = useMemo(
@@ -319,28 +280,9 @@ export function ContextStrip() {
               <button
                 type="button"
                 onClick={() => {
-                  // Retry by forcing a re-render — the useEffect will re-fire
-                  // when token hasn't changed, but we can force a reload
-                  setProjectsLoading(true);
-                  setProjectsError(null);
-                  if (token) {
-                    api
-                      .listProjects(token)
-                      .then((result) => {
-                        const arr: Project[] = Array.isArray(result)
-                          ? result
-                          : ((result as { data?: Project[] })?.data ?? []);
-                        setProjects(arr);
-                      })
-                      .catch((err) => {
-                        setProjectsError(
-                          err instanceof Error
-                            ? err.message
-                            : "Failed to load projects",
-                        );
-                      })
-                      .finally(() => setProjectsLoading(false));
-                  }
+                  // triggerRetry increments retryTrigger, which causes
+                  // useConsoleData to re-fetch projects (H4 fix).
+                  consoleStore.getState().triggerRetry();
                 }}
                 className="mt-1 text-[10px] text-[var(--signal-fg-accent)] hover:underline"
               >

@@ -21,8 +21,9 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn, timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ENV_COLORS } from "@/lib/console-constants";
+import { ENV_COLORS, STATUS_STYLES } from "@/lib/console-constants";
 import { showUndoToast } from "@/components/console/undo-toast";
+import { HoldToConfirm } from "@/components/console/hold-to-confirm";
 import type {
   FeatureStatus,
   LifecycleStage,
@@ -41,43 +42,7 @@ import { IncidentPanel } from "@/components/console/incident-panel";
 import { ApprovalPanel } from "@/components/console/approval-panel";
 import { JanitorPanel } from "@/components/console/janitor-panel";
 
-// ─── Status Badge Config (duplicated from stage-column for self-containment) ─
-
-const STATUS_STYLES: Record<
-  FeatureStatus,
-  { bg: string; fg: string; label: string }
-> = {
-  live: {
-    bg: "var(--signal-bg-success-muted)",
-    fg: "var(--signal-fg-success)",
-    label: "Live",
-  },
-  paused: {
-    bg: "var(--signal-bg-warning-muted)",
-    fg: "var(--signal-fg-warning)",
-    label: "Paused",
-  },
-  retired: {
-    bg: "var(--signal-bg-secondary)",
-    fg: "var(--signal-fg-tertiary)",
-    label: "Retired",
-  },
-  partial: {
-    bg: "var(--signal-bg-accent-muted)",
-    fg: "var(--signal-fg-accent)",
-    label: "Partial",
-  },
-  scheduled: {
-    bg: "var(--signal-bg-info-muted)",
-    fg: "var(--signal-fg-info)",
-    label: "Scheduled",
-  },
-  needs_attention: {
-    bg: "var(--signal-bg-danger-muted)",
-    fg: "var(--signal-fg-danger)",
-    label: "Needs Attention",
-  },
-};
+// STATUS_STYLES imported from @/lib/console-constants
 
 // ─── Stage Progression ───────────────────────────────────────────────
 
@@ -133,8 +98,14 @@ export function FeatureDetailPanel() {
         environment: selectedEnvironment,
       });
 
-      // Optimistic update
-      advanceFeature(feature.key, result.new_stage as LifecycleStage);
+      // Optimistic update — pass full flag response so lastAction,
+      // lastActionAt, lastActionBy, and other server-computed fields
+      // are updated immediately (P0-1 fix).
+      advanceFeature(
+        feature.key,
+        result.new_stage as LifecycleStage,
+        result.flag,
+      );
 
       showUndoToast(
         `"${feature.name}" advancing to ${result.new_stage}`,
@@ -567,13 +538,14 @@ export function FeatureDetailPanel() {
                 );
                 await api.console.toggleFlag(token, feature.key, "pause");
                 showUndoToast(`"${feature.name}" is now PAUSED`, () => {
+                  const currentFeatures = consoleStore.getState().features;
                   consoleStore.getState().setFeatures(
-                    features.map((f) =>
+                    currentFeatures.map((f) =>
                       f.key === feature.key
                         ? { ...f, status: "live" as FeatureStatus }
                         : f,
                     ),
-                    features.length,
+                    currentFeatures.length,
                   );
                 });
               } catch (err) {
@@ -619,13 +591,14 @@ export function FeatureDetailPanel() {
                 );
                 await api.console.toggleFlag(token, feature.key, "resume");
                 showUndoToast(`"${feature.name}" is now LIVE`, () => {
+                  const currentFeatures = consoleStore.getState().features;
                   consoleStore.getState().setFeatures(
-                    features.map((f) =>
+                    currentFeatures.map((f) =>
                       f.key === feature.key
                         ? { ...f, status: "paused" as FeatureStatus }
                         : f,
                     ),
-                    features.length,
+                    currentFeatures.length,
                   );
                 });
               } catch (err) {
@@ -650,19 +623,28 @@ export function FeatureDetailPanel() {
         )}
 
         {/* Advance to next stage */}
-        {nextStage && (
-          <Button
-            variant="secondary"
-            fullWidth
-            size="sm"
-            onClick={handleAdvance}
-            disabled={advancing}
-            loading={advancing}
-          >
-            Advance to {nextStage}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        )}
+        {nextStage &&
+          (selectedEnvironment === "production" ? (
+            <HoldToConfirm
+              label={`Advance to ${nextStage}`}
+              description={`This will advance "${feature.name}" from ${feature.stage} to ${nextStage} in production.`}
+              environment="production"
+              disabled={advancing}
+              onConfirm={handleAdvance}
+            />
+          ) : (
+            <Button
+              variant="secondary"
+              fullWidth
+              size="sm"
+              onClick={handleAdvance}
+              disabled={advancing}
+              loading={advancing}
+            >
+              Advance to {nextStage}
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          ))}
 
         {advanceError && (
           <p className="text-xs text-[var(--signal-fg-danger)]">

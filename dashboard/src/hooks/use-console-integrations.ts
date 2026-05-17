@@ -8,11 +8,12 @@ import { api } from "@/lib/api";
 /**
  * useConsoleIntegrations — fetches integration status for the CONNECT Zone.
  *
- * Fetches on mount and polls every 60 seconds (SDK/agent status changes
- * less frequently than flag state).
+ * Fetches on mount, on retryTrigger change, and polls every 60 seconds
+ * (SDK/agent status changes less frequently than flag state).
  */
 export function useConsoleIntegrations() {
   const token = useAppStore((s) => s.token);
+  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
 
   const setIntegrations = useConsoleStore((s) => s.setIntegrations);
   const setZoneLoading = useConsoleStore((s) => s.setZoneLoading);
@@ -39,9 +40,9 @@ export function useConsoleIntegrations() {
     } finally {
       setZoneLoading("integrations", false);
     }
-  }, [token, setIntegrations, setZoneLoading, setZoneError]);
+  }, [token, retryTrigger, setIntegrations, setZoneLoading, setZoneError]);
 
-  // Fetch on mount
+  // Fetch on mount and when retryTrigger changes
   useEffect(() => {
     fetch();
   }, [fetch]);

@@ -342,6 +342,10 @@ function SdkItem({ sdk }: { sdk: SdkStatus }) {
   );
 }
 
+const ALL_SDK_LANGUAGES: SdkLanguage[] = [
+  "go", "node", "python", "react", "java", "dotnet", "ruby", "vue",
+];
+
 function SdksSection({
   sdks,
   onSelectSdk,
@@ -350,6 +354,10 @@ function SdksSection({
   onSelectSdk?: (lang: SdkLanguage) => void;
 }) {
   const activeCount = sdks.filter((s) => s.status === "active").length;
+  const installedLangs = new Set(sdks.map((s) => s.language));
+  const availableLangs = ALL_SDK_LANGUAGES.filter(
+    (lang) => !installedLangs.has(lang),
+  );
 
   return (
     <CollapsibleSection
@@ -384,11 +392,25 @@ function SdksSection({
           </div>
         </div>
       ) : (
-        <div className="space-y-0.5">
-          {sdks.map((sdk) => (
-            <SdkItem key={sdk.language} sdk={sdk} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-0.5">
+            {sdks.map((sdk) => (
+              <SdkItem key={sdk.language} sdk={sdk} />
+            ))}
+          </div>
+          {availableLangs.length > 0 && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => onSelectSdk?.(availableLangs[0])}
+                className="inline-flex w-full items-center justify-center gap-1 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
+              >
+                <Plus className="h-3 w-3" />
+                Install another SDK
+              </button>
+            </div>
+          )}
+        </>
       )}
     </CollapsibleSection>
   );
@@ -639,7 +661,7 @@ function ConnectError({ message }: { message: string }) {
       </p>
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 rounded-[var(--signal-radius-sm)] bg-[var(--signal-bg-secondary)] px-3 py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] border border-[var(--signal-border-default)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[#e8eaed] hover:text-[var(--signal-fg-primary)]"
+        className="inline-flex items-center gap-1.5 rounded-[var(--signal-radius-sm)] bg-[var(--signal-bg-secondary)] px-3 py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] border border-[var(--signal-border-default)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
         onClick={() => window.location.reload()}
       >
         <RefreshCw className="h-3 w-3" />

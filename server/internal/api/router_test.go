@@ -471,7 +471,10 @@ func newTestRouter(t *testing.T) http.Handler {
 			nil,
 			nil, // incHandler
 			nil, // impHandler
-		nil, // ghWebhookHandler
+			nil, // ghWebhookHandler
+			nil, // consoleH
+			nil, // consoleWSH
+			nil, // maturityH
 		)
 }
 
