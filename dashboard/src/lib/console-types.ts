@@ -53,30 +53,30 @@ export interface FeatureCardData {
   status: FeatureStatus;
 
   environment: EnvironmentType;
-  environmentName: string;
+  environment_name: string;
 
   type: string; // boolean | multivariate | experiment | permission | ops
-  evalVolume: number;
-  evalTrend: number; // percent change, positive = up
-  rolloutPercent: number; // 0-100
-  healthScore: number; // 0-100
+  eval_volume: number;
+  eval_trend: number; // percent change, positive = up
+  rollout_percent: number; // 0-100
+  health_score: number; // 0-100
 
-  lastAction: string;
-  lastActionAt: string; // ISO 8601
-  lastActionBy: string;
+  last_action: string;
+  last_action_at: string; // ISO 8601
+  last_action_by: string;
 
   // AI (optional)
-  aiSuggestion?: string;
-  aiSuggestionType?: "info" | "warning" | "critical";
-  aiExecuted?: boolean;
-  aiConfidence?: number; // 0.0-1.0
+  ai_suggestion?: string;
+  ai_suggestion_type?: "info" | "warning" | "critical";
+  ai_executed?: boolean;
+  ai_confidence?: number; // 0.0-1.0
 
   // Code (optional)
-  codeReferenceCount?: number;
+  code_reference_count?: number;
 
   // Dependencies (optional)
-  dependsOn?: string[];
-  dependedOnBy?: string[];
+  depends_on?: string[];
+  depended_on_by?: string[];
 }
 
 // ─── CONNECT Zone ────────────────────────────────────────────────────
@@ -85,25 +85,25 @@ export interface IntegrationStatus {
   repositories: RepoStatus[];
   sdks: SdkStatus[];
   agents: AgentStatus[];
-  apiKeys: ApiKeyStatus[];
+  api_keys: ApiKeyStatus[];
 }
 
 export interface RepoStatus {
   id: string;
   name: string;
   provider: string; // github | gitlab | bitbucket
-  defaultBranch: string;
-  lastSyncedAt?: string; // ISO 8601
+  default_branch: string;
+  last_synced_at?: string; // ISO 8601
   status: string; // connected | disconnected | scanning | error
-  totalPrs: number;
-  openPrs: number;
+  total_prs: number;
+  open_prs: number;
 }
 
 export interface SdkStatus {
   language: string; // go | node | python | react | java | dotnet | ruby | vue
   version: string;
   environments: string[];
-  lastSeenAt?: string; // ISO 8601
+  last_seen_at?: string; // ISO 8601
   status: string; // active | inactive
 }
 
@@ -112,16 +112,16 @@ export interface AgentStatus {
   name: string;
   type: string;
   status: string; // online | degraded | offline
-  lastHeartbeat?: string; // ISO 8601
-  tasksCompleted: number;
+  last_heartbeat?: string; // ISO 8601
+  tasks_completed: number;
 }
 
 export interface ApiKeyStatus {
   id: string;
   name: string;
   type: string; // sdk | server
-  keyPrefix: string; // fs_srv_...XXXX
-  lastUsedAt?: string; // ISO 8601
+  key_prefix: string; // fs_srv_...XXXX
+  last_used_at?: string; // ISO 8601
   status: string; // active | expiring | expired
   environment: string;
 }
@@ -129,19 +129,19 @@ export interface ApiKeyStatus {
 // ─── LEARN Zone ──────────────────────────────────────────────────────
 
 export interface ConsoleInsights {
-  impactReports: ImpactReport[];
-  costAttribution: CostAttribution;
-  teamVelocity: TeamVelocity;
-  orgLearnings: OrgLearning[];
-  recentActivity: ActivityEntry[];
+  impact_reports: ImpactReport[];
+  cost_attribution: CostAttribution;
+  team_velocity: TeamVelocity;
+  org_learnings: OrgLearning[];
+  recent_activity: ActivityEntry[];
 }
 
 export interface ImpactReport {
-  flagKey: string;
-  flagName: string;
-  metricChanges: MetricChange[];
-  aiSummary?: string;
-  generatedAt: string;
+  flag_key: string;
+  flag_name: string;
+  metric_changes: MetricChange[];
+  ai_summary?: string;
+  generated_at: string;
 }
 
 export interface MetricChange {
@@ -153,19 +153,19 @@ export interface MetricChange {
 }
 
 export interface CostAttribution {
-  totalCost: number;
+  total_cost: number;
   currency: string;
-  periodStart: string;
-  periodEnd: string;
-  perFeature: { flagKey: string; flagName: string; cost: number }[];
+  period_start: string;
+  period_end: string;
+  per_feature: { flag_key: string; flag_name: string; cost: number }[];
 }
 
 export interface TeamVelocity {
-  avgDaysPlanToFlag: number;
-  avgDaysFlagToShip: number;
-  avgDaysShipToLearn: number;
-  totalFlagsShipped: number;
-  totalFlagsInProgress: number;
+  avg_days_plan_to_flag: number;
+  avg_days_flag_to_ship: number;
+  avg_days_ship_to_learn: number;
+  total_flags_shipped: number;
+  total_flags_in_progress: number;
 }
 
 export interface OrgLearning {
@@ -179,9 +179,9 @@ export interface OrgLearning {
 export interface ActivityEntry {
   id: string;
   action: string;
-  flagKey?: string;
-  flagName?: string;
-  actorName?: string;
+  flag_key?: string;
+  flag_name?: string;
+  actor_name?: string;
   timestamp: string; // ISO 8601
 }
 
@@ -207,15 +207,15 @@ export interface HelpContext {
   userAgent: string;
   viewport: string;
   theme: "light" | "dark";
-  featureContext?: {
+  feature_context?: {
     key: string;
     name: string;
     type: string;
     environment: string;
     status: string;
-    rolloutPercent: number;
-    evalVolume: number;
-    healthScore: number;
+    rollout_percent: number;
+    eval_volume: number;
+    health_score: number;
   };
 }
 

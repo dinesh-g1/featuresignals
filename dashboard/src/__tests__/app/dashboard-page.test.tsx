@@ -119,7 +119,7 @@ describe("DashboardPage", () => {
   });
 
   it("shows empty state when no projects", async () => {
-    useAppStore.setState({ currentProjectId: null });
+    useAppStore.setState({ current_project_id: null });
     vi.mocked(api.listProjects).mockResolvedValue([]);
     vi.mocked(api.listFlags).mockResolvedValue([]);
     vi.mocked(api.listAudit).mockResolvedValue([]);
@@ -204,7 +204,7 @@ describe("DashboardPage", () => {
   });
 
   it("picks first project if none selected", async () => {
-    useAppStore.setState({ currentProjectId: null });
+    useAppStore.setState({ current_project_id: null });
     vi.mocked(api.listProjects).mockResolvedValue([
       createMockProject({ id: "auto-proj", name: "Auto" }),
     ]);
@@ -214,7 +214,7 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
 
     await waitFor(() => {
-      expect(useAppStore.getState().currentProjectId).toBe("auto-proj");
+      expect(useAppStore.getState().current_project_id).toBe("auto-proj");
     });
   });
 });

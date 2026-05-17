@@ -213,10 +213,10 @@ function RepoItem({
             Connection error
           </p>
         )}
-        {isConnected && !isScanning && repo.lastSyncedAt && (
-          <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
-            Scanned {formatRelativeTime(repo.lastSyncedAt)}
-            {repo.openPrs > 0 && ` · ${repo.openPrs} open PRs`}
+        {isConnected && !isScanning && repo.last_synced_at && (
+                  <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                    Scanned {formatRelativeTime(repo.last_synced_at)}
+                    {repo.open_prs > 0 && ` · ${repo.open_prs} open PRs`}
           </p>
         )}
         {!isConnected && !isScanning && !isError && (
@@ -322,17 +322,17 @@ function SdkItem({ sdk }: { sdk: SdkStatus }) {
             </span>
           )}
         </div>
-        {sdk.status === "active" && sdk.lastSeenAt && (
-          <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
-            Active · {sdk.environments.length > 0 ? `${sdk.environments.length} envs` : ""}
-          </p>
-        )}
-        {sdk.status !== "active" && sdk.lastSeenAt && (
-          <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
-            Last seen {formatRelativeTime(sdk.lastSeenAt)}
-          </p>
-        )}
-        {sdk.status !== "active" && !sdk.lastSeenAt && (
+        {sdk.status === "active" && sdk.last_seen_at && (
+                  <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                    Active · {sdk.environments.length > 0 ? `${sdk.environments.length} envs` : ""}
+                  </p>
+                )}
+                {sdk.status !== "active" && sdk.last_seen_at && (
+                  <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                    Last seen {formatRelativeTime(sdk.last_seen_at)}
+                  </p>
+                )}
+                {sdk.status !== "active" && !sdk.last_seen_at && (
           <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
             Not connected
           </p>
@@ -434,8 +434,8 @@ function AgentItem({ agent }: { agent: AgentStatus }) {
         </div>
         <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
           {agent.type}
-          {isOnline && agent.lastHeartbeat && (
-            <> · {formatRelativeTime(agent.lastHeartbeat)}</>
+          {isOnline && agent.last_heartbeat && (
+                      <> · {formatRelativeTime(agent.last_heartbeat)}</>
           )}
           {isDegraded && (
             <span className="text-[var(--signal-fg-warning)] ml-1">
@@ -502,13 +502,13 @@ function ApiKeyItem({ apiKey }: { apiKey: ApiKeyStatus }) {
 
   const handleCopyId = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(apiKey.keyPrefix);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard not available — silently ignore
-    }
-  }, [apiKey.keyPrefix]);
+      await navigator.clipboard.writeText(apiKey.key_prefix);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } catch {
+            // Clipboard not available — silently ignore
+          }
+        }, [apiKey.key_prefix]);
 
   return (
     <div className="flex items-center gap-2 py-1.5">
@@ -524,7 +524,7 @@ function ApiKeyItem({ apiKey }: { apiKey: ApiKeyStatus }) {
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           <code className="text-[10px] text-[var(--signal-fg-tertiary)] font-mono select-all">
-            {apiKey.keyPrefix}
+                      {apiKey.key_prefix}
           </code>
           <button
             type="button"
@@ -790,7 +790,7 @@ export function ConnectZone() {
   const error = useConsoleStore((s) => s.errors.integrations);
   const setIntegrations = useConsoleStore((s) => s.setIntegrations);
   const { isL1, isL4, isL5 } = useConsoleMaturity();
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const token = useAppStore((s) => s.token);
   const organization = useAppStore((s) => s.organization);
   const hasRepos = (integrations?.repositories?.length ?? 0) > 0;
@@ -815,7 +815,7 @@ export function ConnectZone() {
     (integrations.repositories?.length ?? 0) === 0 &&
     (integrations.sdks?.length ?? 0) === 0 &&
     (integrations.agents?.length ?? 0) === 0 &&
-    (integrations.apiKeys?.length ?? 0) === 0 &&
+    (integrations.api_keys?.length ?? 0) === 0 &&
     !showScanResults;
 
   // Handle github_connected / github_error URL params
@@ -916,7 +916,7 @@ export function ConnectZone() {
             )}
             {showApiKeys && (
               <ApiKeysSection
-                apiKeys={integrations.apiKeys ?? []}
+                apiKeys={integrations.api_keys ?? []}
                 showRetentionPolicy={showRetentionPolicy}
               />
             )}

@@ -104,14 +104,14 @@ export class APIError extends Error {
 let refreshPromise: Promise<boolean> | null = null;
 
 async function attemptTokenRefresh(): Promise<boolean> {
-  const { refreshToken, setAuth } = useAppStore.getState();
-  if (!refreshToken) return false;
+  const { refresh_token, setAuth } = useAppStore.getState();
+  if (!refresh_token) return false;
 
   try {
     const res = await fetch(`${API_URL}/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: JSON.stringify({ refresh_token: refresh_token }),
     });
     if (!res.ok) return false;
 

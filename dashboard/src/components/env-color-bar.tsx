@@ -102,8 +102,8 @@ const ENV_CONFIG: Record<
 
 export function EnvColorBar() {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const [env, setEnv] = useState<Environment | null>(null);
   const [visible, setVisible] = useState(false);
   const [animate, setAnimate] = useState(false);

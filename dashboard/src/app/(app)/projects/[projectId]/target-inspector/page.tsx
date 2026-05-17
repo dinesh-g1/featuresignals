@@ -20,8 +20,8 @@ import type { InspectTargetResult } from "@/lib/types";
 
 export default function TargetInspectorPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const [targetKey, setTargetKey] = useState("");
   const [fieldError, setFieldError] = useState<string>("");
   const [attrs, setAttrs] = useState<{ key: string; value: string }[]>([

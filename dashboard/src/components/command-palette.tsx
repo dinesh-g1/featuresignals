@@ -504,8 +504,8 @@ function getPlaceholder(query: string): string {
 export function CommandPalette() {
   const router = useRouter();
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<PaletteItem[]>([]);

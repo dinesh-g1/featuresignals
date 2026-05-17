@@ -66,7 +66,7 @@ export function CreateEnvironmentDialog({
   onCreated,
 }: CreateEnvironmentDialogProps) {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [name, setName] = useState("");
   const [colorVal, setColorVal] = useState("#64748b");
   const [creating, setCreating] = useState(false);

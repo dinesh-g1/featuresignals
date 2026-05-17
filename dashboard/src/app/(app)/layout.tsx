@@ -50,7 +50,7 @@ function UpgradeRequiredListener() {
 // ─── Tour Gate ─────────────────────────────────────────────────────
 
 function TourGate() {
-  const tourCompleted = useAppStore((s) => s.tourCompleted);
+  const tourCompleted = useAppStore((s) => s.tour_completed);
   const user = useAppStore((s) => s.user);
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useAxe();
   const router = useRouter();
   const pathname = usePathname();
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   // Console panel collapse state
   const [connectExpanded, setConnectExpanded] = useState(false);

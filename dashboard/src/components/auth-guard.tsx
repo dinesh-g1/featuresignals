@@ -10,7 +10,7 @@ const REFRESH_BUFFER_MS = 5 * 60 * 1000;
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const token = useAppStore((s) => s.token);
-  const expiresAt = useAppStore((s) => s.expiresAt);
+  const expiresAt = useAppStore((s) => s.expires_at);
   const setAuth = useAppStore((s) => s.setAuth);
   const logout = useAppStore((s) => s.logout);
   const router = useRouter();
@@ -22,7 +22,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   const proactiveRefresh = useCallback(async () => {
-    const currentRefreshToken = useAppStore.getState().refreshToken;
+    const currentRefreshToken = useAppStore.getState().refresh_token;
     if (!currentRefreshToken) return;
 
     try {

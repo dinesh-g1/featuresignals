@@ -28,7 +28,7 @@ const PROJECT_SCOPED_ROUTES = new Set([
 export default function OldRouteRedirect() {
   const router = useRouter();
   const params = useParams();
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
 
   useEffect(() => {
     const routeSegments = params.oldRoute as string[];

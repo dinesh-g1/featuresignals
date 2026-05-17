@@ -82,7 +82,7 @@ function CodeBlock({
 
 function LDImporterCard() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [apiToken, setApiToken] = useState("");
   const [project, setProject] = useState("");
   const [importing, setImporting] = useState(false);
@@ -253,7 +253,7 @@ function LDImporterCard() {
 // ─── Terraform Section ──────────────────────────────────────────────
 
 function TerraformCard() {
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
 
   const terraformSnippet = `# provider.tf
 terraform {

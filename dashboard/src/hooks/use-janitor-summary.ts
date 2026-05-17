@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 
 export function useJanitorSummary(refreshInterval = 60000) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [staleCount, setStaleCount] = useState(0);
   const [loading, setLoading] = useState(true);

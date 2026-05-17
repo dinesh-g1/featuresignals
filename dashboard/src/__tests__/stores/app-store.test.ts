@@ -10,8 +10,8 @@ describe("useAppStore", () => {
     it("starts with all auth fields null", () => {
       const state = useAppStore.getState();
       expect(state.token).toBeNull();
-      expect(state.refreshToken).toBeNull();
-      expect(state.expiresAt).toBeNull();
+      expect(state.refresh_token).toBeNull();
+      expect(state.expires_at).toBeNull();
       expect(state.user).toBeNull();
       expect(state.organization).toBeNull();
     });
@@ -24,7 +24,7 @@ describe("useAppStore", () => {
       useAppStore.getState().setAuth("access-tok", "refresh-tok", testUser, testOrg);
       const state = useAppStore.getState();
       expect(state.token).toBe("access-tok");
-      expect(state.refreshToken).toBe("refresh-tok");
+      expect(state.refresh_token).toBe("refresh-tok");
       expect(state.user).toEqual(testUser);
       expect(state.organization).toEqual(testOrg);
     });
@@ -32,12 +32,12 @@ describe("useAppStore", () => {
     it("stores expiresAt when provided", () => {
       const exp = Math.floor(Date.now() / 1000) + 3600;
       useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "o1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, exp);
-      expect(useAppStore.getState().expiresAt).toBe(exp);
+      expect(useAppStore.getState().expires_at).toBe(exp);
     });
 
     it("sets expiresAt to null when not provided", () => {
       useAppStore.getState().setAuth("tok", "ref", { id: "u1", name: "Test", email: "test@test.com", email_verified: true, created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, { id: "o1", name: "Test Org", slug: "test-org", plan: "free", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" });
-      expect(useAppStore.getState().expiresAt).toBeNull();
+      expect(useAppStore.getState().expires_at).toBeNull();
     });
 
     it("sets organization to null when not provided", () => {
@@ -51,8 +51,8 @@ describe("useAppStore", () => {
       useAppStore.getState().setAuth("tok-2", "ref-2", testUser2, { id: "o2", name: "Org 2", slug: "org-2", plan: "pro", data_region: "us", created_at: "2025-01-01T00:00:00Z", updated_at: "2025-01-01T00:00:00Z" }, 2000);
       const state = useAppStore.getState();
       expect(state.token).toBe("tok-2");
-      expect(state.refreshToken).toBe("ref-2");
-      expect(state.expiresAt).toBe(2000);
+      expect(state.refresh_token).toBe("ref-2");
+      expect(state.expires_at).toBe(2000);
       expect(state.user).toEqual(testUser2);
     });
   });
@@ -67,12 +67,12 @@ describe("useAppStore", () => {
 
       const state = useAppStore.getState();
       expect(state.token).toBeNull();
-      expect(state.refreshToken).toBeNull();
-      expect(state.expiresAt).toBeNull();
+      expect(state.refresh_token).toBeNull();
+      expect(state.expires_at).toBeNull();
       expect(state.user).toBeNull();
       expect(state.organization).toBeNull();
-      expect(state.currentProjectId).toBeNull();
-      expect(state.currentEnvId).toBeNull();
+      expect(state.current_project_id).toBeNull();
+      expect(state.current_env_id).toBeNull();
     });
   });
 
@@ -81,14 +81,14 @@ describe("useAppStore", () => {
       useAppStore.getState().setCurrentProject("proj-1");
       useAppStore.getState().setCurrentEnv("env-1");
       useAppStore.getState().setCurrentProject("proj-2");
-      expect(useAppStore.getState().currentEnvId).toBeNull();
+      expect(useAppStore.getState().current_env_id).toBeNull();
     });
 
     it("preserves currentEnvId when same project is re-set", () => {
       useAppStore.getState().setCurrentProject("proj-1");
       useAppStore.getState().setCurrentEnv("env-1");
       useAppStore.getState().setCurrentProject("proj-1");
-      expect(useAppStore.getState().currentEnvId).toBe("env-1");
+      expect(useAppStore.getState().current_env_id).toBe("env-1");
     });
   });
 });

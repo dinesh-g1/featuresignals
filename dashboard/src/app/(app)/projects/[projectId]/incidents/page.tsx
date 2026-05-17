@@ -118,7 +118,7 @@ function CorrelateForm({
   onSuccess: (result: CorrelateResponse) => void;
 }) {
   const token = useAppStore((s) => s.token);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
 
   const [startedAt, setStartedAt] = useState("");
   const [endedAt, setEndedAt] = useState("");
@@ -248,7 +248,7 @@ function RemediateDialog({
   onRemediated: (result: RemediateResponse) => void;
 }) {
   const token = useAppStore((s) => s.token);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -348,7 +348,7 @@ function RemediateDialog({
 
 function IncidentsInner() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
 
   const [monitor, setMonitor] = useState<MonitorResponse | null>(null);
   const [loading, setLoading] = useState(true);

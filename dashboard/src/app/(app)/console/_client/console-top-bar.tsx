@@ -54,7 +54,7 @@ export function ConsoleTopBar() {
   const setCommandPaletteOpen = useConsoleStore((s) => s.setCommandPaletteOpen);
   const token = useAppStore((s) => s.token);
   const organization = useAppStore((s) => s.organization);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const { level, refetch } = useConsoleMaturity();
 

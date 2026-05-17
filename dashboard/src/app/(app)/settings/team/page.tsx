@@ -69,7 +69,7 @@ interface PendingInvitation {
 
 export default function TeamPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const user = useAppStore((s) => s.user);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);

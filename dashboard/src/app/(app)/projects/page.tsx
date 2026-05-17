@@ -31,7 +31,7 @@ import type { Project } from "@/lib/types";
 export default function ProjectsPage() {
   const router = useRouter();
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

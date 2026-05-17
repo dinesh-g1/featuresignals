@@ -87,7 +87,7 @@ export function useProactiveDetection(): void {
       // ── 2. Health critical in production ────────────────────
       const criticalFeature = features.find(
         (f) =>
-          f.healthScore < HEALTH_CRITICAL_THRESHOLD &&
+          f.health_score < HEALTH_CRITICAL_THRESHOLD &&
           f.environment === "production",
       );
 
@@ -100,7 +100,7 @@ export function useProactiveDetection(): void {
             type: "stuck",
             priority: "red",
             title: `${criticalFeature.name} health is critical`,
-            description: `Health score is ${criticalFeature.healthScore}/100 in production. Check the Monitor stage for details.`,
+            description: `Health score is ${criticalFeature.health_score}/100 in production. Check the Monitor stage for details.`,
             action: {
               label: "View Monitor",
               handler: () => {
@@ -114,12 +114,12 @@ export function useProactiveDetection(): void {
 
       // ── 3. Feature stuck (no recent action, not in learn) ──
       const stuckFeature = features.find(
-        (f) => f.stage !== "learn" && isStuckTimeout(f.lastActionAt),
+        (f) => f.stage !== "learn" && isStuckTimeout(f.last_action_at),
       );
 
       if (stuckFeature) {
         const thenDays =
-          new Date(stuckFeature.lastActionAt).getTime() / (1000 * 60 * 60 * 24);
+          new Date(stuckFeature.last_action_at).getTime() / (1000 * 60 * 60 * 24);
         const nowDays = Date.now() / (1000 * 60 * 60 * 24);
         const days = daysBetween(thenDays, nowDays);
         const id = alertId("stuck", stuckFeature.key);
@@ -145,11 +145,11 @@ export function useProactiveDetection(): void {
       // ── 4. Stale features (> 30 days, not learn) ───────────
       const staleFeature = features.find((f) => {
         if (f.stage === "learn") return false;
-        return daysAgo(f.lastActionAt) > STALE_STAGE_DAYS;
+        return daysAgo(f.last_action_at) > STALE_STAGE_DAYS;
       });
 
       if (staleFeature) {
-        const days = Math.floor(daysAgo(staleFeature.lastActionAt));
+        const days = Math.floor(daysAgo(staleFeature.last_action_at));
         const id = alertId("stale", staleFeature.key);
 
         if (alertRef.current !== id) {

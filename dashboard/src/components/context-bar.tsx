@@ -27,7 +27,7 @@ import type { Project, Environment, AuditEntry } from "@/lib/types";
 
 function ProjectDropdown() {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const router = useRouter();
 
@@ -152,7 +152,7 @@ function ProjectDropdown() {
 
 function QuickCreateMenu() {
   const router = useRouter();
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const _token = useAppStore((s) => s.token);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -274,8 +274,8 @@ function QuickCreateMenu() {
 
 function EnvironmentDropdown() {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 
   const [open, setOpen] = useState(false);
@@ -565,7 +565,7 @@ function ActivityBell() {
 // ─── ContextBar (Main Export) ──────────────────────────────────────
 
 export function ContextBar() {
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   return (
     <header className="h-14 bg-white/90 backdrop-blur-md border-b border-[var(--signal-border-default)]/60 flex items-center gap-3 px-4 sm:px-6 sticky top-0 z-40 shrink-0">

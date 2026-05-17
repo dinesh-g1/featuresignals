@@ -58,7 +58,7 @@ export function CreateFlagDialog({
   onCreated,
 }: CreateFlagDialogProps) {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
 
   const [name, setName] = useState("");
@@ -160,20 +160,20 @@ export function CreateFlagDialog({
         stage: "flag",
         status: "scheduled",
         environment: selectedEnvironment,
-        environmentName:
+        environment_name:
           selectedEnvironment === "production"
             ? "Production"
             : selectedEnvironment === "staging"
               ? "Staging"
               : "Development",
         type: flag.flag_type ?? "boolean",
-        evalVolume: 0,
-        evalTrend: 0,
-        rolloutPercent: 0,
-        healthScore: 100,
-        lastAction: "Created",
-        lastActionAt: new Date().toISOString(),
-        lastActionBy: "You",
+        eval_volume: 0,
+        eval_trend: 0,
+        rollout_percent: 0,
+        health_score: 100,
+        last_action: "Created",
+        last_action_at: new Date().toISOString(),
+        last_action_by: "You",
       };
 
       onCreated(featureCard);

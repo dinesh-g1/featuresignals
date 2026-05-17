@@ -27,8 +27,8 @@ const KEY_TYPE_OPTIONS = [
 
 export default function APIKeysPage() {
   const token = useAppStore((s) => s.token);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
+  const projectId = useAppStore((s) => s.current_project_id);
   const searchParams = useSearchParams();
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [selectedEnv, setSelectedEnv] = useState(currentEnvId || "");

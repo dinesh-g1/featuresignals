@@ -77,8 +77,8 @@ export default function EnvironmentsPage() {
 }
 
 function EnvironmentsContent({ onRefresh }: { onRefresh: () => void }) {
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
   const token = useAppStore((s) => s.token);
   const searchParams = useSearchParams();

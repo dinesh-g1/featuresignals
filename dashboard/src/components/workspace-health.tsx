@@ -106,7 +106,7 @@ const StatusIcon = ({ status }: { status: "pass" | "warn" | "fail" }) => {
 
 export function WorkspaceHealth() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [flagCount, setFlagCount] = useState(0);
 

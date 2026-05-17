@@ -15,7 +15,7 @@ import type { Environment, EnvComparisonResponse } from "@/lib/types";
 
 export default function EnvComparisonPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [envs, setEnvs] = useState<Environment[]>([]);
   const [sourceEnv, setSourceEnv] = useState("");
   const [targetEnv, setTargetEnv] = useState("");

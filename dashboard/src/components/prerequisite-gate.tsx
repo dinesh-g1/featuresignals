@@ -58,7 +58,7 @@ export function PrerequisiteGate({
   const [creating, setCreating] = useState(false);
 
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 
@@ -426,7 +426,7 @@ export function PrerequisiteGate({
  */
 export function usePrerequisites() {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const [loading, setLoading] = useState(true);
   const [state, setState] = useState<PrerequisiteState>({
     hasProjects: false,

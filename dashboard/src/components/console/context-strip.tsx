@@ -142,7 +142,7 @@ function MiniDropdownItem({
 export function ContextStrip() {
   // ── App Store ────────────────────────────────────────────────────
   const organization = useAppStore((s) => s.organization);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
 
   // ── Console Store ────────────────────────────────────────────────

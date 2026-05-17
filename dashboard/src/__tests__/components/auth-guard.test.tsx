@@ -122,8 +122,8 @@ describe("AuthGuard", () => {
 
     const state = useAppStore.getState();
     expect(state.token).toBe("new-tok");
-    expect(state.refreshToken).toBe("new-ref");
-    expect(state.expiresAt).toBe(99999);
+    expect(state.refresh_token).toBe("new-ref");
+    expect(state.expires_at).toBe(99999);
   });
 
   it("does not set up timer when no expiresAt is stored", async () => {

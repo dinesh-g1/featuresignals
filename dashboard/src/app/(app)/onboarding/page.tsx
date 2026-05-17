@@ -94,11 +94,11 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = useAppStore((s) => s.token);
-  const refreshToken = useAppStore((s) => s.refreshToken);
+  const refreshToken = useAppStore((s) => s.refresh_token);
   const setAuth = useAppStore((s) => s.setAuth);
   const userName = useAppStore((s) => s.user?.name);
   const orgName = useAppStore((s) => s.organization?.name);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [wizardState, setWizardState] = useState<WizardState | null>(null);

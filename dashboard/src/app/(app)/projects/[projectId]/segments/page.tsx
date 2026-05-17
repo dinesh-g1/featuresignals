@@ -50,7 +50,7 @@ const MATCH_TYPE_OPTIONS = [
 
 export default function SegmentsPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const searchParams = useSearchParams();
   const limit = parseInt(searchParams.get("limit") || "50");
   const offsetVal = parseInt(searchParams.get("offset") || "0");

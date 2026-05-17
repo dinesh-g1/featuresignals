@@ -19,8 +19,8 @@ import type { Project } from "@/lib/types";
  */
 export function useConsoleData() {
   const token = useAppStore((s) => s.token);
-  const expiresAt = useAppStore((s) => s.expiresAt);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const expiresAt = useAppStore((s) => s.expires_at);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
 
   const selectedStage = useConsoleStore((s) => s.selectedStage);

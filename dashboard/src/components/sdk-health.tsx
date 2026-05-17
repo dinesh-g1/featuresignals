@@ -69,7 +69,7 @@ function statusBadgeVariant(s: SDKStatus): "success" | "warning" | "default" {
 
 export function SDKHealth() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [envHealth, setEnvHealth] = useState<EnvironmentSDKHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

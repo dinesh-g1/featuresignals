@@ -247,7 +247,7 @@ export interface FlagTimelineProps {
 
 export function FlagTimeline({ flagId }: FlagTimelineProps) {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

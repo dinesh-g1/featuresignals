@@ -454,7 +454,7 @@ export function NavList() {
   const pathname = usePathname();
   const isOpen = useSidebarStore((s) => s.isOpen);
   const close = useSidebarStore((s) => s.close);
-  const currentProjectId = useAppStore((s) => s.currentProjectId) || "";
+  const currentProjectId = useAppStore((s) => s.current_project_id) || "";
   const organization = useAppStore((s) => s.organization);
   const plan = organization?.plan ?? "free";
   const token = useAppStore((s) => s.token);

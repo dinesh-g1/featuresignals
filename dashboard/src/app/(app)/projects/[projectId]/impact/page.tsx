@@ -66,7 +66,7 @@ function impactLabel(impact: string): string {
 
 function ImpactInner() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
 
   const [learnings, setLearnings] = useState<OrgLearningsResponse | null>(null);
   const [loading, setLoading] = useState(true);

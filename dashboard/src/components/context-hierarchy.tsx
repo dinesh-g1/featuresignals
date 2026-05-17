@@ -156,8 +156,8 @@ function ProjectDropdown({
               </button>
               <Link
                 href={
-                  useAppStore.getState().currentProjectId
-                    ? `/projects/${useAppStore.getState().currentProjectId}/environments`
+                  useAppStore.getState().current_project_id
+                    ? `/projects/${useAppStore.getState().current_project_id}/environments`
                     : "/environments"
                 }
                 onClick={() => setOpen(false)}
@@ -392,8 +392,8 @@ export function ContextHierarchy({
   onCreateEnvironment,
 }: ContextHierarchyProps) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 

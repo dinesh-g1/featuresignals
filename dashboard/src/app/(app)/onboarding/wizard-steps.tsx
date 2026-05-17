@@ -73,7 +73,7 @@ export function StepWelcome({
   userName,
 }: StepWelcomeProps) {
   const router = useRouter();
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
 
   const handleSkip = () => {
     if (projectId) {
@@ -349,7 +349,7 @@ interface StepInstantFlagProps {
 
 export function StepInstantFlag({ state, onFinish }: StepInstantFlagProps) {
   const router = useRouter();
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [activeTab, setActiveTab] = useState<"snippet" | "toggle" | "explain">(
     "toggle",
   );

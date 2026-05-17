@@ -132,8 +132,8 @@ describe("api.ts request interceptor", () => {
 
     expect(result).toEqual(["project-1"]);
     expect(useAppStore.getState().token).toBe("new-token");
-    expect(useAppStore.getState().refreshToken).toBe("new-refresh");
-    expect(useAppStore.getState().expiresAt).toBe(9999);
+    expect(useAppStore.getState().refresh_token).toBe("new-refresh");
+    expect(useAppStore.getState().expires_at).toBe(9999);
   });
 
   it("on 401 token_expired with failed refresh: logs out and redirects", async () => {
@@ -163,14 +163,14 @@ describe("api.ts request interceptor", () => {
     });
 
     expect(useAppStore.getState().token).toBeNull();
-    expect(useAppStore.getState().refreshToken).toBeNull();
+    expect(useAppStore.getState().refresh_token).toBeNull();
     expect(window.location.href).toBe("/login?session_expired=true");
   });
 
   it("on 401 token_expired without refresh token: logs out immediately", async () => {
     useAppStore.setState({
       token: "old-token",
-      refreshToken: null,
+      refresh_token: null,
       user: {
         id: "u1",
         name: "Test",

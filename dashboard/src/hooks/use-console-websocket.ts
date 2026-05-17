@@ -90,8 +90,8 @@ export function isTokenExpired(token: string, graceSec = 10): boolean {
  * to avoid a circular dependency on @/lib/api.
  */
 async function tryRefreshToken(): Promise<boolean> {
-  const { refreshToken, setAuth } = useAppStore.getState();
-  if (!refreshToken) return false;
+  const { refresh_token, setAuth } = useAppStore.getState();
+  if (!refresh_token) return false;
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -99,7 +99,7 @@ async function tryRefreshToken(): Promise<boolean> {
     const res = await fetch(`${API_URL}/v1/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: JSON.stringify({ refresh_token: refresh_token }),
     });
     if (!res.ok) return false;
 

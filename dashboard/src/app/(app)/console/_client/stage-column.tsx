@@ -290,7 +290,7 @@ function FeatureCard({
   const envConfig = ENV_COLORS[feature.environment];
   const statusStyle = STATUS_STYLES[feature.status];
   const isCritical = feature.status === "needs_attention";
-  const isAttention = feature.healthScore < 40 && !isCritical;
+  const isAttention = feature.health_score < 40 && !isCritical;
 
   // Track previous stage to detect advance transitions
   const prevStageRef = useRef(feature.stage);
@@ -312,17 +312,17 @@ function FeatureCard({
 
   // Health dot color
   const healthColor = useMemo(() => {
-    if (feature.healthScore >= 80) return "var(--signal-fg-success)";
-    if (feature.healthScore >= 40) return "var(--signal-fg-warning)";
+    if (feature.health_score >= 80) return "var(--signal-fg-success)";
+    if (feature.health_score >= 40) return "var(--signal-fg-warning)";
     return "var(--signal-fg-danger)";
-  }, [feature.healthScore]);
+  }, [feature.health_score]);
 
   // Health pulse animation
   const healthPulseClass = useMemo(() => {
-    if (feature.healthScore >= 80) return "";
-    if (feature.healthScore >= 40) return "animate-health-pulse-gentle";
+    if (feature.health_score >= 80) return "";
+    if (feature.health_score >= 40) return "animate-health-pulse-gentle";
     return "animate-health-pulse-rapid";
-  }, [feature.healthScore]);
+  }, [feature.health_score]);
 
   const handleClick = (e?: React.MouseEvent | React.KeyboardEvent) => {
     e?.stopPropagation();
@@ -336,22 +336,22 @@ function FeatureCard({
   };
 
   // Trend formatting
-  const trendSign = feature.evalTrend > 0 ? "+" : "";
+  const trendSign = feature.eval_trend > 0 ? "+" : "";
   const trendColor =
-    feature.evalTrend > 0
+    feature.eval_trend > 0
       ? "var(--signal-fg-success)"
-      : feature.evalTrend < 0
+      : feature.eval_trend < 0
         ? "var(--signal-fg-danger)"
         : "var(--signal-fg-tertiary)";
 
   // Format eval volume
   const formattedVolume = useMemo(() => {
-    if (feature.evalVolume >= 1_000_000)
-      return `${(feature.evalVolume / 1_000_000).toFixed(1)}M`;
-    if (feature.evalVolume >= 1_000)
-      return `${(feature.evalVolume / 1_000).toFixed(1)}K`;
-    return String(feature.evalVolume);
-  }, [feature.evalVolume]);
+    if (feature.eval_volume >= 1_000_000)
+      return `${(feature.eval_volume / 1_000_000).toFixed(1)}M`;
+    if (feature.eval_volume >= 1_000)
+      return `${(feature.eval_volume / 1_000).toFixed(1)}K`;
+    return String(feature.eval_volume);
+  }, [feature.eval_volume]);
 
   // Border styles
   const cardStyle: React.CSSProperties = {
@@ -425,7 +425,7 @@ function FeatureCard({
             handleClick();
           }
         }}
-        aria-label={`${feature.name}, ${statusStyle.label}, ${feature.environmentName}`}
+        aria-label={`${feature.name}, ${statusStyle.label}, ${feature.environment_name}`}
         aria-pressed={isSelected}
       >
         <div className="flex flex-col gap-[6px] p-3">
@@ -465,13 +465,13 @@ function FeatureCard({
 
           {/* ── Row 2: Environment · Type ─────────────────────────────── */}
           <div className="flex items-center gap-1 text-xs text-[var(--signal-fg-secondary)]">
-            <span>{feature.environmentName}</span>
+            <span>{feature.environment_name}</span>
             <span aria-hidden="true">·</span>
             <span className="capitalize">{feature.type}</span>
           </div>
 
           {/* ── Row 3: Progress bar + rollout% (only if rollout > 0) ──── */}
-          {feature.rolloutPercent > 0 && (
+          {feature.rollout_percent > 0 && (
             <div className="flex items-center gap-1.5">
               <div
                 className="flex-1 h-1 rounded-full overflow-hidden"
@@ -479,15 +479,15 @@ function FeatureCard({
                   backgroundColor: "var(--signal-border-subtle)",
                 }}
                 role="progressbar"
-                aria-valuenow={feature.rolloutPercent}
+                aria-valuenow={feature.rollout_percent}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label={`Rollout ${feature.rolloutPercent}%`}
+                aria-label={`Rollout ${feature.rollout_percent}%`}
               >
                 <div
                   className="h-full rounded-full transition-all duration-[var(--signal-duration-normal)]"
                   style={{
-                    width: `${feature.rolloutPercent}%`,
+                    width: `${feature.rollout_percent}%`,
                     backgroundColor: "var(--signal-fg-accent)",
                   }}
                 />
@@ -496,7 +496,7 @@ function FeatureCard({
                 className="text-xs font-mono tabular-nums text-[var(--signal-fg-secondary)] shrink-0"
                 style={{ fontSize: "var(--signal-text-mono)" }}
               >
-                {feature.rolloutPercent}%
+                {feature.rollout_percent}%
               </span>
             </div>
           )}
@@ -511,19 +511,19 @@ function FeatureCard({
               style={{ color: trendColor }}
             >
               {trendSign}
-              {feature.evalTrend}%
+              {feature.eval_trend}%
             </span>
           </div>
 
           {/* ── Row 5: Last Action · Relative Time ────────────────────── */}
           <div className="flex items-center gap-1 text-xs text-[var(--signal-fg-tertiary)] truncate">
-            <span className="truncate">{feature.lastAction}</span>
+            <span className="truncate">{feature.last_action}</span>
             <span aria-hidden="true">·</span>
-            <span className="shrink-0">{timeAgo(feature.lastActionAt)}</span>
+            <span className="shrink-0">{timeAgo(feature.last_action_at)}</span>
           </div>
 
           {/* ── Row 6: AI Suggestion (only if present) ────────────────── */}
-          {feature.aiSuggestion && (
+          {feature.ai_suggestion && (
             <div
               className={cn(
                 "flex items-start gap-1",
@@ -539,7 +539,7 @@ function FeatureCard({
                 {"✨"}
               </span>
               <span className="line-clamp-2 leading-snug">
-                {feature.aiSuggestion}
+                {feature.ai_suggestion}
               </span>
             </div>
           )}

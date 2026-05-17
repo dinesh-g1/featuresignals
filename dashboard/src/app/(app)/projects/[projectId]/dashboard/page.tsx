@@ -54,7 +54,7 @@ interface ProjectSnapshot {
 
 function useProjectSnapshot() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const [snap, setSnap] = useState<ProjectSnapshot>({
     flags: [],
     segments: [],
@@ -424,7 +424,7 @@ function useEvalSparklineData() {
 }
 
 export default function DashboardPage() {
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const organization = useAppStore((s) => s.organization);
   const snap = useProjectSnapshot();
   const { approvalCount, webhookFailCount, staleFlagCount } = useAttentionData(

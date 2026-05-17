@@ -7,7 +7,7 @@ import type { JanitorStats } from "@/lib/api";
 
 export function useJanitorStats(refreshInterval = 30000) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [stats, setStats] = useState<JanitorStats | null>(null);
   const [loading, setLoading] = useState(true);

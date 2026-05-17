@@ -93,10 +93,10 @@ export function ShipWizard() {
             ? {
                 ...f,
                 status: "live" as FeatureStatus,
-                rolloutPercent: targetPercent,
-                lastAction: targetPercent >= 100 ? "Shipped" : `Rolled out to ${targetPercent}%`,
-                lastActionAt: new Date().toISOString(),
-                lastActionBy: "You",
+                rollout_percent: targetPercent,
+                last_action: targetPercent >= 100 ? "Shipped" : `Rolled out to ${targetPercent}%`,
+                last_action_at: new Date().toISOString(),
+                last_action_by: "You",
               }
             : f,
         ),
@@ -117,10 +117,10 @@ export function ShipWizard() {
                 ? {
                     ...f,
                     status: feature.status,
-                    rolloutPercent: feature.rolloutPercent,
-                    lastAction: feature.lastAction,
-                    lastActionAt: feature.lastActionAt,
-                    lastActionBy: feature.lastActionBy,
+                    rollout_percent: feature.rollout_percent,
+                    last_action: feature.last_action,
+                    last_action_at: feature.last_action_at,
+                    last_action_by: feature.last_action_by,
                   }
                 : f,
             ),
@@ -225,7 +225,7 @@ export function ShipWizard() {
             Current Rollout
           </span>
           <p className="text-2xl font-bold text-[var(--signal-fg-primary)] mt-1 font-mono tabular-nums">
-            {feature.rolloutPercent}%
+            {feature.rollout_percent}%
           </p>
         </div>
 

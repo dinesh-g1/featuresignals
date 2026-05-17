@@ -26,25 +26,25 @@ interface SuggestionAlert {
  * Returns null if no alert is needed.
  */
 function alertFromSuggestion(feature: FeatureCardData): SuggestionAlert | null {
-  const { aiSuggestion, aiSuggestionType, aiConfidence, key, name, stage } =
+  const { ai_suggestion, ai_suggestion_type, ai_confidence, key, name, stage } =
     feature;
 
   // Guard: skip if no suggestion or confidence too low.
-  if (!aiSuggestion || !aiSuggestionType) return null;
-  if (aiConfidence !== undefined && aiConfidence < AI_CONFIDENCE_THRESHOLD)
+  if (!ai_suggestion || !ai_suggestion_type) return null;
+  if (ai_confidence !== undefined && ai_confidence < AI_CONFIDENCE_THRESHOLD)
     return null;
 
   const selectFeature = () => {
     consoleStore.getState().selectFeature(key);
   };
 
-  switch (aiSuggestionType) {
+  switch (ai_suggestion_type) {
     case "critical":
       return {
         type: "suggestion",
         priority: "red",
         title: name,
-        description: aiSuggestion,
+        description: ai_suggestion,
         action: { label: "View feature", handler: selectFeature },
       };
     case "warning":
@@ -52,7 +52,7 @@ function alertFromSuggestion(feature: FeatureCardData): SuggestionAlert | null {
         type: "suggestion",
         priority: "amber",
         title: `${name} needs attention`,
-        description: aiSuggestion,
+        description: ai_suggestion,
         action: { label: "Review", handler: selectFeature },
       };
     case "info":
@@ -64,7 +64,7 @@ function alertFromSuggestion(feature: FeatureCardData): SuggestionAlert | null {
           type: "suggestion",
           priority: "amber",
           title: `${name} — ${stage} stage`,
-          description: aiSuggestion,
+          description: ai_suggestion,
           action: { label: "View feature", handler: selectFeature },
         };
       }

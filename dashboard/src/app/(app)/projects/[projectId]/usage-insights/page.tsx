@@ -26,8 +26,8 @@ type SortKey = "flag_key" | "true_percentage" | "total_count";
 
 export default function UsageInsightsPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const [insights, setInsights] = useState<FlagInsight[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");

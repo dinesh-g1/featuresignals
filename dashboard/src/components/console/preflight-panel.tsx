@@ -203,7 +203,7 @@ export function PreflightPanel({
   environment,
 }: PreflightPanelProps) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [assessment, setAssessment] = useState<AssessResponse | null>(null);
   const [approval, setApproval] = useState<ApprovalResponse | null>(null);

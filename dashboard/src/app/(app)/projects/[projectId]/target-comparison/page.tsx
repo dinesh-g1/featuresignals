@@ -82,8 +82,8 @@ function AttrEditor({
 
 export default function TargetComparisonPage() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
 
   const [keyA, setKeyA] = useState("");
   const [keyB, setKeyB] = useState("");

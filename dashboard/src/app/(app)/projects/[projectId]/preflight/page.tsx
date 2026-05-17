@@ -255,7 +255,7 @@ function NewAssessmentForm({
 
 function PreflightInner() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const router = useRouter();
   const searchParams = useSearchParams();
 

@@ -167,13 +167,13 @@ export function LifecycleZone() {
           return a.name.localeCompare(b.name);
         case "activity":
           return (
-            new Date(b.lastActionAt).getTime() -
-            new Date(a.lastActionAt).getTime()
+            new Date(b.last_action_at).getTime() -
+            new Date(a.last_action_at).getTime()
           );
         case "health":
-          return b.healthScore - a.healthScore;
+          return b.health_score - a.health_score;
         case "volume":
-          return b.evalVolume - a.evalVolume;
+          return b.eval_volume - a.eval_volume;
         case "stage":
         default:
           return STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage];

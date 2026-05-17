@@ -238,7 +238,7 @@ function EnvironmentSelector({
 
 export function SdkSnippetPanel({ language, onClose }: SdkSnippetPanelProps) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [sdkKey, setSdkKey] = useState<string>("");
   const [loadingKey, setLoadingKey] = useState(true);

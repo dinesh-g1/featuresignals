@@ -7,7 +7,7 @@ import type { StaleFlag } from "@/lib/api";
 
 export function useJanitor(filter?: string) {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [flags, setFlags] = useState<StaleFlag[]>([]);
   const [loading, setLoading] = useState(true);

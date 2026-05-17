@@ -34,7 +34,7 @@ import { api } from "@/lib/api";
 type ExportFormat = "csv" | "json";
 
 export default function ActivityPage() {
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
   const [monthFilter, setMonthFilter] = useState("");

@@ -358,9 +358,9 @@ function Combobox({
 
 export function ContextSelector() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
+  const projectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
 
   const [projects, setProjects] = useState<Project[]>([]);

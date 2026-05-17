@@ -180,7 +180,7 @@ function getBreadcrumbs(pathname: string): BreadcrumbSegment[] {
 export function Breadcrumb() {
   const pathname = usePathname();
   const organization = useAppStore((s) => s.organization);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const token = useAppStore((s) => s.token);
 
   const orgLabel = organization?.name ?? "Organization";

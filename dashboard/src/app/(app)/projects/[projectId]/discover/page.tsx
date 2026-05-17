@@ -118,7 +118,7 @@ function DiscoverSkeleton() {
 
 function DiscoverInner() {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -40,7 +40,7 @@ const REASON_COLORS: Record<string, string> = {
 
 export default function MetricsPage() {
   const token = useAppStore((s) => s.token);
-  const envId = useAppStore((s) => s.currentEnvId);
+  const envId = useAppStore((s) => s.current_env_id);
   const [data, setData] = useState<MetricsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

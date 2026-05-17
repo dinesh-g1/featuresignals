@@ -104,8 +104,8 @@ interface FieldErrors {
 
 function FlagsInner() {
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -575,8 +575,8 @@ function FlagsWithData({
 }) {
   // ALL hooks must come before any conditional return
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
 
   const currentEnvName = (envs ?? []).find((e) => e.id === currentEnvId)?.name;
   const suggestedKey = useMemo(() => {
@@ -951,7 +951,7 @@ function FlagsContent({
   listGateAction: "enable" | "disable";
   handleListGateConfirm: () => Promise<void>;
 }) {
-  const _currentEnvId = useAppStore((s) => s.currentEnvId);
+  const _currentEnvId = useAppStore((s) => s.current_env_id);
 
   // Server handles pagination — use filtered list directly (no client-side slice)
   const total = (flags ?? []).length;

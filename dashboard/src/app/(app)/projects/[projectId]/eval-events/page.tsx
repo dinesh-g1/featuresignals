@@ -76,7 +76,7 @@ function EvalEventsSkeleton() {
 
 export default function EvalEventsPage() {
   const token = useAppStore((s) => s.token);
-  const _projectId = useAppStore((s) => s.currentProjectId);
+  const _projectId = useAppStore((s) => s.current_project_id);
 
   const [analytics, setAnalytics] = useState<EvalEventAnalytics | null>(null);
   const [volume, setVolume] = useState<EvalEventVolume | null>(null);

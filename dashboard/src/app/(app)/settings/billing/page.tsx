@@ -57,7 +57,7 @@ function BillingContent() {
   const [selectedGateway, setSelectedGateway] = useState<string>("payu");
   const [showGatewayPicker, setShowGatewayPicker] = useState(false);
 
-  const refreshToken = useAppStore((s) => s.refreshToken);
+  const refreshToken = useAppStore((s) => s.refresh_token);
   const setAuth = useAppStore((s) => s.setAuth);
 
   useEffect(() => {

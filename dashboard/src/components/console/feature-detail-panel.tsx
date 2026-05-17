@@ -149,24 +149,24 @@ export function FeatureDetailPanel() {
   const statusStyle = STATUS_STYLES[feature.status];
   const nextStage = STAGE_PROGRESSION[feature.stage];
   const healthColor =
-    feature.healthScore >= 80
-      ? "var(--signal-fg-success)"
-      : feature.healthScore >= 40
-        ? "var(--signal-fg-warning)"
-        : "var(--signal-fg-danger)";
-  const trendSign = feature.evalTrend > 0 ? "+" : "";
-  const trendColor =
-    feature.evalTrend > 0
-      ? "var(--signal-fg-success)"
-      : feature.evalTrend < 0
-        ? "var(--signal-fg-danger)"
-        : "var(--signal-fg-tertiary)";
-  const formattedVolume =
-    feature.evalVolume >= 1_000_000
-      ? `${(feature.evalVolume / 1_000_000).toFixed(1)}M`
-      : feature.evalVolume >= 1_000
-        ? `${(feature.evalVolume / 1_000).toFixed(1)}K`
-        : String(feature.evalVolume);
+      feature.health_score >= 80
+        ? "var(--signal-fg-success)"
+        : feature.health_score >= 40
+          ? "var(--signal-fg-warning)"
+          : "var(--signal-fg-danger)";
+    const trendSign = feature.eval_trend > 0 ? "+" : "";
+    const trendColor =
+      feature.eval_trend > 0
+        ? "var(--signal-fg-success)"
+        : feature.eval_trend < 0
+          ? "var(--signal-fg-danger)"
+          : "var(--signal-fg-tertiary)";
+    const formattedVolume =
+      feature.eval_volume >= 1_000_000
+        ? `${(feature.eval_volume / 1_000_000).toFixed(1)}M`
+        : feature.eval_volume >= 1_000
+          ? `${(feature.eval_volume / 1_000).toFixed(1)}K`
+          : String(feature.eval_volume);
 
   // ── Advance success detection ───────────────────────────────────
 
@@ -275,7 +275,7 @@ export function FeatureDetailPanel() {
                   className="text-sm font-mono tabular-nums"
                   style={{ color: healthColor }}
                 >
-                  {feature.healthScore}/100
+                  {feature.health_score}/100
                 </span>
               </div>
             </div>
@@ -296,12 +296,12 @@ export function FeatureDetailPanel() {
                 7-Day Trend
               </span>
               <div className="flex items-center gap-1 mt-1">
-                {feature.evalTrend > 0 ? (
-                  <TrendingUp
-                    className="h-3.5 w-3.5"
-                    style={{ color: trendColor }}
-                  />
-                ) : feature.evalTrend < 0 ? (
+                {feature.eval_trend > 0 ? (
+                                  <TrendingUp
+                                    className="h-3.5 w-3.5"
+                                    style={{ color: trendColor }}
+                                  />
+                                ) : feature.eval_trend < 0 ? (
                   <TrendingUp
                     className="h-3.5 w-3.5 rotate-180"
                     style={{ color: trendColor }}
@@ -312,7 +312,7 @@ export function FeatureDetailPanel() {
                   style={{ color: trendColor }}
                 >
                   {trendSign}
-                  {feature.evalTrend}%
+                                    {feature.eval_trend}%
                 </span>
               </div>
             </div>
@@ -326,25 +326,25 @@ export function FeatureDetailPanel() {
               Rollout
             </span>
             <span className="text-xs font-mono tabular-nums text-[var(--signal-fg-secondary)]">
-              {feature.rolloutPercent}%
-            </span>
-          </div>
-          <div
-            className="h-1.5 rounded-full overflow-hidden"
-            style={{ backgroundColor: "var(--signal-border-subtle)" }}
-            role="progressbar"
-            aria-valuenow={feature.rolloutPercent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-[var(--signal-duration-normal)]"
-              style={{
-                width: `${feature.rolloutPercent}%`,
-                backgroundColor:
-                  feature.rolloutPercent >= 100
-                    ? "var(--signal-fg-success)"
-                    : "var(--signal-fg-accent)",
+              {feature.rollout_percent}%
+                          </span>
+                        </div>
+                        <div
+                          className="h-1.5 rounded-full overflow-hidden"
+                          style={{ backgroundColor: "var(--signal-border-subtle)" }}
+                          role="progressbar"
+                          aria-valuenow={feature.rollout_percent}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all duration-[var(--signal-duration-normal)]"
+                            style={{
+                              width: `${feature.rollout_percent}%`,
+                              backgroundColor:
+                                feature.rollout_percent >= 100
+                                                    ? "var(--signal-fg-success)"
+                                                    : "var(--signal-fg-accent)",
               }}
             />
           </div>
@@ -358,51 +358,51 @@ export function FeatureDetailPanel() {
           <div className="flex items-center gap-1.5 mt-1">
             <Activity className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
             <span className="text-sm text-[var(--signal-fg-primary)]">
-              {feature.lastAction}
-            </span>
-            <span className="text-xs text-[var(--signal-fg-tertiary)]">
-              {timeAgo(feature.lastActionAt)}
+              {feature.last_action}
+                          </span>
+                          <span className="text-xs text-[var(--signal-fg-tertiary)]">
+                            {timeAgo(feature.last_action_at)}
             </span>
           </div>
           <p className="text-xs text-[var(--signal-fg-tertiary)] mt-0.5">
-            by {feature.lastActionBy}
+            by {feature.last_action_by}
           </p>
         </div>
 
         {/* ── AI Suggestion ──────────────────────────────────────── */}
-        {feature.aiSuggestion && (
-          <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
-              AI Suggestion
-            </span>
-            <div
-              className={cn(
-                "mt-1 px-3 py-2 rounded-md text-sm",
-                "bg-[var(--signal-bg-info-muted)]",
-                "border border-[var(--signal-border-info-muted)]",
-                "text-[var(--signal-fg-info)]",
-              )}
-            >
-              <span className="mr-1" aria-hidden="true">
-                ✨
-              </span>
-              {feature.aiSuggestion}
+        {feature.ai_suggestion && (
+                  <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+                      AI Suggestion
+                    </span>
+                    <div
+                      className={cn(
+                        "mt-1 px-3 py-2 rounded-md text-sm",
+                        "bg-[var(--signal-bg-info-muted)]",
+                        "border border-[var(--signal-border-info-muted)]",
+                        "text-[var(--signal-fg-info)]",
+                      )}
+                    >
+                      <span className="mr-1" aria-hidden="true">
+                        ✨
+                      </span>
+                      {feature.ai_suggestion}
             </div>
           </div>
         )}
 
         {/* ── Code References ────────────────────────────────────── */}
-        {feature.codeReferenceCount !== undefined &&
-          feature.codeReferenceCount > 0 && (
-            <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
-                Code References
-              </span>
-              <div className="flex items-center gap-1.5 mt-1">
-                <Code className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
-                <span className="text-sm text-[var(--signal-fg-primary)]">
-                  {feature.codeReferenceCount} reference
-                  {feature.codeReferenceCount !== 1 ? "s" : ""}
+        {feature.code_reference_count !== undefined &&
+                  feature.code_reference_count > 0 && (
+                    <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+                        Code References
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Code className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
+                        <span className="text-sm text-[var(--signal-fg-primary)]">
+                          {feature.code_reference_count} reference
+                          {feature.code_reference_count !== 1 ? "s" : ""}
                 </span>
                 <button
                   type="button"
@@ -419,19 +419,19 @@ export function FeatureDetailPanel() {
           )}
 
         {/* ── Dependencies ───────────────────────────────────────── */}
-        {((feature.dependsOn && feature.dependsOn.length > 0) ||
-          (feature.dependedOnBy && feature.dependedOnBy.length > 0)) && (
-          <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
-              Dependencies
-            </span>
-            {feature.dependsOn && feature.dependsOn.length > 0 && (
-              <div className="mt-1">
-                <span className="text-xs text-[var(--signal-fg-tertiary)]">
-                  Depends on:
-                </span>
-                <div className="flex flex-wrap gap-1 mt-0.5">
-                  {feature.dependsOn.map((dep) => (
+        {((feature.depends_on && feature.depends_on.length > 0) ||
+                  (feature.depended_on_by && feature.depended_on_by.length > 0)) && (
+                  <div className="px-4 py-3 border-b border-[var(--signal-border-subtle)]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+                      Dependencies
+                    </span>
+                    {feature.depends_on && feature.depends_on.length > 0 && (
+                      <div className="mt-1">
+                        <span className="text-xs text-[var(--signal-fg-tertiary)]">
+                          Depends on:
+                        </span>
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {feature.depends_on.map((dep: string) => (
                     <span
                       key={dep}
                       className={cn(
@@ -446,13 +446,13 @@ export function FeatureDetailPanel() {
                 </div>
               </div>
             )}
-            {feature.dependedOnBy && feature.dependedOnBy.length > 0 && (
-              <div className="mt-1.5">
-                <span className="text-xs text-[var(--signal-fg-tertiary)]">
-                  Depended on by:
-                </span>
-                <div className="flex flex-wrap gap-1 mt-0.5">
-                  {feature.dependedOnBy.map((dep) => (
+            {feature.depended_on_by && feature.depended_on_by.length > 0 && (
+                          <div className="mt-1.5">
+                            <span className="text-xs text-[var(--signal-fg-tertiary)]">
+                              Depended on by:
+                            </span>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {feature.depended_on_by.map((dep: string) => (
                     <span
                       key={dep}
                       className={cn(
@@ -528,9 +528,9 @@ export function FeatureDetailPanel() {
                       ? {
                           ...f,
                           status: "paused" as FeatureStatus,
-                          lastAction: "Paused",
-                          lastActionAt: new Date().toISOString(),
-                          lastActionBy: "You",
+                          last_action: "Paused",
+                                                    last_action_at: new Date().toISOString(),
+                                                    last_action_by: "You",
                         }
                       : f,
                   ),
@@ -581,9 +581,9 @@ export function FeatureDetailPanel() {
                       ? {
                           ...f,
                           status: "live" as FeatureStatus,
-                          lastAction: "Enabled",
-                          lastActionAt: new Date().toISOString(),
-                          lastActionBy: "You",
+                          last_action: "Enabled",
+                                                    last_action_at: new Date().toISOString(),
+                                                    last_action_by: "You",
                         }
                       : f,
                   ),
@@ -654,7 +654,7 @@ export function FeatureDetailPanel() {
 
         {/* Ship Wizard button — opens the full ship wizard panel */}
         {(feature.stage === "ship" ||
-          (feature.status === "live" && feature.rolloutPercent < 100)) && (
+          (feature.status === "live" && feature.rollout_percent < 100)) && (
           <Button
             variant="primary"
             fullWidth

@@ -56,8 +56,8 @@ export default function FlagDetailPage() {
   const router = useRouter();
   const flagKey = params.flagKey as string;
   const token = useAppStore((s) => s.token);
-  const projectId = useAppStore((s) => s.currentProjectId);
-  const currentEnvId = useAppStore((s) => s.currentEnvId);
+  const projectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
   const [flag, setFlag] = useState<any>(null);
   const [state, setState] = useState<FlagState | null>(null);
   const [envs, setEnvs] = useState<Environment[]>([]);

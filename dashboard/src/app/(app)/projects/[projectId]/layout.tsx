@@ -12,7 +12,7 @@ export default function ProjectLayout({
   const params = useParams();
   const projectId = params.projectId as string;
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   useEffect(() => {
     if (projectId && projectId !== currentProjectId) {

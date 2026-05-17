@@ -224,7 +224,7 @@ function AgentCard({ agent }: { agent: AgentStatus }) {
                   style={{ color: "var(--signal-fg-accent)" }}
                 />
                 <span className="text-[11px] font-medium text-[var(--signal-fg-primary)]">
-                  {agent.tasksCompleted.toLocaleString()}
+                  {agent.tasks_completed.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -235,8 +235,8 @@ function AgentCard({ agent }: { agent: AgentStatus }) {
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Clock className="h-3 w-3 text-[var(--signal-fg-tertiary)]" />
                 <span className="text-[11px] text-[var(--signal-fg-primary)]">
-                  {agent.lastHeartbeat
-                    ? formatRelativeTime(agent.lastHeartbeat)
+                  {agent.last_heartbeat
+                    ? formatRelativeTime(agent.last_heartbeat)
                     : "Never"}
                 </span>
               </div>

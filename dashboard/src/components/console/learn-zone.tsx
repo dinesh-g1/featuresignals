@@ -200,19 +200,19 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
       ) : (
         <div className="space-y-1">
           {reports.slice(0, 3).map((report) => {
-            const isExpanded = expandedKey === report.flagKey;
-            return (
-              <div key={report.flagKey}>
-                <button
-                  type="button"
-                  onClick={() => handleExpand(report.flagKey)}
+            const isExpanded = expandedKey === report.flag_key;
+                        return (
+                          <div key={report.flag_key}>
+                            <button
+                              type="button"
+                              onClick={() => handleExpand(report.flag_key)}
                   className="flex w-full items-start gap-2 py-1 text-left transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] rounded-[var(--signal-radius-sm)] -mx-1 px-1 group"
                   aria-expanded={isExpanded}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-medium text-[var(--signal-fg-primary)] truncate group-hover:text-[var(--signal-fg-accent)] transition-colors">
-                        {report.flagName}
+                        {report.flag_name}
                       </span>
                       {isExpanded ? (
                         <ChevronDown className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
@@ -220,14 +220,14 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                         <ChevronRight className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" />
                       )}
                     </div>
-                    {report.aiSummary && !isExpanded && (
-                      <p className="text-[10px] text-[var(--signal-fg-secondary)] mt-0.5 line-clamp-2 leading-relaxed">
-                        {report.aiSummary}
+                    {report.ai_summary && !isExpanded && (
+                                          <p className="text-[10px] text-[var(--signal-fg-secondary)] mt-0.5 line-clamp-2 leading-relaxed">
+                                            {report.ai_summary}
                       </p>
                     )}
-                    {report.metricChanges && report.metricChanges.length > 0 && !isExpanded && (
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {report.metricChanges.slice(0, 3).map((mc) => (
+                    {report.metric_changes && report.metric_changes.length > 0 && !isExpanded && (
+                                          <div className="flex flex-wrap gap-1.5 mt-1">
+                                            {report.metric_changes.slice(0, 3).map((mc) => (
                           <span
                             key={mc.metric}
                             className="inline-flex items-center gap-0.5 text-[10px]"
@@ -247,7 +247,7 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                       </div>
                     )}
                     <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
-                      {formatRelativeTime(report.generatedAt)}
+                      {formatRelativeTime(report.generated_at)}
                     </p>
                   </div>
                 </button>
@@ -363,18 +363,18 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                           </div>
                         ) : (
                           <div className="space-y-1.5 py-1">
-                            {report.aiSummary && (
-                              <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed">
-                                {report.aiSummary}
+                            {report.ai_summary && (
+                                                          <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed">
+                                                            {report.ai_summary}
                               </p>
                             )}
-                            {report.metricChanges && report.metricChanges.length > 0 && (
-                              <div className="space-y-1">
-                                <span className="text-[9px] font-semibold text-[var(--signal-fg-tertiary)]">
-                                  All Metrics
-                                </span>
-                                <div className="flex flex-wrap gap-1">
-                                  {report.metricChanges.map((mc) => (
+                            {report.metric_changes && report.metric_changes.length > 0 && (
+                                                          <div className="space-y-1">
+                                                            <span className="text-[9px] font-semibold text-[var(--signal-fg-tertiary)]">
+                                                              All Metrics
+                                                            </span>
+                                                            <div className="flex flex-wrap gap-1">
+                                                              {report.metric_changes.map((mc) => (
                                     <span
                                       key={mc.metric}
                                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]"
@@ -423,7 +423,7 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
 // ─── Cost Tracking ───────────────────────────────────────────────────
 
 function CostTrackingCard({ cost }: { cost: CostAttribution }) {
-  const features = cost.perFeature || [];
+  const features = cost.per_feature || [];
   const maxCost = Math.max(...features.map((f) => f.cost), 1);
 
   return (
@@ -450,7 +450,7 @@ function CostTrackingCard({ cost }: { cost: CostAttribution }) {
               Total this period
             </span>
             <span className="text-sm font-bold text-[var(--signal-fg-primary)]">
-              {formatCurrency(cost.totalCost, cost.currency)}
+              {formatCurrency(cost.total_cost, cost.currency)}
             </span>
           </div>
 
@@ -466,9 +466,9 @@ function CostTrackingCard({ cost }: { cost: CostAttribution }) {
                     : "var(--signal-fg-success)";
 
               return (
-                <div key={feature.flagKey} className="flex items-center gap-2">
+                <div key={feature.flag_key} className="flex items-center gap-2">
                   <span className="text-[10px] text-[var(--signal-fg-secondary)] w-20 truncate shrink-0">
-                    {feature.flagName}
+                    {feature.flag_name}
                   </span>
                   <div className="flex-1 h-2 rounded-full bg-[var(--signal-bg-secondary)] overflow-hidden">
                     <div
@@ -502,9 +502,9 @@ function CostTrackingCard({ cost }: { cost: CostAttribution }) {
 
 function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
   const hasData =
-    velocity.totalFlagsShipped > 0 ||
-    velocity.totalFlagsInProgress > 0 ||
-    velocity.avgDaysFlagToShip > 0;
+    velocity.total_flags_shipped > 0 ||
+    velocity.total_flags_in_progress > 0 ||
+    velocity.avg_days_flag_to_ship > 0;
 
   return (
     <LearnCard icon={Gauge} title="Team Velocity">
@@ -528,7 +528,7 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
             {/* Flags shipped */}
             <div className="text-center">
               <div className="text-lg font-bold text-[var(--signal-fg-primary)]">
-                {velocity.totalFlagsShipped}
+                {velocity.total_flags_shipped}
               </div>
               <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5 leading-tight">
                 Shipped
@@ -539,7 +539,7 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
             <div className="text-center">
               <div className="flex items-center justify-center gap-0.5">
                 <span className="text-lg font-bold text-[var(--signal-fg-primary)]">
-                  {velocity.avgDaysFlagToShip}
+                  {velocity.avg_days_flag_to_ship}
                 </span>
                 <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
                   d
@@ -553,7 +553,7 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
             {/* In progress */}
             <div className="text-center">
               <div className="text-lg font-bold text-[var(--signal-fg-primary)]">
-                {velocity.totalFlagsInProgress}
+                {velocity.total_flags_in_progress}
               </div>
               <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5 leading-tight">
                 In Progress
@@ -568,7 +568,7 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
                 Plan → Flag
               </span>
               <span className="text-[10px] font-medium text-[var(--signal-fg-primary)]">
-                {velocity.avgDaysPlanToFlag}d
+                {velocity.avg_days_plan_to_flag}d
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -576,7 +576,7 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
                 Flag → Ship
               </span>
               <span className="text-[10px] font-medium text-[var(--signal-fg-primary)]">
-                {velocity.avgDaysFlagToShip}d
+                {velocity.avg_days_flag_to_ship}d
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -584,7 +584,7 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
                 Ship → Learn
               </span>
               <span className="text-[10px] font-medium text-[var(--signal-fg-primary)]">
-                {velocity.avgDaysShipToLearn}d
+                {velocity.avg_days_ship_to_learn}d
               </span>
             </div>
           </div>
@@ -659,7 +659,7 @@ function formatAction(action: string, flagName?: string): string {
 }
 
 function ActivityItem({ entry }: { entry: ActivityEntry }) {
-  const actorInitial = (entry.actorName ?? "?").charAt(0).toUpperCase();
+  const actorInitial = (entry.actor_name ?? "?").charAt(0).toUpperCase();
 
   return (
     <div className="flex items-center gap-2 py-1">
@@ -668,8 +668,8 @@ function ActivityItem({ entry }: { entry: ActivityEntry }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-[var(--signal-fg-primary)] truncate">
-          <span className="font-medium">{entry.actorName ?? "Unknown"}</span>{" "}
-          {formatAction(entry.action, entry.flagName)}
+          <span className="font-medium">{entry.actor_name ?? "Unknown"}</span>{" "}
+          {formatAction(entry.action, entry.flag_name)}
         </p>
         <p className="text-[10px] text-[var(--signal-fg-tertiary)]">
           {formatRelativeTime(entry.timestamp)}
@@ -879,11 +879,11 @@ export function LearnZone() {
 
   const isEmpty =
     insights &&
-    (insights.impactReports?.length ?? 0) === 0 &&
-    (insights.costAttribution?.perFeature?.length ?? 0) === 0 &&
-    (insights.teamVelocity?.totalFlagsShipped ?? 0) === 0 &&
-    (insights.orgLearnings?.length ?? 0) === 0 &&
-    (insights.recentActivity?.length ?? 0) === 0;
+    (insights.impact_reports?.length ?? 0) === 0 &&
+    (insights.cost_attribution?.per_feature?.length ?? 0) === 0 &&
+    (insights.team_velocity?.total_flags_shipped ?? 0) === 0 &&
+    (insights.org_learnings?.length ?? 0) === 0 &&
+    (insights.recent_activity?.length ?? 0) === 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -905,21 +905,21 @@ export function LearnZone() {
         {!loading && !error && !isEmpty && insights && (
           <div className="space-y-2 px-3 pb-3">
             {showImpactReports && (
-              <ImpactReportsCard reports={insights.impactReports || []} />
+              <ImpactReportsCard reports={insights.impact_reports || []} />
             )}
             {showCostTracking && (
-              <CostTrackingCard cost={insights.costAttribution || { totalCost: 0, currency: "USD", periodStart: "", periodEnd: "", perFeature: [] }} />
+              <CostTrackingCard cost={insights.cost_attribution || { total_cost: 0, currency: "USD", period_start: "", period_end: "", per_feature: [] }} />
             )}
             {showTeamVelocity && (
-              <TeamVelocityCard velocity={insights.teamVelocity || { avgDaysPlanToFlag: 0, avgDaysFlagToShip: 0, avgDaysShipToLearn: 0, totalFlagsShipped: 0, totalFlagsInProgress: 0 }} />
+              <TeamVelocityCard velocity={insights.team_velocity || { avg_days_plan_to_flag: 0, avg_days_flag_to_ship: 0, avg_days_ship_to_learn: 0, total_flags_shipped: 0, total_flags_in_progress: 0 }} />
             )}
             {showOrgLearnings && (
-              <OrgLearningsCard learnings={insights.orgLearnings || []} />
+              <OrgLearningsCard learnings={insights.org_learnings || []} />
             )}
             {showComplianceReport && <ComplianceReportCard />}
             {showAuditorAccess && <AuditorAccessCard />}
             {showRecentActivity && (
-              <RecentActivityCard activity={insights.recentActivity || []} />
+              <RecentActivityCard activity={insights.recent_activity || []} />
             )}
           </div>
         )}

@@ -35,7 +35,7 @@ import type { Repository } from "@/lib/api";
 
 function JanitorInner() {
   const token = useAppStore((s) => s.token);
-  const currentProjectId = useAppStore((s) => s.currentProjectId);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
   const [filter, setFilter] = useState<"all" | "safe" | "prs" | "suggestions">(
     "all",
