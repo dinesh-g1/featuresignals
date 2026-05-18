@@ -406,21 +406,22 @@ export function ContextHierarchy({
     try {
       setLoading(true);
       const projectsList = await api.listProjects(token);
-      setProjects(projectsList);
+      setProjects(projectsList.data);
 
       // Validate currentProjectId — if it was deleted, don't fetch envs
       const validProjectId =
-        currentProjectId && projectsList.find((p) => p.id === currentProjectId)
+        currentProjectId &&
+        projectsList.data.find((p) => p.id === currentProjectId)
           ? currentProjectId
           : null;
 
       if (validProjectId) {
         try {
           const envs = await api.listEnvironments(token, validProjectId);
-          setEnvironments(envs);
+          setEnvironments(envs.data);
 
           // Validate selected environment still exists
-          if (currentEnvId && !envs.find((e) => e.id === currentEnvId)) {
+          if (currentEnvId && !envs.data.find((e) => e.id === currentEnvId)) {
             setCurrentEnv(null);
           }
         } catch {

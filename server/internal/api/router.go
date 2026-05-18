@@ -70,16 +70,16 @@ func NewRouter(
 	internalChecker dto.InternalChecker,
 	salesNotifier handlers.SalesNotifier,
 	salesNotifyEmail string,
-		janitorH *handlers.JanitorHandler,
-		c2fHandler *handlers.Code2FlagHandler,
-		pflHandler *handlers.PreflightHandler,
-		incHandler *handlers.IncidentHandler,
-		impHandler *handlers.ImpactHandler,
-		ghWebhookHandler *handlers.GitHubWebhookHandler,
-		consoleH *handlers.ConsoleHandler,
-		consoleWSH *handlers.ConsoleWSHandler,
-		maturityH *handlers.MaturityHandler,
-	) http.Handler {
+	janitorH *handlers.JanitorHandler,
+	c2fHandler *handlers.Code2FlagHandler,
+	pflHandler *handlers.PreflightHandler,
+	incHandler *handlers.IncidentHandler,
+	impHandler *handlers.ImpactHandler,
+	ghWebhookHandler *handlers.GitHubWebhookHandler,
+	consoleH *handlers.ConsoleHandler,
+	consoleWSH *handlers.ConsoleWSHandler,
+	maturityH *handlers.MaturityHandler,
+) http.Handler {
 	r := chi.NewRouter()
 
 	// Extract config from internalChecker (passed as dto.InternalChecker interface)
@@ -93,7 +93,10 @@ func NewRouter(
 	// ── Global Middleware (applied to every request) ──────────────────
 	r.Use(middleware.CORS)
 	r.Use(otelchi.Middleware("featuresignals-api", otelchi.WithChiRoutes(r)))
-	r.Use(chimw.Compress(5))
+	// Compress responses, but skip WebSocket upgrade requests.
+	// chi's Compress middleware wraps http.ResponseWriter, which breaks
+	// http.Hijacker — required for WebSocket upgrade to 101 Switching Protocols.
+	r.Use(skipCompressForWS(chimw.Compress(5)))
 	r.Use(middleware.MaxBodySize(1 << 20)) // 1 MB
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -166,6 +169,7 @@ func NewRouter(
 	ssoH := handlers.NewSSOHandler(store)
 	ssoAuthH := handlers.NewSSOAuthHandler(store, jwtMgr, appBaseURL, dashboardURL)
 	mfaH := handlers.NewMFAHandler(store)
+	orgH := handlers.NewOrganizationHandler(store)
 
 	// Enterprise feature-gated handlers
 	scimH := handlers.NewSCIMHandler(store)
@@ -557,13 +561,13 @@ func NewRouter(
 				r.Get("/projects/{projectID}/environments/{envID}", envH.Get)
 
 				// Flags — read operations require flag:read scope
-					r.Group(func(r chi.Router) {
-						r.Use(middleware.RequireScope(domain.ScopeFlagRead))
-						r.Get("/projects/{projectID}/flags", flagH.List)
-						r.Get("/flags", flagH.List) // flat endpoint: ?project_id=x&sort=name:asc&label_selector=key==val
-						r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
-						r.Get("/projects/{projectID}/flags/archived", flagH.ListArchived)
-					})
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireScope(domain.ScopeFlagRead))
+					r.Get("/projects/{projectID}/flags", flagH.List)
+					r.Get("/flags", flagH.List) // flat endpoint: ?project_id=x&sort=name:asc&label_selector=key==val
+					r.Get("/projects/{projectID}/flags/{flagKey}", flagH.Get)
+					r.Get("/projects/{projectID}/flags/archived", flagH.ListArchived)
+				})
 
 				// Flag history & versioning
 				r.Get("/projects/{projectID}/flags/{flagKey}/history", flagHistoryH.ListVersions)
@@ -601,22 +605,22 @@ func NewRouter(
 				r.Get("/members/{memberID}/permissions", teamH.ListPermissions)
 
 				// Agent Registry (P0 #15, #16, #19) — Read (requires agent:read scope)
-						r.Group(func(r chi.Router) {
-							r.Use(middleware.RequireScope(domain.ScopeAgentRead))
-							r.Get("/agents", agentRegistryH.List)
-							r.Get("/agents/{agentID}", agentRegistryH.Get)
-							r.Get("/agents/{agentID}/maturity", agentRegistryH.ListMaturities)
-						})
-
-					// Governance Policies — Read
-					r.Get("/policies", policyH.List)
-					r.Get("/policies/{policyID}", policyH.Get)
-
-					// ABM (Agent Behavior Mesh) — Read
-					r.Get("/abm/behaviors", abmH.ListBehaviors)
-					r.Get("/abm/behaviors/{key}", abmH.GetBehavior)
-					r.Get("/abm/behaviors/{key}/analytics", abmH.GetBehaviorAnalytics)
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireScope(domain.ScopeAgentRead))
+					r.Get("/agents", agentRegistryH.List)
+					r.Get("/agents/{agentID}", agentRegistryH.Get)
+					r.Get("/agents/{agentID}/maturity", agentRegistryH.ListMaturities)
 				})
+
+				// Governance Policies — Read
+				r.Get("/policies", policyH.List)
+				r.Get("/policies/{policyID}", policyH.Get)
+
+				// ABM (Agent Behavior Mesh) — Read
+				r.Get("/abm/behaviors", abmH.ListBehaviors)
+				r.Get("/abm/behaviors/{key}", abmH.GetBehavior)
+				r.Get("/abm/behaviors/{key}/analytics", abmH.GetBehaviorAnalytics)
+			})
 
 			// ── Approval Read Routes (Pro+, all roles) ──────────────
 			r.Group(func(r chi.Router) {
@@ -662,23 +666,23 @@ func NewRouter(
 				r.Post("/projects/{projectID}/environments/{envID}/clone", envH.Clone)
 
 				// Flags — write operations require flag:write scope; toggle ops require flag:toggle
-					r.Group(func(r chi.Router) {
-						r.Use(middleware.RequireScope(domain.ScopeFlagWrite))
-						r.Post("/projects/{projectID}/flags", flagH.Create)
-						r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
-						r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
-						r.Post("/projects/{projectID}/flags/{flagKey}/archive", flagH.Archive)
-						r.Post("/projects/{projectID}/flags/{flagKey}/restore", flagH.Restore)
-					})
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireScope(domain.ScopeFlagWrite))
+					r.Post("/projects/{projectID}/flags", flagH.Create)
+					r.Put("/projects/{projectID}/flags/{flagKey}", flagH.Update)
+					r.Delete("/projects/{projectID}/flags/{flagKey}", flagH.Delete)
+					r.Post("/projects/{projectID}/flags/{flagKey}/archive", flagH.Archive)
+					r.Post("/projects/{projectID}/flags/{flagKey}/restore", flagH.Restore)
+				})
 
-					// Flag states & lifecycle operations — require flag:toggle scope
-					r.Group(func(r chi.Router) {
-						r.Use(middleware.RequireScope(domain.ScopeFlagToggle))
-						r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
-						r.Post("/projects/{projectID}/flags/{flagKey}/promote", flagH.Promote)
-						r.Post("/projects/{projectID}/flags/{flagKey}/kill", flagH.Kill)
-						r.Post("/projects/{projectID}/flags/sync-environments", flagH.SyncEnvironments)
-					})
+				// Flag states & lifecycle operations — require flag:toggle scope
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireScope(domain.ScopeFlagToggle))
+					r.Put("/projects/{projectID}/flags/{flagKey}/environments/{envID}", flagH.UpdateState)
+					r.Post("/projects/{projectID}/flags/{flagKey}/promote", flagH.Promote)
+					r.Post("/projects/{projectID}/flags/{flagKey}/kill", flagH.Kill)
+					r.Post("/projects/{projectID}/flags/sync-environments", flagH.SyncEnvironments)
+				})
 
 				// Insights — entity inspection in evaluation context
 				r.Post("/projects/{projectID}/environments/{envID}/inspect-entity", insightsH.InspectEntity)
@@ -690,23 +694,23 @@ func NewRouter(
 				r.Delete("/projects/{projectID}/segments/{segmentKey}", segmentH.Delete)
 
 				// Agent Registry (P0 #15, #16, #19) — Write
-					r.Post("/agents", agentRegistryH.Create)
-					r.Patch("/agents/{agentID}", agentRegistryH.Update)
-					r.Delete("/agents/{agentID}", agentRegistryH.Delete)
-					r.Post("/agents/{agentID}/heartbeat", agentRegistryH.UpdateHeartbeat)
-					r.Post("/agents/{agentID}/evaluate-maturity", agentRegistryH.EvaluateMaturity)
+				r.Post("/agents", agentRegistryH.Create)
+				r.Patch("/agents/{agentID}", agentRegistryH.Update)
+				r.Delete("/agents/{agentID}", agentRegistryH.Delete)
+				r.Post("/agents/{agentID}/heartbeat", agentRegistryH.UpdateHeartbeat)
+				r.Post("/agents/{agentID}/evaluate-maturity", agentRegistryH.EvaluateMaturity)
 
-					// Governance Policies — Write
-					r.Post("/policies", policyH.Create)
-					r.Patch("/policies/{policyID}", policyH.Update)
-					r.Delete("/policies/{policyID}", policyH.Delete)
-					r.Post("/policies/{policyID}/toggle", policyH.Toggle)
+				// Governance Policies — Write
+				r.Post("/policies", policyH.Create)
+				r.Patch("/policies/{policyID}", policyH.Update)
+				r.Delete("/policies/{policyID}", policyH.Delete)
+				r.Post("/policies/{policyID}/toggle", policyH.Toggle)
 
-					// ABM (Agent Behavior Mesh) — Write
-					r.Post("/abm/behaviors", abmH.CreateBehavior)
-					r.Patch("/abm/behaviors/{key}", abmH.UpdateBehavior)
-					r.Delete("/abm/behaviors/{key}", abmH.DeleteBehavior)
-				})
+				// ABM (Agent Behavior Mesh) — Write
+				r.Post("/abm/behaviors", abmH.CreateBehavior)
+				r.Patch("/abm/behaviors/{key}", abmH.UpdateBehavior)
+				r.Delete("/abm/behaviors/{key}", abmH.DeleteBehavior)
+			})
 
 			// ── Approval Create (Pro+, writers) ─────────────────────
 			r.Group(func(r chi.Router) {
@@ -724,43 +728,55 @@ func NewRouter(
 			// to owner and admin roles.
 
 			r.Group(func(r chi.Router) {
-					r.Use(middleware.RequireRole(ownerAdmin...))
-					r.Use(middleware.RequireScope(domain.ScopeAdmin))
+				r.Use(middleware.RequireRole(ownerAdmin...))
+				r.Use(middleware.RequireScope(domain.ScopeAdmin))
 
-					// Destructive resource operations
-					r.Delete("/projects/{projectID}", projectH.Delete)
-					r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
+				// Destructive resource operations
+				r.Delete("/projects/{projectID}", projectH.Delete)
+				r.Delete("/projects/{projectID}/environments/{envID}", envH.Delete)
 
-					// API Key management — requires apikey:write scope
-					r.Group(func(r chi.Router) {
-						r.Use(middleware.RequireScope(domain.ScopeAPIKeyWrite))
-						r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
-						r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
-						r.Post("/api-keys/{keyID}/rotate", apiKeyH.Rotate)
-					})
-
-					// Team / Member management — write ops require team:write scope
-					r.Group(func(r chi.Router) {
-						r.Use(middleware.RequireScope(domain.ScopeTeamWrite))
-						r.Post("/members/invite", teamH.Invite)
-						r.Put("/members/{memberID}", teamH.UpdateRole)
-						r.Delete("/members/{memberID}", teamH.Remove)
-						r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
-					})
-
-					// Metrics — evaluation & impression analytics
-					r.Get("/metrics/evaluations", metricsH.Summary)
-					r.Post("/metrics/evaluations/reset", metricsH.Reset)
-					r.Get("/metrics/impressions", metricsH.ImpressionSummary)
-					r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
-
-					// Internal KPI analytics
-					r.Get("/analytics/overview", analyticsH.Overview)
-
-					// Evaluation event analytics
-					r.Get("/eval-events", evalEventsH.Query)
-					r.Get("/eval-events/volume", evalEventsH.Volume)
+				// API Key management — requires apikey:write scope
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireScope(domain.ScopeAPIKeyWrite))
+					r.Post("/environments/{envID}/api-keys", apiKeyH.Create)
+					r.Delete("/api-keys/{keyID}", apiKeyH.Revoke)
+					r.Post("/api-keys/{keyID}/rotate", apiKeyH.Rotate)
 				})
+
+				// Team / Member management — write ops require team:write scope
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireScope(domain.ScopeTeamWrite))
+					r.Post("/members/invite", teamH.Invite)
+					r.Put("/members/{memberID}", teamH.UpdateRole)
+					r.Delete("/members/{memberID}", teamH.Remove)
+					r.Put("/members/{memberID}/permissions", teamH.UpdatePermissions)
+				})
+
+				// Metrics — evaluation & impression analytics
+				r.Get("/metrics/evaluations", metricsH.Summary)
+				r.Post("/metrics/evaluations/reset", metricsH.Reset)
+				r.Get("/metrics/impressions", metricsH.ImpressionSummary)
+				r.Post("/metrics/impressions/flush", metricsH.FlushImpressions)
+
+				// Internal KPI analytics
+				r.Get("/analytics/overview", analyticsH.Overview)
+
+				// Evaluation event analytics
+				r.Get("/eval-events", evalEventsH.Query)
+				r.Get("/eval-events/volume", evalEventsH.Volume)
+			})
+
+			// ── Organization Lifecycle (owner only) ──────────────────
+			// These endpoints are the most destructive operations in the
+			// system. Only the organization owner may delete, recover, or
+			// audit resources for deletion.
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole(domain.RoleOwner))
+				r.Delete("/organization", orgH.Delete)
+				r.Post("/organization/recover", orgH.Recover)
+				r.Post("/organization/purge", orgH.Purge)
+				r.Get("/organization/resources", orgH.GetResources)
+			})
 
 			// ── Approval Review (Pro+, admin-only) ──────────────────
 			r.Group(func(r chi.Router) {
@@ -1053,4 +1069,23 @@ func NewRouter(
 	})
 
 	return r
+}
+
+// skipCompressForWS wraps a chi-compatible middleware so that WebSocket
+// upgrade requests bypass compression. The standard chi Compress middleware
+// wraps http.ResponseWriter, which strips the http.Hijacker interface —
+// this causes WebSocket upgrades to fail with a 500 error because the
+// server cannot hijack the underlying TCP connection to perform the
+// 101 Switching Protocols handshake.
+func skipCompressForWS(compress func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// WebSocket upgrade requests must not be compressed.
+			if r.Header.Get("Upgrade") == "websocket" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			compress(next).ServeHTTP(w, r)
+		})
+	}
 }

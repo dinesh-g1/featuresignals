@@ -29,6 +29,25 @@ type Organization struct {
 	DeletedAt *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
 
+// OrgResourceCounts holds the count of every resource type owned by an
+// organization. Used for pre-deletion audit so users understand exactly
+// what will be permanently destroyed.
+type OrgResourceCounts struct {
+	Projects       int `json:"projects"`
+	Environments   int `json:"environments"`
+	Flags          int `json:"flags"`
+	Segments       int `json:"segments"`
+	APIKeys        int `json:"api_keys"`
+	Webhooks       int `json:"webhooks"`
+	Members        int `json:"members"`
+	AuditEntries   int `json:"audit_entries"`
+	Integrations   int `json:"integrations"`
+	Agents         int `json:"agents"`
+	Policies       int `json:"policies"`
+	SSOConfigs     int `json:"sso_configs"`
+	TotalResources int `json:"total_resources"`
+}
+
 const (
 	TrialDurationDays      = 14
 	SoftDeleteInactiveDays = 90

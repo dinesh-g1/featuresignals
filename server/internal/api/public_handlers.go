@@ -89,19 +89,19 @@ type MigrationPreviewRequest struct {
 
 // MigrationPreviewResponse is returned by the migration preview endpoint.
 type MigrationPreviewResponse struct {
-	Flags                []importedFlagInfo        `json:"flags"`
-	Environments         []importedEnvInfo         `json:"environments"`
-	Segments             []importedSegmentInfo     `json:"segments"`
-	EstimatedMigrationTime string                   `json:"estimated_migration_time"`
-	PricingComparison    pricingComparison         `json:"pricing_comparison"`
+	Flags                  []importedFlagInfo    `json:"flags"`
+	Environments           []importedEnvInfo     `json:"environments"`
+	Segments               []importedSegmentInfo `json:"segments"`
+	EstimatedMigrationTime string                `json:"estimated_migration_time"`
+	PricingComparison      pricingComparison     `json:"pricing_comparison"`
 }
 
 type importedFlagInfo struct {
-	Key          string            `json:"key"`
-	Name         string            `json:"name"`
-	Type         string            `json:"type"`
-	Environments map[string]bool   `json:"environments"`
-	Rules        int               `json:"rules"`
+	Key          string          `json:"key"`
+	Name         string          `json:"name"`
+	Type         string          `json:"type"`
+	Environments map[string]bool `json:"environments"`
+	Rules        int             `json:"rules"`
 }
 
 type importedEnvInfo struct {
@@ -116,10 +116,10 @@ type importedSegmentInfo struct {
 }
 
 type pricingComparison struct {
-	Current       providerPricing `json:"current"`
-	FS            providerPricing `json:"fs"`
-	SavingsAnnual float64         `json:"savings_annual"`
-	SavingsPercent float64        `json:"savings_percent"`
+	Current        providerPricing `json:"current"`
+	FS             providerPricing `json:"fs"`
+	SavingsAnnual  float64         `json:"savings_annual"`
+	SavingsPercent float64         `json:"savings_percent"`
 }
 
 type providerPricing struct {
@@ -281,9 +281,9 @@ func (h *PublicHandler) MigrationPreview(w http.ResponseWriter, r *http.Request)
 	fsMonthly := 29.0 // Pro plan ~$29 USD
 
 	resp := MigrationPreviewResponse{
-		Flags:                 flagInfos,
-		Environments:          envInfos,
-		Segments:              segInfos,
+		Flags:                  flagInfos,
+		Environments:           envInfos,
+		Segments:               segInfos,
 		EstimatedMigrationTime: estTime,
 		PricingComparison: pricingComparison{
 			Current: providerPricing{
@@ -451,11 +451,11 @@ func (h *PublicHandler) PublicEvaluate(w http.ResponseWriter, r *http.Request) {
 	logger.Info("public eval", "flag_key", flagKey, "targeting_key", evalCtx.Key, "reason", result.Reason, "latency_ms", latencyMs)
 
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"flag_key":    flagKey,
-		"value":       result.Value,
-		"reason":      result.Reason,
+		"flag_key":     flagKey,
+		"value":        result.Value,
+		"reason":       result.Reason,
 		"matched_rule": nil,
-		"latency_ms":  latencyMs,
+		"latency_ms":   latencyMs,
 	})
 }
 
@@ -586,7 +586,7 @@ func buildDemoRuleset() *domain.Ruleset {
 
 	states := map[string]*domain.FlagState{
 		"dark-mode": {
-			Enabled:    true,
+			Enabled:      true,
 			DefaultValue: falseVal,
 			Rules: []domain.TargetingRule{
 				{
@@ -601,7 +601,7 @@ func buildDemoRuleset() *domain.Ruleset {
 			PercentageRollout: 5000, // 50% for non-enterprise
 		},
 		"new-checkout": {
-			Enabled:    true,
+			Enabled:      true,
 			DefaultValue: falseVal,
 			Rules: []domain.TargetingRule{
 				{
@@ -615,7 +615,7 @@ func buildDemoRuleset() *domain.Ruleset {
 			},
 		},
 		"beta-features": {
-			Enabled:    true,
+			Enabled:      true,
 			DefaultValue: falseVal,
 			Rules: []domain.TargetingRule{
 				{

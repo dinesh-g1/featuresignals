@@ -185,11 +185,11 @@ func (h *Handler) HandleStatusHistory(w http.ResponseWriter, r *http.Request) {
 
 // RegionSLA contains computed SLA metrics for a single region.
 type RegionSLA struct {
-	Region       string  `json:"region"`
-	Name         string  `json:"name"`
-	UptimePct    float64 `json:"uptime_pct"`
-	DaysTracked  int     `json:"days_tracked"`
-	CurrentStreak int    `json:"current_streak_days"`
+	Region        string  `json:"region"`
+	Name          string  `json:"name"`
+	UptimePct     float64 `json:"uptime_pct"`
+	DaysTracked   int     `json:"days_tracked"`
+	CurrentStreak int     `json:"current_streak_days"`
 }
 
 // HandleSLA computes uptime SLA metrics per region over a given period.
@@ -268,9 +268,9 @@ func (h *Handler) HandleSLA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
-		"sla":        result,
+		"sla":         result,
 		"period_days": days,
-		"checked_at": time.Now().UTC(),
+		"checked_at":  time.Now().UTC(),
 	})
 }
 

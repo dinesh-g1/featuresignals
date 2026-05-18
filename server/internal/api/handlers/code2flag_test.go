@@ -347,6 +347,7 @@ func (m *mockCode2FlagStore) seedGeneratedFlag(orgID, key, flagType, status stri
 	gf := &domain.GeneratedFlag{
 		ID:          m.nextID(),
 		OrgID:       orgID,
+		ProjectID:   "proj-1",
 		Key:         key,
 		Name:        key,
 		Description: "Auto-generated flag",

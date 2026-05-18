@@ -117,8 +117,8 @@ func (h *OpsEnvVarsHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 	log := h.logger.With("handler", "ops_env_vars_upsert")
 
 	var req struct {
-		Scope   string              `json:"scope"`
-		ScopeID string              `json:"scope_id"`
+		Scope   string               `json:"scope"`
+		ScopeID string               `json:"scope_id"`
 		Vars    []domain.EnvVarInput `json:"env_vars"`
 	}
 	if err := httputil.DecodeJSON(r, &req); err != nil {

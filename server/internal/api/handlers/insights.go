@@ -97,12 +97,12 @@ type EntityDef struct {
 }
 
 type EntityComparisonResult struct {
-	FlagKey    string      `json:"flag_key"`
-	ValueA     interface{} `json:"value_a"`
-	ValueB     interface{} `json:"value_b"`
-	ReasonA    string      `json:"reason_a"`
-	ReasonB    string      `json:"reason_b"`
-	IsDifferent bool       `json:"is_different"`
+	FlagKey     string      `json:"flag_key"`
+	ValueA      interface{} `json:"value_a"`
+	ValueB      interface{} `json:"value_b"`
+	ReasonA     string      `json:"reason_a"`
+	ReasonB     string      `json:"reason_b"`
+	IsDifferent bool        `json:"is_different"`
 }
 
 // CompareEntities evaluates all flags for two entities and returns a diff.

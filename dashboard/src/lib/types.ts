@@ -20,8 +20,25 @@ export interface Organization {
   plan: string;
   data_region: string;
   trial_expires_at?: string;
+  deleted_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface OrgResourceCounts {
+  projects: number;
+  environments: number;
+  flags: number;
+  segments: number;
+  api_keys: number;
+  webhooks: number;
+  members: number;
+  audit_entries: number;
+  integrations: number;
+  agents: number;
+  policies: number;
+  sso_configs: number;
+  total_resources: number;
 }
 
 export interface Project {

@@ -51,23 +51,23 @@ type Config struct {
 	StripeMode          string
 
 	// ── AI Janitor ──────────────────────────────────────────────
-	DeepSeekAPIKey         string
-	DeepSeekModel          string
-	OpenAIAPIKey           string
-	OpenAIModel            string
-	OpenAIEndpoint         string
-	AzureOpenAIAPIKey      string
-	AzureOpenAIEndpoint    string
-	AzureOpenAIModel       string
-	GitHubClientID         string
-	GitHubClientSecret     string
-	GitLabClientID         string
-	GitLabClientSecret     string
-	BitbucketClientID      string
-	BitbucketClientSecret  string
-	JanitorEncryptionKey   string
-	JanitorLLMTimeout      time.Duration
-	JanitorLLMMaxRetries   int
+	DeepSeekAPIKey          string
+	DeepSeekModel           string
+	OpenAIAPIKey            string
+	OpenAIModel             string
+	OpenAIEndpoint          string
+	AzureOpenAIAPIKey       string
+	AzureOpenAIEndpoint     string
+	AzureOpenAIModel        string
+	GitHubClientID          string
+	GitHubClientSecret      string
+	GitLabClientID          string
+	GitLabClientSecret      string
+	BitbucketClientID       string
+	BitbucketClientSecret   string
+	JanitorEncryptionKey    string
+	JanitorLLMTimeout       time.Duration
+	JanitorLLMMaxRetries    int
 	JanitorLLMMinConfidence float64
 
 	// Deployment mode: "cloud" or "onprem"
@@ -128,7 +128,7 @@ type Config struct {
 
 	// ── Agent Runtime ─────────────────────────────────────────────
 	AgentHeartbeatIntervalSec int
-	AgentStaleTimeoutSec       int
+	AgentStaleTimeoutSec      int
 
 	// ── Workflow Engine ───────────────────────────────────────────
 	WorkflowMaxConcurrent     int
@@ -170,7 +170,6 @@ type Config struct {
 	OTELLogsEnabled    bool
 	OTELLogLevel       string
 	OTELSampleRate     float64
-
 }
 
 func Load() *Config {
@@ -246,9 +245,9 @@ func Load() *Config {
 		LocalRegion: getEnv("LOCAL_REGION", "in"),
 
 		// Policy Evaluator
-		PolicyEvalMaxPolicies:  getEnvInt("POLICY_EVAL_MAX_POLICIES", 50),
-		PolicyEvalTimeoutMs:    getEnvInt("POLICY_EVAL_TIMEOUT_MS", 10),
-		PipelineStepTimeoutMs:  getEnvInt("PIPELINE_STEP_TIMEOUT_MS", 10),
+		PolicyEvalMaxPolicies: getEnvInt("POLICY_EVAL_MAX_POLICIES", 50),
+		PolicyEvalTimeoutMs:   getEnvInt("POLICY_EVAL_TIMEOUT_MS", 10),
+		PipelineStepTimeoutMs: getEnvInt("PIPELINE_STEP_TIMEOUT_MS", 10),
 
 		// Agent Runtime
 		AgentHeartbeatIntervalSec: getEnvInt("AGENT_HEARTBEAT_INTERVAL_SEC", 30),
@@ -291,7 +290,6 @@ func Load() *Config {
 		ClickHouseMaxOpenConns:  getEnvInt("CLICKHOUSE_MAX_OPEN_CONNS", 10),
 		ClickHouseDialTimeout:   time.Duration(getEnvInt("CLICKHOUSE_DIAL_TIMEOUT_SEC", 10)) * time.Second,
 		ClickHouseQueryTimeout:  time.Duration(getEnvInt("CLICKHOUSE_QUERY_TIMEOUT_SEC", 30)) * time.Second,
-
 	}
 }
 

@@ -43,28 +43,28 @@ type ConnectResponse struct {
 
 // AnalyzeRequest requests a migration analysis from a source provider.
 type AnalyzeRequest struct {
-	Provider        string   `json:"provider"`
-	APIKey          string   `json:"api_key"`
-	BaseURL         string   `json:"base_url,omitempty"`
-	ProjectID       string   `json:"project_id,omitempty"`
-	IncludeFlags    bool     `json:"include_flags"`
-	IncludeEnvs     bool     `json:"include_environments"`
-	IncludeSegments bool     `json:"include_segments"`
-	ExportFormat    string   `json:"export_format,omitempty"` // terraform, pulumi, ansible, etc.
+	Provider        string `json:"provider"`
+	APIKey          string `json:"api_key"`
+	BaseURL         string `json:"base_url,omitempty"`
+	ProjectID       string `json:"project_id,omitempty"`
+	IncludeFlags    bool   `json:"include_flags"`
+	IncludeEnvs     bool   `json:"include_environments"`
+	IncludeSegments bool   `json:"include_segments"`
+	ExportFormat    string `json:"export_format,omitempty"` // terraform, pulumi, ansible, etc.
 }
 
 // AnalyzeResponse returns the migration plan.
 type AnalyzeResponse struct {
-	Plan         MigrationPlan      `json:"plan"`
-	IaCFiles     []ExportFile       `json:"iac_files,omitempty"`
+	Plan     MigrationPlan `json:"plan"`
+	IaCFiles []ExportFile  `json:"iac_files,omitempty"`
 }
 
 // MigrationPlan describes what would be migrated.
 type MigrationPlan struct {
-	Provider     string `json:"provider"`
-	FlagsCount   int    `json:"flags_count"`
-	EnvsCount    int    `json:"environments_count"`
-	SegmentsCount int   `json:"segments_count"`
+	Provider      string `json:"provider"`
+	FlagsCount    int    `json:"flags_count"`
+	EnvsCount     int    `json:"environments_count"`
+	SegmentsCount int    `json:"segments_count"`
 }
 
 // ExportFile represents a generated IaC file.
@@ -76,27 +76,27 @@ type ExportFile struct {
 
 // ExecuteRequest requests execution of a migration.
 type ExecuteRequest struct {
-	Provider        string   `json:"provider"`
-	APIKey          string   `json:"api_key"`
-	BaseURL         string   `json:"base_url,omitempty"`
-	ProjectID       string   `json:"project_id,omitempty"`
-	TargetProjectID string   `json:"target_project_id"`
-	IncludeFlags    bool     `json:"include_flags"`
-	IncludeEnvs     bool     `json:"include_environments"`
-	IncludeSegments bool     `json:"include_segments"`
-	ExportFormat    string   `json:"export_format,omitempty"`
+	Provider        string `json:"provider"`
+	APIKey          string `json:"api_key"`
+	BaseURL         string `json:"base_url,omitempty"`
+	ProjectID       string `json:"project_id,omitempty"`
+	TargetProjectID string `json:"target_project_id"`
+	IncludeFlags    bool   `json:"include_flags"`
+	IncludeEnvs     bool   `json:"include_environments"`
+	IncludeSegments bool   `json:"include_segments"`
+	ExportFormat    string `json:"export_format,omitempty"`
 }
 
 // ExecuteResponse returns migration execution results.
 type ExecuteResponse struct {
-	MigrationID     string       `json:"migration_id"`
-	Status          string       `json:"status"`
-	ProjectID       string       `json:"project_id"`
-	ImportedFlags   int          `json:"imported_flags"`
-	ImportedEnvs    int          `json:"imported_environments"`
-	ImportedSegments int         `json:"imported_segments"`
-	GeneratedFiles  []ExportFile `json:"generated_files,omitempty"`
-	CreatedAt       string       `json:"created_at"`
+	MigrationID      string       `json:"migration_id"`
+	Status           string       `json:"status"`
+	ProjectID        string       `json:"project_id"`
+	ImportedFlags    int          `json:"imported_flags"`
+	ImportedEnvs     int          `json:"imported_environments"`
+	ImportedSegments int          `json:"imported_segments"`
+	GeneratedFiles   []ExportFile `json:"generated_files,omitempty"`
+	CreatedAt        string       `json:"created_at"`
 }
 
 // StatusResponse returns migration job status.

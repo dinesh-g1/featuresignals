@@ -5,7 +5,13 @@ import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
-  ActivityIcon, CheckIcon, AlertIcon, FlagIcon, UsersIcon, KeyIcon, ShieldIcon
+  ActivityIcon,
+  CheckIcon,
+  AlertIcon,
+  FlagIcon,
+  UsersIcon,
+  KeyIcon,
+  ShieldIcon,
 } from "@/components/icons/nav-icons";
 import type { UsageInfo } from "@/lib/types";
 
@@ -84,24 +90,13 @@ const StatusIcon = ({ status }: { status: "pass" | "warn" | "fail" }) => {
         : "Action required";
   if (status === "pass")
     return (
-      <CheckIcon
-        className="h-3.5 w-3.5 text-emerald-500"
-        aria-label={label}
-        />
+      <CheckIcon className="h-3.5 w-3.5 text-emerald-500" aria-label={label} />
     );
   if (status === "warn")
     return (
-      <AlertIcon
-        className="h-3.5 w-3.5 text-amber-500"
-        aria-label={label}
-        />
+      <AlertIcon className="h-3.5 w-3.5 text-amber-500" aria-label={label} />
     );
-  return (
-    <AlertIcon
-      className="h-3.5 w-3.5 text-red-500"
-      aria-label={label}
-      />
-  );
+  return <AlertIcon className="h-3.5 w-3.5 text-red-500" aria-label={label} />;
 };
 
 export function WorkspaceHealth() {
@@ -122,7 +117,7 @@ export function WorkspaceHealth() {
     if (!token || !projectId) return;
     api
       .listFlags(token, projectId)
-      .then((flags) => setFlagCount(flags?.length ?? 0))
+      .then((flags) => setFlagCount(flags.data.length))
       .catch(() => {});
   }, [token, projectId]);
 
@@ -154,6 +149,7 @@ export function WorkspaceHealth() {
 
       <div
         className="h-1.5 w-full rounded-full bg-[var(--signal-bg-secondary)] mb-4"
+        role="progressbar"
         aria-valuenow={score}
         aria-valuemin={0}
         aria-valuemax={100}
@@ -181,7 +177,9 @@ export function WorkspaceHealth() {
                 {check.label}
               </span>
               <span className="mx-1 text-slate-300">·</span>
-              <span className="text-xs text-[var(--signal-fg-secondary)]">{check.detail}</span>
+              <span className="text-xs text-[var(--signal-fg-secondary)]">
+                {check.detail}
+              </span>
             </div>
           </div>
         ))}

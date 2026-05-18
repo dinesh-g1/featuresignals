@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      router.push("/projects");
+      router.push("/console");
       return;
     }
     setLoadingAuth(false);

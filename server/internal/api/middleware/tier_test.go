@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"errors"
 	"testing"
 	"time"
 
@@ -90,7 +90,9 @@ func (s *tierMockStore) CreateFlag(context.Context, *domain.Flag) error         
 func (s *tierMockStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) ListFlags(context.Context, string, int, int) ([]domain.Flag, error) { return nil, nil }
+func (s *tierMockStore) ListFlags(context.Context, string, int, int) ([]domain.Flag, error) {
+	return nil, nil
+}
 func (s *tierMockStore) ListFlagsWithFilter(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, nil
 }
@@ -184,28 +186,36 @@ func (s *tierMockStore) GetLastAuditHash(context.Context, string) (string, error
 func (s *tierMockStore) GetLimitsConfig(context.Context, string) (*domain.LimitsConfigRow, error) {
 	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
 }
-func (s *tierMockStore) CountFlags(context.Context, string) (int, error)       { return 0, nil }
-func (s *tierMockStore) CountSegments(context.Context, string) (int, error)    { return 0, nil }
+func (s *tierMockStore) CountFlags(context.Context, string) (int, error)        { return 0, nil }
+func (s *tierMockStore) CountSegments(context.Context, string) (int, error)     { return 0, nil }
 func (s *tierMockStore) CountEnvironments(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountMembers(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountMembers(context.Context, string) (int, error)      { return 0, nil }
 func (s *tierMockStore) CountOrgMembers(ctx context.Context, orgID string) (int, error) {
 	return 0, nil
 }
-func (s *tierMockStore) CountWebhooks(context.Context, string) (int, error)    { return 0, nil }
-func (s *tierMockStore) CountAPIKeys(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountWebhooks(context.Context, string) (int, error)     { return 0, nil }
+func (s *tierMockStore) CountAPIKeys(context.Context, string) (int, error)      { return 0, nil }
 func (s *tierMockStore) CountAPIKeysByEnv(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountCustomRoles(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountCustomRoles(context.Context, string) (int, error)  { return 0, nil }
 func (s *tierMockStore) CountFlagVersions(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountPinnedItems(context.Context, string, string, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountPinnedItems(context.Context, string, string, string) (int, error) {
+	return 0, nil
+}
 func (s *tierMockStore) CountIntegrations(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountEnvironmentsByProject(context.Context, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountEnvironmentsByProject(context.Context, string) (int, error) {
+	return 0, nil
+}
 func (s *tierMockStore) CountFlagStatesByEnv(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountFlagsWithFilter(context.Context, string, string, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountFlagsWithFilter(context.Context, string, string, string) (int, error) {
+	return 0, nil
+}
 func (s *tierMockStore) CountFlagsByProject(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountSegmentsWithFilter(context.Context, string, string, string) (int, error) { return 0, nil }
+func (s *tierMockStore) CountSegmentsWithFilter(context.Context, string, string, string) (int, error) {
+	return 0, nil
+}
 func (s *tierMockStore) CountSegmentsByProject(context.Context, string) (int, error) { return 0, nil }
 func (s *tierMockStore) CountWebhookDeliveries(context.Context, string) (int, error) { return 0, nil }
-func (s *tierMockStore) CountProjects(context.Context, string) (int, error)    { return 0, nil }
+func (s *tierMockStore) CountProjects(context.Context, string) (int, error)          { return 0, nil }
 func (s *tierMockStore) ListPinnedItems(context.Context, string, string, string, int, int) ([]domain.PinnedItem, error) {
 	return nil, nil
 }
@@ -218,7 +228,7 @@ func (s *tierMockStore) DeletePinnedItem(context.Context, string, string, string
 func (s *tierMockStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
 	return nil, nil
 }
-func (s *tierMockStore) CountAuditEntries(context.Context, string) (int, error)   { return 0, nil }
+func (s *tierMockStore) CountAuditEntries(context.Context, string) (int, error) { return 0, nil }
 func (s *tierMockStore) CountApprovalRequests(context.Context, string, string) (int, error) {
 	return 0, nil
 }
@@ -285,7 +295,10 @@ func (s *tierMockStore) HardDeleteOrganization(context.Context, string) error { 
 func (s *tierMockStore) ListInactiveOrgs(context.Context, string, time.Time) ([]domain.Organization, error) {
 	return nil, nil
 }
-func (s *tierMockStore) DowngradeOrgToFree(context.Context, string) error               { return nil }
+func (s *tierMockStore) DowngradeOrgToFree(context.Context, string) error { return nil }
+func (s *tierMockStore) GetOrganizationResourceCounts(context.Context, string) (*domain.OrgResourceCounts, error) {
+	return nil, nil
+}
 func (s *tierMockStore) CreateSalesInquiry(context.Context, *domain.SalesInquiry) error { return nil }
 func (s *tierMockStore) CreateOneTimeToken(context.Context, string, string, time.Duration) (string, error) {
 	return "test-token", nil
@@ -338,6 +351,10 @@ func (s *tierMockStore) ListCustomRoles(context.Context, string, int, int) ([]do
 func (s *tierMockStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return nil }
 func (s *tierMockStore) DeleteCustomRole(context.Context, string) error             { return nil }
 func (s *tierMockStore) SoftDeleteUser(context.Context, string) error               { return nil }
+func (s *tierMockStore) DeleteUser(context.Context, string) error                   { return nil }
+func (s *tierMockStore) GetOrgIDsForUser(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
 
 func (s *tierMockStore) InsertProductEvent(context.Context, *domain.ProductEvent) error { return nil }
 func (s *tierMockStore) InsertProductEvents(context.Context, []domain.ProductEvent) error {
@@ -526,7 +543,7 @@ func TestTierEnforce_EnvironmentCreate_AtLimit(t *testing.T) {
 	store := &tierMockStore{
 		org: &domain.Organization{ID: "org-1", PlanEnvironmentsLimit: 2},
 		envs: map[string][]domain.Environment{
-			"proj-1": {{ID: "e1"}, {ID: "e2"}}	,
+			"proj-1": {{ID: "e1"}, {ID: "e2"}},
 		},
 	}
 	logger := slog.Default()
@@ -631,7 +648,6 @@ func (s *tierMockStore) ConsumeMagicLinkToken(context.Context, string) (string, 
 
 // ─── OpsStore stubs (required by domain.Store) ────────────────────────
 
-
 func (s *tierMockStore) ListLicenses(context.Context, string, string, string) ([]domain.License, int, error) {
 	return nil, 0, nil
 }
@@ -672,7 +688,6 @@ func (s *tierMockStore) ListOpsAuditLogs(context.Context, string, string, string
 }
 func (s *tierMockStore) CreateOpsAuditLog(context.Context, *domain.OpsAuditLog) error { return nil }
 
-
 func (s *tierMockStore) CreateIntegration(context.Context, domain.CreateIntegrationRequest) (*domain.Integration, error) {
 	return nil, nil
 }
@@ -695,18 +710,26 @@ func (s *tierMockStore) ListDeliveries(context.Context, string, int) ([]domain.I
 	return nil, nil
 }
 
-func (s *tierMockStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
-func (s *tierMockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
-func (s *tierMockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
-func (s *tierMockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *tierMockStore) CreateOpsCredentials(context.Context, string, string, string) error {
+	return nil
+}
+func (s *tierMockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
+func (s *tierMockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) {
+	return "", nil
+}
+func (s *tierMockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
 func (s *tierMockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
-func (s *tierMockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
+func (s *tierMockStore) DeleteAllOpsSessions(context.Context, string) error     { return nil }
 
 func (s *tierMockStore) CreateSession(context.Context, *domain.PublicSession) error { return nil }
 func (s *tierMockStore) GetSession(context.Context, string) (*domain.PublicSession, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *tierMockStore) DeleteSession(context.Context, string) error          { return nil }
+func (s *tierMockStore) DeleteSession(context.Context, string) error       { return nil }
 func (s *tierMockStore) CleanExpiredSessions(context.Context) (int, error) { return 0, nil }
 
 // CreditStore stubs — satisfy domain.Store interface in tests.

@@ -30,12 +30,12 @@ func NewDataExportHandler(store dataExportStore) *DataExportHandler {
 }
 
 type orgDataExport struct {
-	ExportedAt   string                `json:"exported_at"`
-	Organization *domain.Organization  `json:"organization"`
-	Projects     []projectDataExport   `json:"projects"`
-	Members      []memberExportEntry   `json:"members"`
-	Webhooks     []webhookExportEntry  `json:"webhooks"`
-	AuditSummary auditExportSummary    `json:"audit_summary"`
+	ExportedAt   string               `json:"exported_at"`
+	Organization *domain.Organization `json:"organization"`
+	Projects     []projectDataExport  `json:"projects"`
+	Members      []memberExportEntry  `json:"members"`
+	Webhooks     []webhookExportEntry `json:"webhooks"`
+	AuditSummary auditExportSummary   `json:"audit_summary"`
 }
 
 type projectDataExport struct {

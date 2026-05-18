@@ -21,13 +21,16 @@ import { motion } from "framer-motion";
 import { Sliders, AlertTriangle, CheckCircle, ArrowLeft } from "lucide-react";
 import { useConsoleStore } from "@/stores/console-store";
 import { useAppStore } from "@/stores/app-store";
+import { useConsoleFeatures } from "@/hooks/use-console-data";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { HoldToConfirm } from "@/components/console/hold-to-confirm";
 import { showUndoToast } from "@/components/console/undo-toast";
 import { ENV_COLORS } from "@/lib/console-constants";
-import type { FeatureStatus } from "@/lib/console-types";
+import type { FeatureStatus, FeatureCardData } from "@/lib/console-types";
 
 // ─── Quick Rollout Presets ────────────────────────────────────────────
 
@@ -44,10 +47,10 @@ const ROLLOUT_PRESETS = [
 
 export function ShipWizard() {
   const selectedFeatureKey = useConsoleStore((s) => s.selectedFeature);
-  const features = useConsoleStore((s) => s.features);
+  const { data: featuresData } = useConsoleFeatures();
+  const features = featuresData?.data ?? [];
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
   const setActivePanel = useConsoleStore((s) => s.setActivePanel);
-  const setFeatures = useConsoleStore((s) => s.setFeatures);
   const token = useAppStore((s) => s.token);
 
   const [targetPercent, setTargetPercent] = useState(100);
@@ -64,7 +67,9 @@ export function ShipWizard() {
 
   // ── Derived values ─────────────────────────────────────────────────
 
-  const envConfig = feature ? ENV_COLORS[feature.environment] : ENV_COLORS["development"];
+  const envConfig = feature
+    ? ENV_COLORS[feature.environment]
+    : ENV_COLORS["development"];
 
   // ── Back to flag detail ────────────────────────────────────────────
 
@@ -87,20 +92,30 @@ export function ShipWizard() {
       });
 
       // Optimistic update
-      setFeatures(
-        features.map((f) =>
-          f.key === feature.key
-            ? {
-                ...f,
-                status: "live" as FeatureStatus,
-                rollout_percent: targetPercent,
-                last_action: targetPercent >= 100 ? "Shipped" : `Rolled out to ${targetPercent}%`,
-                last_action_at: new Date().toISOString(),
-                last_action_by: "You",
-              }
-            : f,
-        ),
-        features.length,
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.console.all, exact: false },
+        (old: unknown) => {
+          const p = old as { data: FeatureCardData[]; total: number } | null;
+          if (!p?.data) return old;
+          return {
+            ...p,
+            data: p.data.map((f) =>
+              f.key === feature.key
+                ? {
+                    ...f,
+                    status: "live" as FeatureStatus,
+                    rollout_percent: targetPercent,
+                    last_action:
+                      targetPercent >= 100
+                        ? "Shipped"
+                        : `Rolled out to ${targetPercent}%`,
+                    last_action_at: new Date().toISOString(),
+                    last_action_by: "You",
+                  }
+                : f,
+            ),
+          };
+        },
       );
 
       setShipped(true);
@@ -110,22 +125,7 @@ export function ShipWizard() {
           ? `"${feature.name}" is now LIVE`
           : `"${feature.name}" rolled out to ${targetPercent}%`,
         () => {
-          // Revert optimistic update
-          setFeatures(
-            features.map((f) =>
-              f.key === feature.key
-                ? {
-                    ...f,
-                    status: feature.status,
-                    rollout_percent: feature.rollout_percent,
-                    last_action: feature.last_action,
-                    last_action_at: feature.last_action_at,
-                    last_action_by: feature.last_action_by,
-                  }
-                : f,
-            ),
-            features.length,
-          );
+          queryClient.invalidateQueries({ queryKey: queryKeys.console.all });
         },
       );
     } catch (err) {
@@ -135,14 +135,7 @@ export function ShipWizard() {
     } finally {
       setShipping(false);
     }
-  }, [
-    feature,
-    token,
-    targetPercent,
-    selectedEnvironment,
-    features,
-    setFeatures,
-  ]);
+  }, [feature, token, targetPercent, selectedEnvironment]);
 
   // ── Not found ──────────────────────────────────────────────────────
 

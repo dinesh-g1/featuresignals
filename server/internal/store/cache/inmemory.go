@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	cacheMeter   = otel.Meter("featuresignals/cache")
+	cacheMeter      = otel.Meter("featuresignals/cache")
 	cacheHitCtr, _  = cacheMeter.Int64Counter("cache.hit", ometric.WithDescription("Evaluation cache hits"))
 	cacheMissCtr, _ = cacheMeter.Int64Counter("cache.miss", ometric.WithDescription("Evaluation cache misses"))
 )

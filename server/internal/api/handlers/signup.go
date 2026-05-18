@@ -17,6 +17,7 @@ import (
 type signupStore interface {
 	domain.UserReader
 	domain.UserWriter
+	domain.OrgReader
 	domain.OrgWriter
 	domain.OrgMemberStore
 	domain.ProjectWriter
@@ -112,9 +113,86 @@ func (h *SignupHandler) InitiateSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.store.GetUserByEmail(ctx, req.Email); err == nil {
-		httputil.Error(w, http.StatusConflict, "email already registered")
-		return
+	if existingUser, err := h.store.GetUserByEmail(ctx, req.Email); err == nil {
+		// User exists — check what state their org(s) are in.
+		orgIDs, orgsErr := h.store.GetOrgIDsForUser(ctx, existingUser.ID)
+		if orgsErr != nil {
+			log.Error("failed to list orgs for existing user", "error", orgsErr, "user_id", existingUser.ID)
+			httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
+			return
+		}
+
+		// No orgs at all — all were hard-deleted. Clean up the orphaned user
+		// and let a fresh signup proceed.
+		if len(orgIDs) == 0 {
+			if delErr := h.store.DeleteUser(ctx, existingUser.ID); delErr != nil {
+				log.Error("failed to delete orphaned user", "error", delErr, "user_id", existingUser.ID)
+				httputil.Error(w, http.StatusInternalServerError, "Internal operation failed — an unexpected error occurred. Try again or contact support if the issue persists.")
+				return
+			}
+			log.Info("deleted orphaned user for fresh signup", "user_id", existingUser.ID, "email", req.Email)
+			// Continue to normal signup flow below.
+		} else {
+			// Fetch all orgs and check their deleted status.
+			var activeOrgs []string
+			var softDeletedOrgs []*domain.Organization
+			for _, oid := range orgIDs {
+				org, fetchErr := h.store.GetOrganization(ctx, oid)
+				if fetchErr != nil {
+					// Org might have been hard-deleted between the membership
+					// query and now; skip it.
+					continue
+				}
+				if org.DeletedAt != nil {
+					softDeletedOrgs = append(softDeletedOrgs, org)
+				} else {
+					activeOrgs = append(activeOrgs, org.Name)
+				}
+			}
+
+			// If the user has active orgs, they should sign in, not sign up.
+			if len(activeOrgs) > 0 {
+				httputil.JSON(w, http.StatusConflict, dto.EmailRegisteredResponse{
+					Error:   "email_already_registered",
+					Message: "This email is already registered. Please sign in instead.",
+				})
+				return
+			}
+
+			// User's only org(s) are soft-deleted. Return a response that
+			// tells the frontend the situation so it can offer recovery.
+			if len(softDeletedOrgs) > 0 {
+				// Pick the most recently deleted org for the response.
+				latest := softDeletedOrgs[0]
+				for _, o := range softDeletedOrgs[1:] {
+					if o.DeletedAt != nil && latest.DeletedAt != nil && o.DeletedAt.After(*latest.DeletedAt) {
+						latest = o
+					}
+				}
+				graceEnd := latest.DeletedAt.Add(time.Duration(domain.HardDeleteGraceDays) * 24 * time.Hour)
+				remainingDays := int(time.Until(graceEnd).Hours() / 24)
+				if remainingDays < 0 {
+					remainingDays = 0
+				}
+				httputil.JSON(w, http.StatusOK, dto.OrgDeletedSignupResponse{
+					Error:                    "org_deleted",
+					Code:                     "email_has_deleted_org",
+					Message:                  "This email is associated with an organization that was recently deleted.",
+					OrgName:                  latest.Name,
+					DeletedAt:                latest.DeletedAt.Format(time.RFC3339),
+					GracePeriodRemainingDays: remainingDays,
+					CanRecover:               true,
+				})
+				return
+			}
+
+			// Fallback: shouldn't reach here, but treat as active.
+			httputil.JSON(w, http.StatusConflict, dto.EmailRegisteredResponse{
+				Error:   "email_already_registered",
+				Message: "This email is already registered. Please sign in instead.",
+			})
+			return
+		}
 	}
 
 	passwordHash, err := auth.HashPassword(req.Password)
@@ -268,8 +346,6 @@ func (h *SignupHandler) CompleteSignup(w http.ResponseWriter, r *http.Request) {
 
 	// Clean up pending registration
 	_ = h.store.DeletePendingRegistration(ctx, pr.ID)
-
-
 
 	tokens, err := h.jwtMgr.GenerateTokenPair(user.ID, org.ID, string(domain.RoleOwner), user.Email, org.DataRegion)
 	if err != nil {

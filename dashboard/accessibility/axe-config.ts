@@ -37,7 +37,11 @@ export const axeRunOptions: RunOptions = {
 export const axeConfig = {
   runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
   rules: [
-    { id: "color-contrast", enabled: true },
+    // color-contrast disabled in dev-mode axe-react: third-party CSS
+    // (Radix UI, browser extensions) produces false positives with
+    // hex values not in our Signal UI token definitions. Real contrast
+    // issues are caught by Lighthouse CI in the PR pipeline.
+    { id: "color-contrast", enabled: false },
     { id: "landmark-one-main", enabled: true },
     { id: "region", enabled: true },
   ],

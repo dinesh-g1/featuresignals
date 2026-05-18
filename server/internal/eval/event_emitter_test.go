@@ -6,15 +6,14 @@ import (
 	"os"
 	"testing"
 
-	"time"
 	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/events"
+	"time"
 )
 
 func testLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 }
-
 
 func TestEvalEventEmitter_Evaluate_NoneMode(t *testing.T) {
 	engine := NewEngine()
@@ -52,8 +51,8 @@ func TestEvalEventEmitter_Evaluate_BatchMode(t *testing.T) {
 	engine := NewEngine()
 	bus := events.NewNoopEventBus(testLogger())
 	cfg := domain.EvalEmissionConfig{
-		Mode:           "batch",
-		BatchSize:      10,
+		Mode:            "batch",
+		BatchSize:       10,
 		BatchIntervalMs: 100,
 	}
 
@@ -91,8 +90,8 @@ func TestEvalEventEmitter_EvaluateAll(t *testing.T) {
 	engine := NewEngine()
 	bus := events.NewNoopEventBus(testLogger())
 	cfg := domain.EvalEmissionConfig{
-		Mode:           "batch",
-		BatchSize:      10,
+		Mode:            "batch",
+		BatchSize:       10,
 		BatchIntervalMs: 100,
 	}
 

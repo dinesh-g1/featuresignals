@@ -30,9 +30,9 @@ func NewUserPrivacyHandler(store userPrivacyStore) *UserPrivacyHandler {
 }
 
 type userDataExport struct {
-	ExportedAt  string                    `json:"exported_at"`
-	User        userExportData            `json:"user"`
-	Memberships []membershipExportData    `json:"memberships"`
+	ExportedAt  string                 `json:"exported_at"`
+	User        userExportData         `json:"user"`
+	Memberships []membershipExportData `json:"memberships"`
 }
 
 type userExportData struct {

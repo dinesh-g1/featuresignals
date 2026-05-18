@@ -6,6 +6,7 @@ import {
   createMockProject,
   createMockFlag,
   createMockAuditEntry,
+  makePaginatedResponse,
 } from "@/__tests__/helpers/fixtures";
 
 vi.mock("@/lib/api", () => ({
@@ -13,16 +14,14 @@ vi.mock("@/lib/api", () => ({
     listProjects: vi.fn(),
     listFlags: vi.fn(),
     listAudit: vi.fn(),
-    getUsage: vi
-      .fn()
-      .mockResolvedValue({
-        projects_used: 1,
-        projects_limit: 3,
-        seats_used: 1,
-        seats_limit: 5,
-        environments_used: 1,
-        environments_limit: 3,
-      }),
+    getUsage: vi.fn().mockResolvedValue({
+      projects_used: 1,
+      projects_limit: 3,
+      seats_used: 1,
+      seats_limit: 5,
+      environments_used: 1,
+      environments_limit: 3,
+    }),
   },
 }));
 
@@ -69,43 +68,41 @@ vi.mock("@/components/ui", () => ({
   ),
 }));
 
-import { queryCache } from "@/lib/query-cache";
+import { queryClient } from "@/lib/query-client";
 import DashboardPage from "@/app/(app)/projects/[projectId]/dashboard/page";
 
 describe("DashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    queryCache.clear();
-    useAppStore
-      .getState()
-      .setAuth(
-        "test-token",
-        "test-refresh",
-        {
-          id: "u1",
-          name: "Test",
-          email: "test@test.com",
-          email_verified: true,
-          created_at: "2025-01-01T00:00:00Z",
-          updated_at: "2025-01-01T00:00:00Z",
-        },
-        {
-          id: "org-1",
-          name: "Test Org",
-          slug: "test-org",
-          plan: "pro",
-          data_region: "us",
-          created_at: "2025-01-01T00:00:00Z",
-          updated_at: "2025-01-01T00:00:00Z",
-        },
-        9999999999,
-      );
+    queryClient.clear();
+    useAppStore.getState().setAuth(
+      "test-token",
+      "test-refresh",
+      {
+        id: "u1",
+        name: "Test",
+        email: "test@test.com",
+        email_verified: true,
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      {
+        id: "org-1",
+        name: "Test Org",
+        slug: "test-org",
+        plan: "pro",
+        data_region: "us",
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-01T00:00:00Z",
+      },
+      9999999999,
+    );
     useAppStore.getState().setCurrentProject("proj-1");
   });
 
   afterEach(() => {
     useAppStore.getState().logout();
-    queryCache.clear();
+    queryClient.clear();
   });
 
   it("shows loading skeleton initially", () => {
@@ -120,9 +117,9 @@ describe("DashboardPage", () => {
 
   it("shows empty state when no projects", async () => {
     useAppStore.setState({ current_project_id: null });
-    vi.mocked(api.listProjects).mockResolvedValue([]);
-    vi.mocked(api.listFlags).mockResolvedValue([]);
-    vi.mocked(api.listAudit).mockResolvedValue([]);
+    vi.mocked(api.listProjects).mockResolvedValue(makePaginatedResponse([]));
+    vi.mocked(api.listFlags).mockResolvedValue(makePaginatedResponse([]));
+    vi.mocked(api.listAudit).mockResolvedValue(makePaginatedResponse([]));
 
     render(<DashboardPage />);
 
@@ -132,21 +129,25 @@ describe("DashboardPage", () => {
   });
 
   it("renders stat cards with counts", async () => {
-    vi.mocked(api.listProjects).mockResolvedValue([
-      createMockProject({ id: "p1", name: "Proj 1" }),
-      createMockProject({ id: "p2", name: "Proj 2" }),
-    ]);
-    vi.mocked(api.listFlags).mockResolvedValue([
-      createMockFlag({ id: "f1", key: "flag-1" }),
-    ]);
-    vi.mocked(api.listAudit).mockResolvedValue([
-      createMockAuditEntry({
-        id: "a1",
-        action: "create",
-        resource_type: "flag",
-        created_at: "2024-01-01T00:00:00Z",
-      }),
-    ]);
+    vi.mocked(api.listProjects).mockResolvedValue(
+      makePaginatedResponse([
+        createMockProject({ id: "p1", name: "Proj 1" }),
+        createMockProject({ id: "p2", name: "Proj 2" }),
+      ]),
+    );
+    vi.mocked(api.listFlags).mockResolvedValue(
+      makePaginatedResponse([createMockFlag({ id: "f1", key: "flag-1" })]),
+    );
+    vi.mocked(api.listAudit).mockResolvedValue(
+      makePaginatedResponse([
+        createMockAuditEntry({
+          id: "a1",
+          action: "create",
+          resource_type: "flag",
+          created_at: "2024-01-01T00:00:00Z",
+        }),
+      ]),
+    );
 
     render(<DashboardPage />);
 
@@ -164,24 +165,28 @@ describe("DashboardPage", () => {
   });
 
   it("displays recent audit entries", async () => {
-    vi.mocked(api.listProjects).mockResolvedValue([
-      createMockProject({ id: "proj-1", name: "Test" }),
-    ]);
-    vi.mocked(api.listFlags).mockResolvedValue([]);
-    vi.mocked(api.listAudit).mockResolvedValue([
-      createMockAuditEntry({
-        id: "a1",
-        action: "create",
-        resource_type: "flag",
-        created_at: "2024-01-01T00:00:00Z",
-      }),
-      createMockAuditEntry({
-        id: "a2",
-        action: "update",
-        resource_type: "segment",
-        created_at: "2024-01-02T00:00:00Z",
-      }),
-    ]);
+    vi.mocked(api.listProjects).mockResolvedValue(
+      makePaginatedResponse([
+        createMockProject({ id: "proj-1", name: "Test" }),
+      ]),
+    );
+    vi.mocked(api.listFlags).mockResolvedValue(makePaginatedResponse([]));
+    vi.mocked(api.listAudit).mockResolvedValue(
+      makePaginatedResponse([
+        createMockAuditEntry({
+          id: "a1",
+          action: "create",
+          resource_type: "flag",
+          created_at: "2024-01-01T00:00:00Z",
+        }),
+        createMockAuditEntry({
+          id: "a2",
+          action: "update",
+          resource_type: "segment",
+          created_at: "2024-01-02T00:00:00Z",
+        }),
+      ]),
+    );
 
     render(<DashboardPage />);
 
@@ -205,11 +210,13 @@ describe("DashboardPage", () => {
 
   it("picks first project if none selected", async () => {
     useAppStore.setState({ current_project_id: null });
-    vi.mocked(api.listProjects).mockResolvedValue([
-      createMockProject({ id: "auto-proj", name: "Auto" }),
-    ]);
-    vi.mocked(api.listFlags).mockResolvedValue([]);
-    vi.mocked(api.listAudit).mockResolvedValue([]);
+    vi.mocked(api.listProjects).mockResolvedValue(
+      makePaginatedResponse([
+        createMockProject({ id: "auto-proj", name: "Auto" }),
+      ]),
+    );
+    vi.mocked(api.listFlags).mockResolvedValue(makePaginatedResponse([]));
+    vi.mocked(api.listAudit).mockResolvedValue(makePaginatedResponse([]));
 
     render(<DashboardPage />);
 

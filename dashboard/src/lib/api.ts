@@ -35,6 +35,7 @@ import type {
   LoginResponse,
   MonitorResponse,
   OrgLearningsResponse,
+  OrgResourceCounts,
   RefreshResponse,
   RemediateResponse,
   OnboardingState,
@@ -58,6 +59,12 @@ import type {
   HelpContext,
   MaturityConfig,
 } from "@/lib/console-types";
+import type {
+  Policy,
+  CreatePolicyRequest,
+  UpdatePolicyRequest,
+} from "@/lib/policy-types";
+import type { Agent } from "@/lib/agent-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -76,11 +83,19 @@ interface RequestOptions {
 }
 
 export class APIError extends Error {
+  public body: Record<string, unknown>;
   constructor(
     public status: number,
     message: string,
+    body?: Record<string, unknown>,
   ) {
     super(message);
+    this.body = body || {};
+  }
+
+  /** Convenience accessor for error code (e.g. "email_has_deleted_org") */
+  get code(): string | undefined {
+    return this.body.code as string | undefined;
   }
 }
 
@@ -108,7 +123,13 @@ async function attemptTokenRefresh(): Promise<boolean> {
   }
 }
 
+// sessionExpiredHandled prevents multiple concurrent 401 responses from
+// triggering simultaneous redirects, which can cause browser hangs.
+let sessionExpiredHandled = false;
+
 function handleSessionExpired() {
+  if (sessionExpiredHandled) return; // Already handled by a concurrent call.
+  sessionExpiredHandled = true;
   const { logout } = useAppStore.getState();
   logout();
   if (typeof window !== "undefined") {
@@ -128,8 +149,10 @@ function getInFlightKey(path: string, method: string): string {
  * Used by tests to ensure clean state between test cases.
  */
 export function resetAPIState(): void {
+  sessionExpiredHandled = false;
   refreshPromise = null;
   inFlightRequests.clear();
+  offlineToastShown = false;
 }
 
 // --- Offline detection ---
@@ -225,9 +248,17 @@ async function request<T>(
 
     const promise = requestWithRetry<T>(path, options);
     inFlightRequests.set(key, promise);
-    promise.finally(() => {
-      inFlightRequests.delete(key);
-    });
+    // .finally() returns a new promise that would also reject if `promise`
+    // rejects — suppress that unhandled rejection since the caller handles
+    // the original promise.
+    promise
+      .finally(() => {
+        inFlightRequests.delete(key);
+      })
+      .catch(() => {
+        // Suppress unhandled rejection from the finally-derived promise.
+        // The original promise is returned to (and handled by) the caller.
+      });
     return promise;
   }
 
@@ -309,7 +340,7 @@ async function requestWithRetry<T>(
           if (typeof window !== "undefined") {
             window.location.href = "/register";
           }
-          throw new APIError(403, data.error);
+          throw new APIError(403, data.error, data);
         }
 
         if (res.status === 402) {
@@ -317,6 +348,7 @@ async function requestWithRetry<T>(
             402,
             data.error ||
               "Plan limit reached. Upgrade to Pro for unlimited access.",
+            data,
           );
           if (typeof window !== "undefined") {
             window.dispatchEvent(
@@ -360,10 +392,10 @@ async function requestWithRetry<T>(
 
         if (res.status === 401 && options.token) {
           handleSessionExpired();
-          throw new APIError(401, data.error || "Request failed");
+          throw new APIError(401, data.error || "Request failed", data);
         }
 
-        throw new APIError(res.status, data.error || "Request failed");
+        throw new APIError(res.status, data.error || "Request failed", data);
       }
 
       if (res.status === 204) return undefined as T;
@@ -400,7 +432,7 @@ async function requestWithRetry<T>(
   throw lastError || new Error("Request failed");
 }
 
-interface PaginatedResponse<T> {
+export interface PaginatedResponse<T> {
   data: T[];
   total: number;
   limit: number;
@@ -541,8 +573,11 @@ export const api = {
     }),
 
   // Projects
-  listProjects: (token: string) =>
-    requestList<Project>("/v1/projects", { token }),
+  listProjects: (token: string, params?: { limit?: number; offset?: number }) =>
+    requestListPaginated<Project>(
+      `/v1/projects?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   listProjectsPaginated: (token: string, limit?: number, offset?: number) =>
     requestListPaginated<Project>(
       `/v1/projects?limit=${limit ?? 50}&offset=${offset ?? 0}`,
@@ -564,10 +599,15 @@ export const api = {
     request<Project>(`/v1/projects/${id}`, { token }),
 
   // Environments
-  listEnvironments: (token: string, projectId: string) =>
-    requestList<Environment>(`/v1/projects/${projectId}/environments`, {
-      token,
-    }),
+  listEnvironments: (
+    token: string,
+    projectId: string,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    requestListPaginated<Environment>(
+      `/v1/projects/${projectId}/environments?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   listEnvironmentsPaginated: (
     token: string,
     projectId: string,
@@ -601,8 +641,15 @@ export const api = {
     }),
 
   // Flags
-  listFlags: (token: string, projectId: string) =>
-    requestList<Flag>(`/v1/projects/${projectId}/flags`, { token }),
+  listFlags: (
+    token: string,
+    projectId: string,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    requestListPaginated<Flag>(
+      `/v1/projects/${projectId}/flags?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   listFlagsPaginated: (
     token: string,
     projectId: string,
@@ -719,8 +766,15 @@ export const api = {
     }),
 
   // Segments
-  listSegments: (token: string, projectId: string) =>
-    requestList<Segment>(`/v1/projects/${projectId}/segments`, { token }),
+  listSegments: (
+    token: string,
+    projectId: string,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    requestListPaginated<Segment>(
+      `/v1/projects/${projectId}/segments?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   listSegmentsPaginated: (
     token: string,
     projectId: string,
@@ -757,8 +811,15 @@ export const api = {
     }),
 
   // API Keys
-  listAPIKeys: (token: string, envId: string) =>
-    requestList<APIKey>(`/v1/environments/${envId}/api-keys`, { token }),
+  listAPIKeys: (
+    token: string,
+    envId: string,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    requestListPaginated<APIKey>(
+      `/v1/environments/${envId}/api-keys?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   createAPIKey: (
     token: string,
     envId: string,
@@ -775,12 +836,10 @@ export const api = {
   // Audit
   listAudit: (
     token: string,
-    limit?: number,
-    offset?: number,
-    projectId?: string,
+    params?: { limit?: number; offset?: number; projectId?: string },
   ) =>
-    requestList<AuditEntry>(
-      `/v1/audit?limit=${limit || 50}&offset=${offset || 0}${projectId ? `&project_id=${projectId}` : ""}`,
+    requestListPaginated<AuditEntry>(
+      `/v1/audit?${new URLSearchParams({ limit: String(params?.limit ?? 50), offset: String(params?.offset ?? 0), ...(params?.projectId ? { project_id: params.projectId } : {}) }).toString()}`,
       { token },
     ),
   exportAudit: (
@@ -799,8 +858,11 @@ export const api = {
   exportOrgData: (token: string) => request<Blob>("/v1/data/export", { token }),
 
   // Team / Members
-  listMembers: (token: string) =>
-    requestList<OrgMember>("/v1/members", { token }),
+  listMembers: (token: string, params?: { limit?: number; offset?: number }) =>
+    requestListPaginated<OrgMember>(
+      `/v1/members?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   inviteMember: (token: string, data: { email: string; role: string }) =>
     request("/v1/members/invite", { method: "POST", body: data, token }),
   updateMemberRole: (token: string, memberId: string, role: string) =>
@@ -827,13 +889,25 @@ export const api = {
     }),
 
   // Organization
+  getOrganizationResources: (token: string) =>
+    request<OrgResourceCounts>("/v1/organization/resources", { token }),
   deleteOrganization: (token: string) =>
     request("/v1/organization", { method: "DELETE", token }),
+  purgeOrganization: (token: string) =>
+    request("/v1/organization/purge", { method: "POST", token }),
+  purgeOrganizationByEmail: (email: string) =>
+    request("/v1/organization/purge-by-email", {
+      method: "POST",
+      body: { email },
+    }),
 
   // Approvals
-  listApprovals: (token: string, status?: string) =>
-    requestList<ApprovalRequest>(
-      `/v1/approvals${status ? `?status=${status}` : ""}`,
+  listApprovals: (
+    token: string,
+    params?: { limit?: number; offset?: number; status?: string },
+  ) =>
+    requestListPaginated<ApprovalRequest>(
+      `/v1/approvals?${new URLSearchParams({ limit: String(params?.limit ?? 50), offset: String(params?.offset ?? 0), ...(params?.status ? { status: params.status } : {}) }).toString()}`,
       { token },
     ),
   getApproval: (token: string, id: string) =>
@@ -953,8 +1027,11 @@ export const api = {
     ),
 
   // Webhooks
-  listWebhooks: (token: string) =>
-    requestList<Webhook>("/v1/webhooks", { token }),
+  listWebhooks: (token: string, params?: { limit?: number; offset?: number }) =>
+    requestListPaginated<Webhook>(
+      `/v1/webhooks?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   createWebhook: (
     token: string,
     data: { name: string; url: string; secret?: string; events: string[] },
@@ -967,10 +1044,15 @@ export const api = {
     }),
   deleteWebhook: (token: string, webhookId: string) =>
     request(`/v1/webhooks/${webhookId}`, { method: "DELETE", token }),
-  listWebhookDeliveries: (token: string, webhookId: string) =>
-    requestList<WebhookDelivery>(`/v1/webhooks/${webhookId}/deliveries`, {
-      token,
-    }),
+  listWebhookDeliveries: (
+    token: string,
+    webhookId: string,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    requestListPaginated<WebhookDelivery>(
+      `/v1/webhooks/${webhookId}/deliveries?limit=${params?.limit ?? 50}&offset=${params?.offset ?? 0}`,
+      { token },
+    ),
   testWebhook: (token: string, webhookId: string) =>
     request<{ success: boolean; response_status: number; message?: string }>(
       `/v1/webhooks/${webhookId}/test`,
@@ -1136,6 +1218,11 @@ export const api = {
       body: { hint_id: hintID },
       token,
     }),
+  getEmailPreferences: (token: string) =>
+    request<{ consent: boolean; preference: string }>(
+      "/v1/users/me/email-preferences",
+      { token },
+    ),
   updateEmailPreferences: (
     token: string,
     data: { consent: boolean; preference: string },
@@ -1247,11 +1334,79 @@ export const api = {
     getFlag: (token: string, key: string) =>
       request<FeatureCardData>(`/v1/console/flags/${key}`, { token }),
 
-    getInsights: (token: string) =>
-      request<ConsoleInsights>(`/v1/console/insights`, { token }),
+    getInsights: (
+      token: string,
+      params?: {
+        report_limit?: number;
+        report_offset?: number;
+        learning_limit?: number;
+        learning_offset?: number;
+        activity_limit?: number;
+        activity_offset?: number;
+      },
+    ) => {
+      const qs = new URLSearchParams();
+      if (params?.report_limit !== undefined)
+        qs.set("report_limit", String(params.report_limit));
+      if (params?.report_offset !== undefined)
+        qs.set("report_offset", String(params.report_offset));
+      if (params?.learning_limit !== undefined)
+        qs.set("learning_limit", String(params.learning_limit));
+      if (params?.learning_offset !== undefined)
+        qs.set("learning_offset", String(params.learning_offset));
+      if (params?.activity_limit !== undefined)
+        qs.set("activity_limit", String(params.activity_limit));
+      if (params?.activity_offset !== undefined)
+        qs.set("activity_offset", String(params.activity_offset));
+      const qsStr = qs.toString();
+      return request<ConsoleInsights>(
+        `/v1/console/insights${qsStr ? `?${qsStr}` : ""}`,
+        { token },
+      );
+    },
 
-    getIntegrations: (token: string) =>
-      request<IntegrationStatus>(`/v1/console/integrations`, { token }),
+    getIntegrations: (
+      token: string,
+      params?: {
+        repo_limit?: number;
+        repo_offset?: number;
+        sdk_limit?: number;
+        sdk_offset?: number;
+        agent_limit?: number;
+        agent_offset?: number;
+        key_limit?: number;
+        key_offset?: number;
+        policy_limit?: number;
+        policy_offset?: number;
+      },
+    ) => {
+      const qs = new URLSearchParams();
+      if (params?.repo_limit !== undefined)
+        qs.set("repo_limit", String(params.repo_limit));
+      if (params?.repo_offset !== undefined)
+        qs.set("repo_offset", String(params.repo_offset));
+      if (params?.sdk_limit !== undefined)
+        qs.set("sdk_limit", String(params.sdk_limit));
+      if (params?.sdk_offset !== undefined)
+        qs.set("sdk_offset", String(params.sdk_offset));
+      if (params?.agent_limit !== undefined)
+        qs.set("agent_limit", String(params.agent_limit));
+      if (params?.agent_offset !== undefined)
+        qs.set("agent_offset", String(params.agent_offset));
+      if (params?.key_limit !== undefined)
+        qs.set("key_limit", String(params.key_limit));
+      if (params?.key_offset !== undefined)
+        qs.set("key_offset", String(params.key_offset));
+      if (params?.policy_limit !== undefined)
+        qs.set("policy_limit", String(params.policy_limit));
+      if (params?.policy_offset !== undefined)
+        qs.set("policy_offset", String(params.policy_offset));
+      const qsStr = qs.toString();
+      return request<IntegrationStatus>(
+        `/v1/console/integrations${qsStr ? `?${qsStr}` : ""}`,
+        { token },
+      );
+    },
 
     getHelpContext: (token: string) =>
       request<HelpContext>(`/v1/console/help`, { token }),
@@ -1518,6 +1673,160 @@ export const api = {
         `/v1/impact/learnings?project_id=${projectId}`,
         { token },
       ),
+  },
+
+  // ── Agent Management ────────────────────────────────────────
+
+  agents: {
+    /** List all registered agents for the organization */
+    list: (token: string, params?: { limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      const qsStr = qs.toString();
+      return requestListPaginated<Agent>(
+        `/v1/agents${qsStr ? `?${qsStr}` : ""}`,
+        { token },
+      );
+    },
+
+    /** Get a single agent by ID */
+    get: (token: string, agentId: string) =>
+      request<Agent>(`/v1/agents/${agentId}`, { token }),
+
+    /** Register a new agent */
+    register: (
+      token: string,
+      body: {
+        name: string;
+        type: string;
+        version?: string;
+        brain_type?: string;
+        scopes?: string[];
+        rate_limits?: {
+          per_minute: number;
+          per_hour: number;
+          concurrent_actions: number;
+        };
+      },
+    ) =>
+      request<Agent>(`/v1/agents`, {
+        method: "POST",
+        body,
+        token,
+      }),
+
+    /** Update agent configuration */
+    update: (
+      token: string,
+      agentId: string,
+      body: {
+        name?: string;
+        status?: string;
+        rate_limits?: {
+          per_minute: number;
+          per_hour: number;
+          concurrent_actions: number;
+        };
+        scopes?: string[];
+      },
+    ) =>
+      request<Agent>(`/v1/agents/${agentId}`, {
+        method: "PATCH",
+        body,
+        token,
+      }),
+
+    /** Delete an agent */
+    delete: (token: string, agentId: string) =>
+      request<{ status: string }>(`/v1/agents/${agentId}`, {
+        method: "DELETE",
+        token,
+      }),
+
+    /** Toggle agent enabled/disabled */
+    toggle: (token: string, agentId: string, enabled: boolean) =>
+      request<Agent>(`/v1/agents/${agentId}/toggle`, {
+        method: "POST",
+        body: { enabled },
+        token,
+      }),
+
+    /** Get agent heartbeat status */
+    getHeartbeat: (token: string, agentId: string) =>
+      request<{ agent_id: string; last_heartbeat: string; status: string }>(
+        `/v1/agents/${agentId}/heartbeat`,
+        { token },
+      ),
+
+    /** Get agent maturity details */
+    getMaturity: (token: string, agentId: string) =>
+      request<{
+        agent_id: string;
+        data: import("@/lib/agent-types").AgentMaturity[];
+      }>(`/v1/agents/${agentId}/maturity`, { token }),
+  },
+
+  // ── Policy Management ───────────────────────────────────────
+
+  policies: {
+    /** List all governance policies */
+    list: (token: string, params?: { limit?: number; offset?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.offset) qs.set("offset", String(params.offset));
+      const qsStr = qs.toString();
+      return request<{ data: Policy[]; total: number }>(
+        `/v1/policies${qsStr ? `?${qsStr}` : ""}`,
+        { token },
+      );
+    },
+
+    /** Get a single policy by ID */
+    get: (token: string, policyId: string) =>
+      request<Policy>(`/v1/policies/${policyId}`, { token }),
+
+    /** Create a new policy */
+    create: (token: string, body: CreatePolicyRequest) =>
+      request<Policy>(`/v1/policies`, {
+        method: "POST",
+        body,
+        token,
+      }),
+
+    /** Update an existing policy */
+    update: (token: string, policyId: string, body: UpdatePolicyRequest) =>
+      request<Policy>(`/v1/policies/${policyId}`, {
+        method: "PATCH",
+        body,
+        token,
+      }),
+
+    /** Delete a policy */
+    delete: (token: string, policyId: string) =>
+      request<{ status: string }>(`/v1/policies/${policyId}`, {
+        method: "DELETE",
+        token,
+      }),
+
+    /** Toggle policy enabled/disabled */
+    toggle: (token: string, policyId: string, enabled: boolean) =>
+      request<{ policy_id: string; active: boolean }>(
+        `/v1/policies/${policyId}/toggle`,
+        {
+          method: "POST",
+          body: { enabled },
+          token,
+        },
+      ),
+
+    /** Preview which agents/tools a policy affects */
+    preview: (token: string, policyId: string) =>
+      request<{
+        affected_agents: { id: string; name: string; type: string }[];
+        affected_tools: string[];
+        match_count: number;
+      }>(`/v1/policies/${policyId}/preview`, { token }),
   },
 };
 

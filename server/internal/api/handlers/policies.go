@@ -6,26 +6,28 @@
 //
 // ─── Endpoints ────────────────────────────────────────────────────────────
 //
-//   POST   /v1/policies                       — Create a governance policy
-//   GET    /v1/policies                       — List all policies (ordered by priority)
-//   GET    /v1/policies/{policyID}            — Get a single policy
-//   PATCH  /v1/policies/{policyID}            — Update a policy
-//   DELETE /v1/policies/{policyID}            — Delete a policy
-//   POST   /v1/policies/{policyID}/toggle     — Enable/disable a policy
+//	POST   /v1/policies                       — Create a governance policy
+//	GET    /v1/policies                       — List all policies (ordered by priority)
+//	GET    /v1/policies/{policyID}            — Get a single policy
+//	PATCH  /v1/policies/{policyID}            — Update a policy
+//	DELETE /v1/policies/{policyID}            — Delete a policy
+//	POST   /v1/policies/{policyID}/toggle     — Enable/disable a policy
 //
 // ─── Curl Examples ─────────────────────────────────────────────────────────
 //
 // Create a policy requiring human approval for production:
-//   curl -X POST http://localhost:8080/v1/policies \
-//     -H "Authorization: Bearer $TOKEN" \
-//     -H "Content-Type: application/json" \
-//     -d '{"name":"Require approval for production","priority":10,"effect":"require_human","scope":{"agent_types":["janitor"],"environments":["production"]},"rules":[{"name":"check-env","expression":"action.context.environment_id != \"production\" || action.decision.requires_human","message":"Production changes require human approval"}]}'
+//
+//	curl -X POST http://localhost:8080/v1/policies \
+//	  -H "Authorization: Bearer $TOKEN" \
+//	  -H "Content-Type: application/json" \
+//	  -d '{"name":"Require approval for production","priority":10,"effect":"require_human","scope":{"agent_types":["janitor"],"environments":["production"]},"rules":[{"name":"check-env","expression":"action.context.environment_id != \"production\" || action.decision.requires_human","message":"Production changes require human approval"}]}'
 //
 // Toggle a policy off:
-//   curl -X POST http://localhost:8080/v1/policies/pol_abc123/toggle \
-//     -H "Authorization: Bearer $TOKEN" \
-//     -H "Content-Type: application/json" \
-//     -d '{"enabled":false}'
+//
+//	curl -X POST http://localhost:8080/v1/policies/pol_abc123/toggle \
+//	  -H "Authorization: Bearer $TOKEN" \
+//	  -H "Content-Type: application/json" \
+//	  -d '{"enabled":false}'
 package handlers
 
 import (

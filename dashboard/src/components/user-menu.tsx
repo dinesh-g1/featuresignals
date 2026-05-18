@@ -5,16 +5,13 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import {
-  GearIcon,
-  CreditCardIcon,
-  TeamIcon,
   LogOutIcon,
   PersonIcon,
-  HelpCircleIcon,
   BookIcon,
+  CommandIcon,
   ExternalLinkIcon,
 } from "@/components/icons/nav-icons";
-import { DOCS_URL, WEBSITE_URL } from "@/lib/external-urls";
+import { DOCS_URL } from "@/lib/external-urls";
 import { path } from "@/lib/paths";
 
 interface MenuItem {
@@ -84,21 +81,10 @@ export function UserMenu() {
     },
     "divider",
     {
-      label: "Settings",
+      label: "Profile & Preferences",
       href: "/settings/general",
-      icon: GearIcon,
+      icon: PersonIcon,
     },
-    {
-      label: "Team",
-      href: "/team",
-      icon: TeamIcon,
-    },
-    {
-      label: "Billing",
-      href: "/settings/billing",
-      icon: CreditCardIcon,
-    },
-    "divider",
     {
       label: "Documentation",
       href: DOCS_URL,
@@ -106,10 +92,12 @@ export function UserMenu() {
       external: true,
     },
     {
-      label: "Support",
-      href: `${WEBSITE_URL}/support`,
-      icon: HelpCircleIcon,
-      external: true,
+      label: "Keyboard Shortcuts",
+      icon: CommandIcon,
+      onClick: () => {
+        setOpen(false);
+        window.dispatchEvent(new CustomEvent("fs:open-shortcuts"));
+      },
     },
     "divider",
     {

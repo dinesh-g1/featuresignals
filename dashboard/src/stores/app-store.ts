@@ -83,19 +83,20 @@ export const useAppStore = create<AppState>()(
     {
       name: "featuresignals-store",
       version: 2,
-      migrate: (persistedState: any, version: number) => {
+      migrate: (persistedState: unknown, version: number) => {
         if (version < 2) {
+          const old = persistedState as Record<string, unknown>;
           return {
-            ...persistedState,
-            refresh_token: persistedState.refreshToken,
-            expires_at: persistedState.expiresAt,
-            onboarding_completed: persistedState.onboardingCompleted,
-            tour_completed: persistedState.tourCompleted,
-            current_project_id: persistedState.currentProjectId,
-            current_env_id: persistedState.currentEnvId,
+            ...old,
+            refresh_token: old.refreshToken as string | null,
+            expires_at: old.expiresAt as number | null,
+            onboarding_completed: old.onboardingCompleted as boolean,
+            tour_completed: old.tourCompleted as boolean,
+            current_project_id: old.currentProjectId as string | null,
+            current_env_id: old.currentEnvId as string | null,
           };
         }
-        return persistedState;
+        return persistedState as AppState;
       },
     },
   ),

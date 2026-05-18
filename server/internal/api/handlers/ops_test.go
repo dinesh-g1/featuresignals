@@ -26,14 +26,12 @@ type opsMockStore struct {
 
 func newOpsMockStore() *opsMockStore {
 	return &opsMockStore{
-		licenses:  make(map[string]*domain.License),
-		opsUsers:  make(map[string]*domain.OpsUser),
-		orgs:      make(map[string]*domain.Organization),
-		users:     make(map[string]*domain.User),
+		licenses: make(map[string]*domain.License),
+		opsUsers: make(map[string]*domain.OpsUser),
+		orgs:     make(map[string]*domain.Organization),
+		users:    make(map[string]*domain.User),
 	}
 }
-
-
 
 func (m *opsMockStore) ListLicenses(_ context.Context, plan, deploymentModel, search string) ([]domain.License, int, error) {
 	var result []domain.License
@@ -273,14 +271,6 @@ func timePtr(t time.Time) *time.Time { return &t }
 
 // ─── Tests ────────────────────────────────────────────────────────────
 
-
-
-
-
-
-
-
-
 func TestOpsHandler_CreateLicense_Validation(t *testing.T) {
 	store := newOpsMockStore()
 	store.orgs["org-1"] = &domain.Organization{ID: "org-1", Name: "Test Org"}
@@ -348,10 +338,6 @@ func TestOpsHandler_RevokeLicense(t *testing.T) {
 		t.Error("expected success=true")
 	}
 }
-
-
-
-
 
 func TestOpsHandler_ListOpsAuditLogs(t *testing.T) {
 	store := newOpsMockStore()

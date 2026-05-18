@@ -13,6 +13,7 @@
  */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -72,6 +73,7 @@ function AgentSkeleton() {
 // ─── Empty ───────────────────────────────────────────────────────────
 
 function AgentEmpty() {
+  const router = useRouter();
   return (
     <div className="px-3 py-2 text-center">
       <p className="text-[11px] text-[var(--signal-fg-secondary)]">
@@ -79,6 +81,7 @@ function AgentEmpty() {
       </p>
       <button
         type="button"
+        onClick={() => router.push("/console/agents")}
         className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--signal-fg-accent)] hover:underline mt-1"
       >
         Register your first AI agent
@@ -217,22 +220,56 @@ function AgentCard({ agent }: { agent: AgentStatus }) {
             </div>
           </div>
 
-          {/* Config placeholder */}
+          {/* Config section */}
           <div className="pt-2 border-t border-[var(--signal-border-subtle)]">
-            <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="flex items-center gap-1.5 mb-2">
               <Wrench className="h-3 w-3 text-[var(--signal-fg-tertiary)]" />
               <span className="text-[9px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
                 Configuration
               </span>
             </div>
-            <div
-              className="px-2.5 py-2 rounded-[var(--signal-radius-sm)] text-center"
-              style={{ backgroundColor: "var(--signal-bg-primary)" }}
-            >
-              <p className="text-[10px] text-[var(--signal-fg-tertiary)]">
-                Agent configuration is coming soon. You&apos;ll be able to
-                manage agent behavior, permissions, and automation rules.
-              </p>
+            <div className="space-y-2 text-[10px] text-[var(--signal-fg-secondary)]">
+              <div className="flex items-center justify-between">
+                <span>Rate Limits</span>
+                <span className="text-[var(--signal-fg-primary)] font-mono">
+                  {agent.rate_limits
+                    ? `${agent.rate_limits.per_minute}/min · ${agent.rate_limits.per_hour}/hr · ${agent.rate_limits.concurrent} concurrent`
+                    : "—/min · —/hr · — concurrent"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Scopes</span>
+                <span className="text-[var(--signal-fg-primary)]">
+                  {agent.scopes && agent.scopes.length > 0
+                    ? agent.scopes.slice(0, 3).join(", ")
+                    : "None configured"}
+                  {agent.scopes && agent.scopes.length > 3 && ` +${agent.scopes.length - 3} more`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Maturity</span>
+                <span className="inline-flex items-center gap-1">
+                  <span
+                    className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold"
+                    style={{
+                      backgroundColor: "var(--signal-bg-accent-muted)",
+                      color: "var(--signal-fg-accent)",
+                    }}
+                  >
+                    L{agent.maturity_level ?? 1}
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div className="mt-2 pt-2 border-t border-[var(--signal-border-subtle)]">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-[10px] font-medium text-[var(--signal-fg-accent)] hover:underline"
+              >
+                <Settings className="h-3 w-3" />
+                Configure in Agent Manager
+                <ExternalLink className="h-3 w-3" />
+              </button>
             </div>
           </div>
         </motion.div>
@@ -247,6 +284,7 @@ export function AgentControlsPanel({
   agents,
   loading = false,
 }: AgentControlsPanelProps) {
+  const router = useRouter();
   return (
     <div className="space-y-2">
       {loading ? (
@@ -261,10 +299,11 @@ export function AgentControlsPanel({
           {/* Global agent settings */}
           <button
             type="button"
+            onClick={() => router.push("/console/agents")}
             className="inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
           >
             <Settings className="h-3 w-3" />
-            Agent Settings
+            Manage Agents
           </button>
         </>
       )}

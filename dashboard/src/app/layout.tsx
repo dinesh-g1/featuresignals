@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DocsProvider } from "@/contexts/docs-context";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -55,7 +56,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <DocsProvider>{children}</DocsProvider>
+        <Providers>
+          <DocsProvider>{children}</DocsProvider>
+        </Providers>
       </body>
     </html>
   );

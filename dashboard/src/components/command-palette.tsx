@@ -539,7 +539,7 @@ export function CommandPalette() {
           if (!token || !currentEnvId) return;
           try {
             const keys = await api.listAPIKeys(token, currentEnvId);
-            const sdkKey = keys?.find(
+            const sdkKey = keys.data.find(
               (k: { type: string }) => k.type === "sdk",
             );
             if (sdkKey?.key_prefix) {
@@ -558,7 +558,7 @@ export function CommandPalette() {
           api.listFlags(token, projectId),
           api.listSegments(token, projectId),
         ]);
-        (flags || []).forEach((f: Flag) => {
+        flags.data.forEach((f: Flag) => {
           results.push({
             id: `flag-${f.key}`,
             label: f.key,
@@ -567,7 +567,7 @@ export function CommandPalette() {
             href: `/projects/${projectId}/flags/${f.key}`,
           });
         });
-        (segments || []).forEach((s: Segment) => {
+        segments.data.forEach((s: Segment) => {
           results.push({
             id: `seg-${s.key}`,
             label: s.key,

@@ -22,7 +22,6 @@ export function SkeletonConsole() {
         userSelect: "none",
       }}
       aria-hidden="true"
-      aria-label="Loading Console"
     >
       {/* ── Top Bar Skeleton (48px) ─────────────────────────────────── */}
       <div

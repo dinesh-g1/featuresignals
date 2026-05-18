@@ -18,10 +18,10 @@ import (
 
 // mockPreflightStore implements all required interfaces for PreflightHandler tests.
 type mockPreflightStore struct {
-	reports   map[string]*domain.PreflightReport
-	approvals map[string]*domain.PreflightApprovalRequest
-	flags     map[string]*domain.Flag          // keyed by "projectID/key"
-	envs      map[string]*domain.Environment
+	reports     map[string]*domain.PreflightReport
+	approvals   map[string]*domain.PreflightApprovalRequest
+	flags       map[string]*domain.Flag // keyed by "projectID/key"
+	envs        map[string]*domain.Environment
 	scanResults map[string][]domain.ScanResult // keyed by "orgID/projectID"
 }
 

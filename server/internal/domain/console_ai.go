@@ -6,12 +6,12 @@ package domain
 // (Layer 3: Autonomous).
 type AISuggestion struct {
 	FlagKey     string  `json:"flag_key"`
-	Type        string  `json:"type"`        // "cleanup" | "rollback_risk" | "advance_ready" | "health_warning" | "dependency_conflict"
-	Priority    string  `json:"priority"`    // "info" | "warning" | "critical"
-	Message     string  `json:"message"`     // Human-readable, feature-level language
-	Action      string  `json:"action"`      // "Create cleanup PR" | "Review rollout config" | "Advance to next stage" | "Check Monitor stage"
+	Type        string  `json:"type"`     // "cleanup" | "rollback_risk" | "advance_ready" | "health_warning" | "dependency_conflict"
+	Priority    string  `json:"priority"` // "info" | "warning" | "critical"
+	Message     string  `json:"message"`  // Human-readable, feature-level language
+	Action      string  `json:"action"`   // "Create cleanup PR" | "Review rollout config" | "Advance to next stage" | "Check Monitor stage"
 	AutoFixable bool    `json:"auto_fixable"`
-	Confidence  float64 `json:"confidence"`  // 0.0-1.0
+	Confidence  float64 `json:"confidence"` // 0.0-1.0
 }
 
 // AISuggestionType represents the well-known suggestion type constants.

@@ -14,7 +14,7 @@ import (
 type MockGateway struct {
 	mu       sync.RWMutex
 	charges  []*MockCharge
-	failRate float64 // 0.0 = never fail, 1.0 = always fail
+	failRate float64       // 0.0 = never fail, 1.0 = always fail
 	delay    time.Duration // simulated processing delay
 	logger   *slog.Logger
 }
@@ -161,8 +161,8 @@ func (g *MockGateway) CreateCheckoutSession(ctx context.Context, req CheckoutReq
 // HandleWebhook implements the Gateway interface.
 func (g *MockGateway) HandleWebhook(ctx context.Context, payload []byte, signature string) (*WebhookEvent, error) {
 	return &WebhookEvent{
-		Type:       EventCheckoutCompleted,
-		Status:     "completed",
+		Type:           EventCheckoutCompleted,
+		Status:         "completed",
 		GatewayEventID: fmt.Sprintf("evt_mock_%d", time.Now().UnixNano()),
 	}, nil
 }

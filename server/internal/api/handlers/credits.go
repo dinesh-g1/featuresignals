@@ -36,14 +36,14 @@ func (h *BillingHandler) GetCredits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type bearerJSON struct {
-		ID               string      `json:"id"`
-		DisplayName      string      `json:"display_name"`
-		Description      string      `json:"description"`
-		UnitName         string      `json:"unit_name"`
-		Balance          int         `json:"balance"`
-		IncludedPerMonth int         `json:"included_per_month"`
-		LifetimeUsed     int         `json:"lifetime_used"`
-		AvailablePacks   []packJSON  `json:"available_packs"`
+		ID               string     `json:"id"`
+		DisplayName      string     `json:"display_name"`
+		Description      string     `json:"description"`
+		UnitName         string     `json:"unit_name"`
+		Balance          int        `json:"balance"`
+		IncludedPerMonth int        `json:"included_per_month"`
+		LifetimeUsed     int        `json:"lifetime_used"`
+		AvailablePacks   []packJSON `json:"available_packs"`
 	}
 
 	org, err := h.store.GetOrganization(r.Context(), orgID)
@@ -132,11 +132,11 @@ func (h *BillingHandler) PurchaseCredits(w http.ResponseWriter, r *http.Request)
 
 	httputil.JSON(w, http.StatusOK, map[string]any{
 		"purchase": map[string]any{
-			"id":           purchase.ID,
-			"pack_id":      purchase.PackID,
-			"bearer_id":    purchase.BearerID,
-			"credits":      purchase.Credits,
-			"price_paise":  purchase.PricePaise,
+			"id":            purchase.ID,
+			"pack_id":       purchase.PackID,
+			"bearer_id":     purchase.BearerID,
+			"credits":       purchase.Credits,
+			"price_paise":   purchase.PricePaise,
 			"price_display": formatPaiseDisplay(purchase.PricePaise),
 		},
 		"new_balance": newBalance,
@@ -236,9 +236,9 @@ func (h *BillingHandler) GetCreditBalance(w http.ResponseWriter, r *http.Request
 	}
 
 	type balanceJSON struct {
-		BearerID   string `json:"bearer_id"`
-		Balance    int    `json:"balance"`
-		LifetimeUsed int  `json:"lifetime_used"`
+		BearerID     string `json:"bearer_id"`
+		Balance      int    `json:"balance"`
+		LifetimeUsed int    `json:"lifetime_used"`
 	}
 
 	result := make([]balanceJSON, 0, len(balances))
@@ -279,4 +279,3 @@ func parsePagination(r *http.Request, defaultLimit, maxLimit int) (int, int) {
 	}
 	return limit, offset
 }
-

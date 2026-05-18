@@ -50,12 +50,12 @@ function ProjectDropdown() {
     if (!token) return;
     api
       .listProjects(token)
-      .then(setProjects)
+      .then((res) => setProjects(res.data))
       .catch(() => {});
     const unsub = EventBus.subscribe(EVENTS.PROJECTS_CHANGED, () => {
       api
         .listProjects(token)
-        .then(setProjects)
+        .then((res) => setProjects(res.data))
         .catch(() => {});
     });
     return () => unsub();
@@ -292,12 +292,12 @@ function EnvironmentDropdown() {
     }
     api
       .listEnvironments(token, currentProjectId)
-      .then(setEnvs)
+      .then((res) => setEnvs(res.data))
       .catch(() => {});
     const unsub = EventBus.subscribe(EVENTS.ENVIRONMENTS_CHANGED, () => {
       api
         .listEnvironments(token, currentProjectId)
-        .then(setEnvs)
+        .then((res) => setEnvs(res.data))
         .catch(() => {});
     });
     return () => unsub();
@@ -440,8 +440,8 @@ function ActivityBell() {
   useEffect(() => {
     if (!token) return;
     api
-      .listAudit(token, 5, 0)
-      .then(setEntries)
+      .listAudit(token, { limit: 5, offset: 0 })
+      .then((res) => setEntries(res.data))
       .catch(() => {});
   }, [token]);
 

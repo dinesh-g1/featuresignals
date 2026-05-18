@@ -20,9 +20,9 @@ import (
 // token bucket. In production, this would be backed by Redis for
 // cross-instance consistency. This is the fifth step in the pipeline.
 type RateLimitGovernanceStep struct {
-	mu       sync.Mutex
-	buckets  map[string]*agentBucket // keyed by agent_id
-	logger   *slog.Logger
+	mu      sync.Mutex
+	buckets map[string]*agentBucket // keyed by agent_id
+	logger  *slog.Logger
 }
 
 // agentBucket tracks an agent's recent action count for rate limiting.

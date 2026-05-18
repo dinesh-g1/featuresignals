@@ -1,8 +1,8 @@
 package postgres_test
 
 import (
-	"errors"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -380,12 +380,12 @@ func TestAgentMaturity_UpsertAndList(t *testing.T) {
 			"flag.cleanup.staging": domain.MaturityL3Supervised,
 		},
 		Stats: domain.MaturityStats{
-			TotalDecisions:       100,
-			SuccessfulDecisions:  95,
-			Accuracy:             0.95,
-			IncidentsCaused:      1,
-			HumanOverrideRate:    0.05,
-			AvgConfidence:        0.92,
+			TotalDecisions:        100,
+			SuccessfulDecisions:   95,
+			Accuracy:              0.95,
+			IncidentsCaused:       1,
+			HumanOverrideRate:     0.05,
+			AvgConfidence:         0.92,
 			DaysSinceLastIncident: 30,
 		},
 	}
@@ -401,12 +401,12 @@ func TestAgentMaturity_UpsertAndList(t *testing.T) {
 			"flag.rollout.production": domain.MaturityL2Assist,
 		},
 		Stats: domain.MaturityStats{
-			TotalDecisions:       50,
-			SuccessfulDecisions:  48,
-			Accuracy:             0.96,
-			IncidentsCaused:      0,
-			HumanOverrideRate:    0.02,
-			AvgConfidence:        0.88,
+			TotalDecisions:        50,
+			SuccessfulDecisions:   48,
+			Accuracy:              0.96,
+			IncidentsCaused:       0,
+			HumanOverrideRate:     0.02,
+			AvgConfidence:         0.88,
 			DaysSinceLastIncident: 90,
 		},
 	}

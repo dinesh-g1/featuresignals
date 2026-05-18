@@ -125,12 +125,12 @@ export default function FlagDetailPage() {
       }),
       api
         .listFlags(token, projectId)
-        .then((f) => setAllFlags(f ?? []))
+        .then((f) => setAllFlags(f.data))
         .catch(() => {}),
       api
         .listEnvironments(token, projectId)
         .then((e) => {
-          const list = e ?? [];
+          const list = e.data;
           setEnvs(list);
           if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
         })
@@ -139,7 +139,7 @@ export default function FlagDetailPage() {
         .listSegments(token, projectId)
         .then((s) => {
           setSegments(
-            (s ?? []).map((seg: Segment) => ({ key: seg.key, name: seg.name })),
+            s.data.map((seg: Segment) => ({ key: seg.key, name: seg.name })),
           );
         })
         .catch(() => {}),

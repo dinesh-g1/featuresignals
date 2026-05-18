@@ -18,12 +18,12 @@ import (
 // ── Mock Incident Store ────────────────────────────────────────────────────
 
 type mockIncidentStore struct {
-	correlations  map[string]*domain.IncidentCorrelation
-	remediations  map[string]*domain.AutoRemediation
-	flags         map[string]*domain.Flag          // keyed by "projectID/key"
-	flagStates    map[string]*domain.FlagState     // keyed by "flagID/envID"
-	envs          map[string]*domain.Environment
-	auditEntries  []*domain.AuditEntry
+	correlations map[string]*domain.IncidentCorrelation
+	remediations map[string]*domain.AutoRemediation
+	flags        map[string]*domain.Flag      // keyed by "projectID/key"
+	flagStates   map[string]*domain.FlagState // keyed by "flagID/envID"
+	envs         map[string]*domain.Environment
+	auditEntries []*domain.AuditEntry
 }
 
 func newMockIncidentStore() *mockIncidentStore {
@@ -239,6 +239,7 @@ func TestIncidentHandler_GetMonitor_Success(t *testing.T) {
 	store.correlations["corr-1"] = &domain.IncidentCorrelation{
 		ID: "corr-1", OrgID: testOrgID, IncidentStartedAt: now.Add(-1 * time.Hour),
 		TotalFlagsChanged: 3, HighestCorrelation: 0.85, CreatedAt: now,
+		CorrelatedChanges: json.RawMessage(`[{"flag_key":"test-flag","correlation_score":0.85,"change_type":"rollout"}]`),
 	}
 	store.remediations["rem-1"] = &domain.AutoRemediation{
 		ID: "rem-1", OrgID: testOrgID, FlagKey: "test-flag", EnvID: "env-1",
@@ -301,9 +302,11 @@ func TestIncidentHandler_GetMonitor_CriticalHealth(t *testing.T) {
 	now := time.Now().UTC()
 	for i := 0; i < 5; i++ {
 		id := "corr-" + string(rune('0'+i))
+		key := "flag-" + string(rune('a'+i))
 		store.correlations[id] = &domain.IncidentCorrelation{
 			ID: id, OrgID: testOrgID, IncidentStartedAt: now,
 			CreatedAt: now, IncidentEndedAt: nil, // still open
+			CorrelatedChanges: json.RawMessage(`[{"flag_key":"` + key + `","correlation_score":0.9,"change_type":"toggle"}]`),
 		}
 	}
 

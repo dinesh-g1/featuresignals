@@ -25,7 +25,6 @@ func NewMFAHandler(store mfaStore) *MFAHandler {
 	return &MFAHandler{store: store}
 }
 
-
 // Enable generates a new TOTP secret and returns it with a QR URI.
 // MFA is not active until Verify is called.
 func (h *MFAHandler) Enable(w http.ResponseWriter, r *http.Request) {

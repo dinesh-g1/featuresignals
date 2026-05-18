@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { consoleStore } from "@/stores/console-store";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import type { FeatureCardData } from "@/lib/console-types";
 
 // ─── Constants ──────────────────────────────────────────────────────
@@ -104,7 +106,20 @@ export function useConsoleAI(): void {
   useEffect(() => {
     const interval = setInterval(() => {
       const state = consoleStore.getState();
-      const { features, proactiveAlert: currentAlert } = state;
+      const currentAlert = state.proactiveAlert;
+
+      // Read features from TanStack Query cache
+      const featuresData = queryClient.getQueryData(
+        queryKeys.console.features({
+          projectId: undefined,
+          stage: undefined,
+          environment: state.selectedEnvironment,
+          sort: state.sortBy,
+          limit: state.featuresLimit,
+        }),
+      );
+      const features: FeatureCardData[] =
+        (featuresData as { data?: FeatureCardData[] } | null)?.data ?? [];
 
       // ── Find the highest-priority AI suggestion ─────────────────
       // Critical takes precedence over warning over info.

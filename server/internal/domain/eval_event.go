@@ -9,8 +9,8 @@
 package domain
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"time"
 )
 
@@ -168,6 +168,7 @@ type EvalEventReader interface {
 	GetEvaluationLatency(ctx context.Context, orgID, flagKey string, since time.Time) (p50, p95, p99 int64, err error)
 	GetEvaluationVolume(ctx context.Context, orgID string, since time.Time, interval string) ([]TimeSeriesPoint, error)
 }
+
 // TimeSeriesPoint is a single data point in a time series query.
 type TimeSeriesPoint struct {
 	Timestamp time.Time `json:"timestamp"`

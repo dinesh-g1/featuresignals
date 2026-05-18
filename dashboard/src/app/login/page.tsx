@@ -20,7 +20,9 @@ import {
   EyeOffIcon,
   BuildingIcon,
   ChevronRightIcon,
+  InfoIcon,
 } from "@/components/icons/nav-icons";
+import { toast } from "@/components/toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -64,13 +66,23 @@ function LoginForm() {
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   const sessionExpired = searchParams.get("session_expired") === "true";
+  const orgDeleted = searchParams.get("org_deleted") === "true";
   const ssoError = searchParams.get("sso_error");
   const emailVerified = searchParams.get("email_verified") === "true";
+  const emailParam = searchParams.get("email");
+
+  // Pre-fill email from query param (e.g. from register page org_deleted flow)
+  useEffect(() => {
+    if (emailParam && !email) {
+      setEmail(emailParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailParam]);
 
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      router.push("/projects");
+      router.push("/console");
       return;
     }
     setLoadingAuth(false);
@@ -124,6 +136,9 @@ function LoginForm() {
           data.tokens.expires_at,
           data.onboarding_completed,
         );
+        if (orgDeleted) {
+          toast("Your organization has been recovered.", "success");
+        }
         if (!data.onboarding_completed) {
           router.push("/onboarding");
         } else {
@@ -132,7 +147,7 @@ function LoginForm() {
       } catch (err: unknown) {
         if (err instanceof APIError) {
           try {
-            const body = err as unknown as Record<string, unknown>;
+            const body = err.body;
             if (err.status === 429) {
               setErrorType("account_locked");
               const retryAfterStr = (body.retry_after as string) || "";
@@ -170,7 +185,7 @@ function LoginForm() {
         setLoading(false);
       }
     },
-    [email, password, router, setAuth],
+    [email, password, router, setAuth, orgDeleted],
   );
 
   const handleSSOLogin = useCallback(
@@ -275,6 +290,24 @@ function LoginForm() {
       {/* Messages + Form */}
       <div className="mt-6 space-y-4">
         {/* ===== SUCCESS MESSAGES ===== */}
+        {orgDeleted && (
+          <div className="mb-5 rounded-xl border border-[var(--signal-border-warning-muted)] bg-[var(--signal-bg-warning-muted)] px-4 py-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <InfoIcon className="h-4 w-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--signal-fg-warning)]">
+                  Your organization has been scheduled for deletion.
+                </p>
+                <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
+                  Sign in to recover it. Your organization will be
+                  automatically restored upon successful login.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {sessionExpired && (
           <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             Your session has expired. Please sign in again.

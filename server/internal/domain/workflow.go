@@ -238,18 +238,18 @@ const (
 
 const (
 	// Code2Flag workflows
-	WorkflowFlagDiscovery  = "code2flag.discover"  // Scan repo, identify flag candidates
-	WorkflowFlagCreation   = "code2flag.create"    // Create flag, generate SDK code, create PR
-	WorkflowFlagCleanup    = "code2flag.cleanup"   // Scan flags, identify stale, propose removal, create PR
+	WorkflowFlagDiscovery = "code2flag.discover" // Scan repo, identify flag candidates
+	WorkflowFlagCreation  = "code2flag.create"   // Create flag, generate SDK code, create PR
+	WorkflowFlagCleanup   = "code2flag.cleanup"  // Scan flags, identify stale, propose removal, create PR
 
 	// Preflight workflows
-	WorkflowRolloutPlan    = "preflight.plan"      // Analyze impact, generate rollout plan
-	WorkflowRolloutExecute = "preflight.execute"   // Execute staged rollout with monitoring
+	WorkflowRolloutPlan     = "preflight.plan"       // Analyze impact, generate rollout plan
+	WorkflowRolloutExecute  = "preflight.execute"    // Execute staged rollout with monitoring
 	WorkflowComplianceCheck = "preflight.compliance" // Run compliance checks, route for approval
 
 	// IncidentFlag workflows
-	WorkflowIncidentCorrelate = "incident.correlate" // Correlate flag changes with incidents
-	WorkflowIncidentRespond   = "incident.respond"   // Auto-remediate or escalate
+	WorkflowIncidentCorrelate  = "incident.correlate"  // Correlate flag changes with incidents
+	WorkflowIncidentRespond    = "incident.respond"    // Auto-remediate or escalate
 	WorkflowIncidentPostmortem = "incident.postmortem" // Generate postmortem from incident data
 
 	// Impact Analyzer workflows
@@ -257,6 +257,6 @@ const (
 	WorkflowCostAttribute = "impact.cost"    // Attribute infrastructure cost to features
 
 	// ABM workflows
-	WorkflowAgentPromotion  = "abm.promote"  // Evaluate agent maturity, promote if ready
+	WorkflowAgentPromotion   = "abm.promote" // Evaluate agent maturity, promote if ready
 	WorkflowAgentDegradation = "abm.degrade" // Detect regression, degrade maturity
 )

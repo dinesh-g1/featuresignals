@@ -105,3 +105,23 @@ type LoginErrorResponse struct {
 	AttemptsAllowed int    `json:"attempts_allowed"`
 	Remaining       int    `json:"remaining"`
 }
+
+// EmailRegisteredResponse is returned when a signup attempts to use an email
+// that is already associated with an active organization.
+type EmailRegisteredResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+// OrgDeletedSignupResponse is returned when a signup attempts to use an email
+// whose only organization has been soft-deleted. The frontend should offer
+// the user the option to recover the org or wait for the grace period to expire.
+type OrgDeletedSignupResponse struct {
+	Error                    string `json:"error"`
+	Code                     string `json:"code"`
+	Message                  string `json:"message"`
+	OrgName                  string `json:"org_name"`
+	DeletedAt                string `json:"deleted_at"`
+	GracePeriodRemainingDays int    `json:"grace_period_remaining_days"`
+	CanRecover               bool   `json:"can_recover"`
+}

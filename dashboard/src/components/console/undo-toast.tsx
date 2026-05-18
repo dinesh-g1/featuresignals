@@ -254,6 +254,7 @@ export function UndoToastContainer() {
         "pointer-events-none",
       )}
       style={{ bottom: "48px" }}
+      role="status"
       aria-label="Undoable actions"
     >
       <AnimatePresence mode="popLayout">

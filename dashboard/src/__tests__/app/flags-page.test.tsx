@@ -7,6 +7,7 @@ import {
   act,
 } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
+import { makePaginatedResponse } from "@/__tests__/helpers/fixtures";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -76,7 +77,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 import { api } from "@/lib/api";
-import { queryCache } from "@/lib/query-cache";
+import { queryClient } from "@/lib/query-client";
 import FlagsPage from "@/app/(app)/projects/[projectId]/flags/page";
 
 const mockFlags = [
@@ -121,7 +122,7 @@ const mockEnvs = [
 describe("FlagsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    queryCache.clear();
+    queryClient.clear();
 
     const store = useAppStore.getState();
     store.setAuth(
@@ -148,8 +149,12 @@ describe("FlagsPage", () => {
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
-    vi.mocked(api.listFlags).mockResolvedValue(mockFlags);
-    vi.mocked(api.listEnvironments).mockResolvedValue(mockEnvs);
+    vi.mocked(api.listFlags).mockResolvedValue(
+      makePaginatedResponse(mockFlags),
+    );
+    vi.mocked(api.listEnvironments).mockResolvedValue(
+      makePaginatedResponse(mockEnvs),
+    );
     vi.mocked(api.listFlagStatesByEnv).mockResolvedValue([
       {
         id: "fs-1",
@@ -194,7 +199,7 @@ describe("FlagsPage", () => {
 
   afterEach(() => {
     useAppStore.getState().logout();
-    queryCache.clear();
+    queryClient.clear();
   });
 
   it("renders loading skeleton initially", () => {
@@ -248,7 +253,7 @@ describe("FlagsPage", () => {
   });
 
   it("shows empty state when no flags", async () => {
-    vi.mocked(api.listFlags).mockResolvedValue([]);
+    vi.mocked(api.listFlags).mockResolvedValue(makePaginatedResponse([]));
 
     render(<FlagsPage />);
 

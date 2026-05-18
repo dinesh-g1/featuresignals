@@ -61,20 +61,21 @@ func (m *mockConsoleStore) GetFlag(ctx context.Context, orgID, key string) (*dom
 	return f, nil
 }
 
-func (m *mockConsoleStore) GetInsights(ctx context.Context, orgID string) (*domain.ConsoleInsights, error) {
+func (m *mockConsoleStore) GetInsights(ctx context.Context, orgID string, params domain.ConsoleInsightsParams) (*domain.ConsoleInsights, error) {
 	return &domain.ConsoleInsights{
-		ImpactReports:  []domain.ImpactReport{},
-		OrgLearnings:   []domain.OrgLearning{},
-		RecentActivity: []domain.ActivityEntry{},
+		ImpactReports:  domain.NewPaginatedList([]domain.ImpactReport{}, 0, params.ReportLimit, params.ReportOffset),
+		OrgLearnings:   domain.NewPaginatedList([]domain.OrgLearning{}, 0, params.LearningLimit, params.LearningOffset),
+		RecentActivity: domain.NewPaginatedList([]domain.ActivityEntry{}, 0, params.ActivityLimit, params.ActivityOffset),
 	}, nil
 }
 
-func (m *mockConsoleStore) GetIntegrations(ctx context.Context, orgID string) (*domain.ConsoleIntegrations, error) {
+func (m *mockConsoleStore) GetIntegrations(ctx context.Context, orgID string, params domain.ConsoleIntegrationsParams) (*domain.ConsoleIntegrations, error) {
 	return &domain.ConsoleIntegrations{
-		Repositories: []domain.RepoStatus{},
-		SDKs:         []domain.SdkStatus{},
-		Agents:       []domain.ConsoleAgentStatus{},
-		APIKeys:      []domain.ConsoleApiKeyStatus{},
+		Repositories: domain.NewPaginatedList([]domain.RepoStatus{}, 0, params.RepoLimit, params.RepoOffset),
+		SDKs:         domain.NewPaginatedList([]domain.SdkStatus{}, 0, params.SDKLimit, params.SDKOffset),
+		Agents:       domain.NewPaginatedList([]domain.ConsoleAgentStatus{}, 0, params.AgentLimit, params.AgentOffset),
+		APIKeys:      domain.NewPaginatedList([]domain.ConsoleApiKeyStatus{}, 0, params.KeyLimit, params.KeyOffset),
+		Policies:     domain.NewPaginatedList([]domain.ConsolePolicyStatus{}, 0, params.PolicyLimit, params.PolicyOffset),
 	}, nil
 }
 
@@ -150,11 +151,11 @@ func (m *mockConsoleStore) ArchiveFlag(ctx context.Context, orgID, key string) (
 
 func makeConsoleFlag(key, name, stage string) *domain.ConsoleFlag {
 	return &domain.ConsoleFlag{
-		Key:   key,
-		Name:  name,
-		Stage: stage,
-		Status: "active",
-		Type:  "boolean",
+		Key:          key,
+		Name:         name,
+		Stage:        stage,
+		Status:       "active",
+		Type:         "boolean",
 		DependsOn:    []string{},
 		DependedOnBy: []string{},
 	}

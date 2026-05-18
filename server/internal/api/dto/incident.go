@@ -10,10 +10,10 @@ import "encoding/json"
 
 // MonitorResponse is the monitoring status returned by GET /v1/incidentflag/monitor.
 type MonitorResponse struct {
-	ActiveAlerts        []ActiveAlert         `json:"active_alerts"`
-	RecentCorrelations  []CorrelationSummary  `json:"recent_correlations"`
+	ActiveAlerts         []ActiveAlert        `json:"active_alerts"`
+	RecentCorrelations   []CorrelationSummary `json:"recent_correlations"`
 	FlagsUnderMonitoring int                  `json:"flags_under_monitoring"`
-	OverallHealth       string                `json:"overall_health"` // healthy, warning, critical
+	OverallHealth        string               `json:"overall_health"` // healthy, warning, critical
 }
 
 // ActiveAlert represents an active monitoring alert for a flag.
@@ -38,10 +38,10 @@ type CorrelationSummary struct {
 
 // CorrelateRequest is the request body for POST /v1/incidentflag/correlate.
 type CorrelateRequest struct {
-	IncidentStartedAt string   `json:"incident_started_at"`           // required, RFC 3339
-	IncidentEndedAt   string   `json:"incident_ended_at,omitempty"`   // optional
-	ServicesAffected  []string `json:"services_affected,omitempty"`   // optional
-	EnvID             string   `json:"env_id,omitempty"`              // optional
+	IncidentStartedAt string   `json:"incident_started_at"`         // required, RFC 3339
+	IncidentEndedAt   string   `json:"incident_ended_at,omitempty"` // optional
+	ServicesAffected  []string `json:"services_affected,omitempty"` // optional
+	EnvID             string   `json:"env_id,omitempty"`            // optional
 }
 
 // CorrelatedChangeItem represents a single flag change correlated to an incident.
@@ -51,16 +51,16 @@ type CorrelatedChangeItem struct {
 	ChangeType       string  `json:"change_type"`       // toggle, rollout, kill
 	ChangedAt        string  `json:"changed_at"`
 	WasReverted      bool    `json:"was_reverted"`
-	RiskLevel        string  `json:"risk_level"`        // low, medium, high, critical
+	RiskLevel        string  `json:"risk_level"` // low, medium, high, critical
 }
 
 // CorrelateResponse is returned from POST /v1/incidentflag/correlate.
 type CorrelateResponse struct {
-	CorrelationID    string                 `json:"correlation_id"`
-	CorrelatedChanges []CorrelatedChangeItem `json:"correlated_changes"`
-	TotalFlagsChanged int                    `json:"total_flags_changed"`
-	HighestCorrelation float64               `json:"highest_correlation"`
-	CreatedAt         string                 `json:"created_at"`
+	CorrelationID      string                 `json:"correlation_id"`
+	CorrelatedChanges  []CorrelatedChangeItem `json:"correlated_changes"`
+	TotalFlagsChanged  int                    `json:"total_flags_changed"`
+	HighestCorrelation float64                `json:"highest_correlation"`
+	CreatedAt          string                 `json:"created_at"`
 }
 
 // ─── Remediate Types ───────────────────────────────────────────────────────
@@ -76,11 +76,11 @@ type RemediateRequest struct {
 
 // RemediateResponse is returned from POST /v1/incidentflag/remediate.
 type RemediateResponse struct {
-	RemediationID  string          `json:"remediation_id"`
-	FlagKey        string          `json:"flag_key"`
-	Action         string          `json:"action"`
-	Status         string          `json:"status"`
-	PreviousState  json.RawMessage `json:"previous_state,omitempty"`
-	AppliedAt      string          `json:"applied_at,omitempty"`
-	Message        string          `json:"message,omitempty"`
+	RemediationID string          `json:"remediation_id"`
+	FlagKey       string          `json:"flag_key"`
+	Action        string          `json:"action"`
+	Status        string          `json:"status"`
+	PreviousState json.RawMessage `json:"previous_state,omitempty"`
+	AppliedAt     string          `json:"applied_at,omitempty"`
+	Message       string          `json:"message,omitempty"`
 }

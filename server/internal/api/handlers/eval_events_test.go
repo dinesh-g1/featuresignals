@@ -137,8 +137,8 @@ func TestEvalEventsHandler_Query(t *testing.T) {
 			query: "flag_key=test-flag&since=2026-01-15T00:00:00Z",
 			mock: func() *mockEvalEventStore {
 				return &mockEvalEventStore{
-					count:     42,
-					byVariant: map[string]int64{"control": 42},
+					count:      42,
+					byVariant:  map[string]int64{"control": 42},
 					latencyErr: errors.New("query timeout"),
 				}
 			},
@@ -404,4 +404,3 @@ func TestEvalEventsHandler_Volume_EmptySlice(t *testing.T) {
 		t.Errorf("expected empty array, got %d elements", len(arr))
 	}
 }
-

@@ -29,14 +29,14 @@ const (
 // Product events are separate from audit log entries — audit entries serve
 // compliance and governance, product events serve product intelligence.
 type ProductEvent struct {
-	ID         string            `json:"id" db:"id"`
-	Event      string            `json:"event" db:"event"`
-	Category   EventCategory     `json:"category" db:"category"`
-	UserID     string            `json:"user_id,omitempty" db:"user_id"`
-	OrgID      string            `json:"org_id,omitempty" db:"org_id"`
-	Properties json.RawMessage   `json:"properties,omitempty" db:"properties"`
-	Context    *EventContext     `json:"context,omitempty" db:"-"`
-	CreatedAt  time.Time         `json:"created_at" db:"created_at"`
+	ID         string          `json:"id" db:"id"`
+	Event      string          `json:"event" db:"event"`
+	Category   EventCategory   `json:"category" db:"category"`
+	UserID     string          `json:"user_id,omitempty" db:"user_id"`
+	OrgID      string          `json:"org_id,omitempty" db:"org_id"`
+	Properties json.RawMessage `json:"properties,omitempty" db:"properties"`
+	Context    *EventContext   `json:"context,omitempty" db:"-"`
+	CreatedAt  time.Time       `json:"created_at" db:"created_at"`
 }
 
 // EventContext carries non-business metadata about where/how the event

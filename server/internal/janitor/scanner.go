@@ -32,18 +32,18 @@ import (
 //   - If GitHub is unreachable, results are limited to cached data.
 //   - Scan failures do not affect the evaluation hot path.
 type RepoScanner struct {
-	gitProvider    GitProvider
+	gitProvider     GitProvider
 	code2flagWriter domain.Code2FlagWriter
-	janitorStore   store.JanitorStore
-	scanEventBus   domain.ScanEventBus
-	logger         *slog.Logger
+	janitorStore    store.JanitorStore
+	scanEventBus    domain.ScanEventBus
+	logger          *slog.Logger
 
 	// analyzer performs regex-based conditional detection.
 	analyzer *Analyzer
 
 	// active tracks currently running scans for cancellation.
-	mu      sync.Mutex
-	active  map[string]context.CancelFunc
+	mu     sync.Mutex
+	active map[string]context.CancelFunc
 }
 
 // NewRepoScanner creates a new RepoScanner. gitProvider may be nil if no
@@ -59,13 +59,13 @@ func NewRepoScanner(
 		logger = slog.Default()
 	}
 	return &RepoScanner{
-		gitProvider:    gitProvider,
+		gitProvider:     gitProvider,
 		code2flagWriter: code2flagWriter,
-		janitorStore:   janitorStore,
-		scanEventBus:   scanEventBus,
-		analyzer:       NewAnalyzer(logger),
-		logger:         logger.With("component", "repo_scanner"),
-		active:         make(map[string]context.CancelFunc),
+		janitorStore:    janitorStore,
+		scanEventBus:    scanEventBus,
+		analyzer:        NewAnalyzer(logger),
+		logger:          logger.With("component", "repo_scanner"),
+		active:          make(map[string]context.CancelFunc),
 	}
 }
 
@@ -175,10 +175,10 @@ func (s *RepoScanner) ScanRepository(ctx context.Context, repoName, branch strin
 		completedFiles++
 		if completedFiles%10 == 0 || completedFiles == totalFiles {
 			s.scanEventBus.Publish(scanCtx, scanID, "scan.repo.progress", map[string]interface{}{
-				"repo":             repoName,
-				"total_files":      totalFiles,
-				"completed_files":  completedFiles,
-				"results_found":    len(scanResults),
+				"repo":            repoName,
+				"total_files":     totalFiles,
+				"completed_files": completedFiles,
+				"results_found":   len(scanResults),
 			})
 		}
 	}
@@ -201,11 +201,11 @@ func (s *RepoScanner) ScanRepository(ctx context.Context, repoName, branch strin
 	)
 
 	s.scanEventBus.Publish(scanCtx, scanID, "scan.complete", map[string]interface{}{
-		"repo":           repoName,
-		"branch":         branch,
-		"files_scanned":  totalFiles,
-		"results_found":  len(scanResults),
-		"duration_ms":    time.Since(startTime).Milliseconds(),
+		"repo":          repoName,
+		"branch":        branch,
+		"files_scanned": totalFiles,
+		"results_found": len(scanResults),
+		"duration_ms":   time.Since(startTime).Milliseconds(),
 	})
 
 	return nil
@@ -249,37 +249,37 @@ func extractZipFiles(zipBytes []byte, filterFiles map[string]struct{}) (map[stri
 // Skips binaries, images, vendor directories, and generated code.
 func filterCodeFiles(files map[string][]byte) map[string][]byte {
 	codeExtensions := map[string]bool{
-		".go":     true,
-		".java":   true,
-		".js":     true,
-		".ts":     true,
-		".tsx":    true,
-		".jsx":    true,
-		".py":     true,
-		".rb":     true,
-		".rs":     true,
-		".cs":     true,
-		".swift":  true,
-		".kt":     true,
-		".kts":    true,
-		".cpp":    true,
-		".cc":     true,
-		".c":      true,
-		".h":      true,
-		".hpp":    true,
-		".scala":  true,
-		".php":    true,
-		".r":      true,
-		".dart":   true,
-		".ex":     true,
-		".exs":    true,
-		".clj":    true,
-		".cljs":   true,
-		".elm":    true,
-		".erl":    true,
-		".hrl":    true,
-		".fs":     true,
-		".fsx":    true,
+		".go":    true,
+		".java":  true,
+		".js":    true,
+		".ts":    true,
+		".tsx":   true,
+		".jsx":   true,
+		".py":    true,
+		".rb":    true,
+		".rs":    true,
+		".cs":    true,
+		".swift": true,
+		".kt":    true,
+		".kts":   true,
+		".cpp":   true,
+		".cc":    true,
+		".c":     true,
+		".h":     true,
+		".hpp":   true,
+		".scala": true,
+		".php":   true,
+		".r":     true,
+		".dart":  true,
+		".ex":    true,
+		".exs":   true,
+		".clj":   true,
+		".cljs":  true,
+		".elm":   true,
+		".erl":   true,
+		".hrl":   true,
+		".fs":    true,
+		".fsx":   true,
 	}
 
 	skipPrefixes := []string{

@@ -23,7 +23,11 @@ export type LifecycleStage =
 
 export type LifecycleRow = "plan" | "build" | "operate";
 
-export type ProductId = "code2flag" | "preflight" | "incidentflag" | "impact-analyzer";
+export type ProductId =
+  | "code2flag"
+  | "preflight"
+  | "incidentflag"
+  | "impact-analyzer";
 
 export interface ProductDefinition {
   id: ProductId;
@@ -93,11 +97,30 @@ export interface FeatureCardData {
 
 // ─── CONNECT Zone ────────────────────────────────────────────────────
 
+export interface PolicyRule {
+  name: string;
+  description?: string;
+  expression: string;
+  message?: string;
+}
+
+export interface PolicyStatus {
+  id: string;
+  name: string;
+  effect: string; // deny | require_human | warn | audit
+  enabled: boolean;
+  priority: number;
+  rule_count: number;
+  rules?: PolicyRule[];
+  updated_at?: string; // ISO 8601
+}
+
 export interface IntegrationStatus {
-  repositories: RepoStatus[];
-  sdks: SdkStatus[];
-  agents: AgentStatus[];
-  api_keys: ApiKeyStatus[];
+  repositories: PaginatedResponse<RepoStatus>;
+  sdks: PaginatedResponse<SdkStatus>;
+  agents: PaginatedResponse<AgentStatus>;
+  api_keys: PaginatedResponse<ApiKeyStatus>;
+  policies: PaginatedResponse<PolicyStatus>;
 }
 
 export interface RepoStatus {
@@ -119,6 +142,12 @@ export interface SdkStatus {
   status: string; // active | inactive
 }
 
+export interface AgentRateLimits {
+  per_minute: number;
+  per_hour: number;
+  concurrent: number;
+}
+
 export interface AgentStatus {
   id: string;
   name: string;
@@ -126,6 +155,9 @@ export interface AgentStatus {
   status: string; // online | degraded | offline
   last_heartbeat?: string; // ISO 8601
   tasks_completed: number;
+  rate_limits?: AgentRateLimits | null;
+  scopes?: string[];
+  maturity_level?: number;
 }
 
 export interface ApiKeyStatus {
@@ -134,18 +166,18 @@ export interface ApiKeyStatus {
   type: string; // sdk | server
   key_prefix: string; // fs_srv_...XXXX
   last_used_at?: string; // ISO 8601
-  status: string; // active | expiring | expired
+  status: string; // active | expiring | expired | revoked
   environment: string;
 }
 
 // ─── LEARN Zone ──────────────────────────────────────────────────────
 
 export interface ConsoleInsights {
-  impact_reports: ImpactReport[];
+  impact_reports: PaginatedResponse<ImpactReport>;
   cost_attribution: CostAttribution;
   team_velocity: TeamVelocity;
-  org_learnings: OrgLearning[];
-  recent_activity: ActivityEntry[];
+  org_learnings: PaginatedResponse<OrgLearning>;
+  recent_activity: PaginatedResponse<ActivityEntry>;
 }
 
 export interface ImpactReport {

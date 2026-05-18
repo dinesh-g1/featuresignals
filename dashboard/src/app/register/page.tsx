@@ -13,9 +13,12 @@ import Link from "next/link";
 import {
   MailIcon,
   AlertIcon,
+  InfoIcon,
   ArrowLeftIcon,
+  TrashIcon,
+  BuildingIcon,
 } from "@/components/icons/nav-icons";
-import { api } from "@/lib/api";
+import { api, APIError } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { AuthLayout } from "@/components/auth-layout";
@@ -301,6 +304,15 @@ function RegisterForm() {
 
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [errorType, setErrorType] = useState<
+    "generic" | "email_registered" | "org_deleted"
+  >("generic");
+  const [orgDeletedInfo, setOrgDeletedInfo] = useState<{
+    org_name: string;
+    deleted_at: string;
+    grace_period_remaining_days: number;
+    can_recover: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [otpError, setOtpError] = useState<{
@@ -381,6 +393,8 @@ function RegisterForm() {
 
   async function handleInitiateSignup() {
     setError("");
+    setErrorType("generic");
+    setOrgDeletedInfo(null);
     setOtpError(null);
 
     // Mark all fields as touched on submit attempt so inline errors appear
@@ -397,10 +411,80 @@ function RegisterForm() {
       setOtp("");
       setOtpError(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Signup failed";
-      setError(msg);
+      if (err instanceof APIError && err.code === "email_has_deleted_org") {
+        setErrorType("org_deleted");
+        setOrgDeletedInfo({
+          org_name: (err.body.org_name as string) || "",
+          deleted_at: (err.body.deleted_at as string) || "",
+          grace_period_remaining_days:
+            (err.body.grace_period_remaining_days as number) || 0,
+          can_recover: (err.body.can_recover as boolean) ?? true,
+        });
+        setError(
+          (err.body.message as string) ||
+            "This email is associated with an organization that was recently deleted.",
+        );
+      } else if (
+        err instanceof APIError &&
+        (err.status === 409 || err.message?.toLowerCase().includes("already"))
+      ) {
+        setErrorType("email_registered");
+        setError(
+          err.message || "This email is already registered.",
+        );
+      } else {
+        setErrorType("generic");
+        const msg = err instanceof Error ? err.message : "Signup failed";
+        setError(msg);
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Navigate to login with org_deleted flag to start recovery flow
+  function handleRecoverOrg() {
+    const emailEncoded = encodeURIComponent(form.email);
+    router.push(`/login?org_deleted=true&email=${emailEncoded}`);
+  }
+
+  // Purge the deleted org permanently, then redirect to fresh signup
+  async function handlePurgeDeletedOrg() {
+    const orgName = orgDeletedInfo?.org_name || "the organization";
+    const confirmed = window.confirm(
+      `This will permanently delete '${orgName}' and all its data. You can then create a new organization. This action is irreversible.`,
+    );
+    if (!confirmed) return;
+
+    setLoading(true);
+    setError("");
+    try {
+      await api.purgeOrganizationByEmail(form.email);
+      setErrorType("generic");
+      setOrgDeletedInfo(null);
+      setError("");
+    } catch (purgeErr: unknown) {
+      setError(
+        purgeErr instanceof Error
+          ? purgeErr.message
+          : "Failed to permanently delete organization.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Format date for display
+  function formatDeletedDate(dateStr: string): string {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return dateStr;
     }
   }
 
@@ -490,7 +574,83 @@ function RegisterForm() {
           </p>
         </div>
 
-        {error && (
+        {error && errorType === "org_deleted" && orgDeletedInfo && (
+          <div
+            className="rounded-xl border border-[var(--signal-border-warning-muted)] bg-[var(--signal-bg-warning-muted)] p-4"
+            role="alert"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <InfoIcon className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--signal-fg-warning)]">
+                    Organization Previously Deleted
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
+                    This email is associated with{" "}
+                    <span className="font-semibold">
+                      &ldquo;{orgDeletedInfo.org_name}&rdquo;
+                    </span>
+                    , which was deleted on{" "}
+                    {formatDeletedDate(orgDeletedInfo.deleted_at)}.
+                  </p>
+                  {orgDeletedInfo.grace_period_remaining_days > 0 && (
+                    <p className="mt-1 text-sm text-[var(--signal-fg-secondary)]">
+                      You have{" "}
+                      <span className="font-semibold text-[var(--signal-fg-warning)]">
+                        {orgDeletedInfo.grace_period_remaining_days} days
+                      </span>{" "}
+                      to recover your organization before it is permanently
+                      deleted.
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleRecoverOrg}
+                  >
+                    <BuildingIcon className="mr-1.5 h-4 w-4" />
+                    Recover Organization
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePurgeDeletedOrg}
+                    disabled={loading}
+                    className="text-[var(--signal-fg-danger)] hover:bg-[var(--signal-bg-danger-muted)]"
+                  >
+                    <TrashIcon className="mr-1.5 h-4 w-4" />
+                    {loading ? "Purging..." : "Start Fresh"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && errorType === "email_registered" && (
+          <div
+            className="flex items-start gap-2 rounded-lg bg-[var(--signal-bg-accent-muted)] p-3 text-sm ring-1 ring-[var(--signal-border-accent-muted)]"
+            role="alert"
+          >
+            <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--signal-fg-accent)]" />
+            <div>
+              <p className="text-[var(--signal-fg-primary)]">{error}</p>
+              <Link
+                href={`/login?email=${encodeURIComponent(form.email)}`}
+                className="mt-1 inline-block text-sm font-medium text-[var(--signal-fg-accent)] hover:underline"
+              >
+                Sign in instead
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {error && errorType === "generic" && (
           <div
             className="flex items-start gap-2 rounded-lg bg-[var(--signal-bg-danger-muted)] p-3 text-sm text-red-600 ring-1 ring-red-100"
             role="alert"

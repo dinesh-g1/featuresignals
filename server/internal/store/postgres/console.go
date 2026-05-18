@@ -324,30 +324,24 @@ func (s *ConsoleStore) GetFlag(ctx context.Context, orgID, key string) (*domain.
 // GetInsights aggregates post-rollout learning data for the LEARN zone.
 // Gracefully degrades when ClickHouse is not available — returns empty
 // collections rather than errors.
-func (s *ConsoleStore) GetInsights(ctx context.Context, orgID string) (*domain.ConsoleInsights, error) {
-	insights := &domain.ConsoleInsights{
-		ImpactReports:  []domain.ImpactReport{},
-		OrgLearnings:   []domain.OrgLearning{},
-		RecentActivity: []domain.ActivityEntry{},
-	}
+func (s *ConsoleStore) GetInsights(ctx context.Context, orgID string, params domain.ConsoleInsightsParams) (*domain.ConsoleInsights, error) {
+	insights := &domain.ConsoleInsights{}
 
-	// Impact reports: latest 5 for this org.
-	reports, err := s.listImpactReports(ctx, orgID, 5)
+	// Impact reports: paginated.
+	reports, reportTotal, err := s.listImpactReports(ctx, orgID, params.ReportLimit, params.ReportOffset)
 	if err != nil {
 		s.logger.Warn("console GetInsights: impact reports unavailable, degrading gracefully",
 			"org_id", orgID, "error", err)
-	} else {
-		insights.ImpactReports = reports
 	}
+	insights.ImpactReports = domain.NewPaginatedList(reports, reportTotal, params.ReportLimit, params.ReportOffset)
 
-	// Org learnings: latest 3 for this org.
-	learnings, err := s.listOrgLearnings(ctx, orgID, 3)
+	// Org learnings: paginated.
+	learnings, learningTotal, err := s.listOrgLearnings(ctx, orgID, params.LearningLimit, params.LearningOffset)
 	if err != nil {
 		s.logger.Warn("console GetInsights: org learnings unavailable, degrading gracefully",
 			"org_id", orgID, "error", err)
-	} else {
-		insights.OrgLearnings = learnings
 	}
+	insights.OrgLearnings = domain.NewPaginatedList(learnings, learningTotal, params.LearningLimit, params.LearningOffset)
 
 	// Cost attribution: latest for this org.
 	costAttr, err := s.getLatestCostAttribution(ctx, orgID)
@@ -367,14 +361,13 @@ func (s *ConsoleStore) GetInsights(ctx context.Context, orgID string) (*domain.C
 		insights.TeamVelocity = velocity
 	}
 
-	// Recent activity: last 10 audit entries.
-	activity, err := s.listRecentActivity(ctx, orgID, 10)
+	// Recent activity: paginated.
+	activity, activityTotal, err := s.listRecentActivity(ctx, orgID, params.ActivityLimit, params.ActivityOffset)
 	if err != nil {
 		s.logger.Warn("console GetInsights: recent activity unavailable, degrading gracefully",
 			"org_id", orgID, "error", err)
-	} else {
-		insights.RecentActivity = activity
 	}
+	insights.RecentActivity = domain.NewPaginatedList(activity, activityTotal, params.ActivityLimit, params.ActivityOffset)
 
 	return insights, nil
 }
@@ -382,44 +375,66 @@ func (s *ConsoleStore) GetInsights(ctx context.Context, orgID string) (*domain.C
 // ─── ConsoleReader: GetIntegrations ────────────────────────────────────────
 
 // GetIntegrations returns integration statuses for the CONNECT zone.
-func (s *ConsoleStore) GetIntegrations(ctx context.Context, orgID string) (*domain.ConsoleIntegrations, error) {
-	integrations := &domain.ConsoleIntegrations{
-		Repositories: []domain.RepoStatus{},
-		SDKs:         []domain.SdkStatus{},
-		Agents:       []domain.ConsoleAgentStatus{},
-		APIKeys:      []domain.ConsoleApiKeyStatus{},
-	}
+func (s *ConsoleStore) GetIntegrations(ctx context.Context, orgID string, params domain.ConsoleIntegrationsParams) (*domain.ConsoleIntegrations, error) {
+	integrations := &domain.ConsoleIntegrations{}
+
+	// Each sub-query gets its own 2-second timeout so a single slow query
+	// doesn't block the entire /v1/console/integrations response.
+	const queryTimeout = 2 * time.Second
 
 	// Repositories.
-	repos, err := s.listRepos(ctx, orgID)
-	if err != nil {
-		s.logger.Warn("console GetIntegrations: repos unavailable", "org_id", orgID, "error", err)
-	} else {
-		integrations.Repositories = repos
+	{
+		qCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+		repos, repoTotal, err := s.listRepos(qCtx, orgID, params.RepoLimit, params.RepoOffset)
+		cancel()
+		if err != nil {
+			s.logger.Warn("console GetIntegrations: repos unavailable", "org_id", orgID, "error", err)
+		}
+		integrations.Repositories = domain.NewPaginatedList(repos, repoTotal, params.RepoLimit, params.RepoOffset)
 	}
 
-	// SDKs — derived from API key usage patterns.
-	sdks, err := s.listSDKs(ctx, orgID)
-	if err != nil {
-		s.logger.Warn("console GetIntegrations: SDKs unavailable", "org_id", orgID, "error", err)
-	} else {
-		integrations.SDKs = sdks
+	// SDKs — derived from API key usage and eval event user-agents.
+	{
+		qCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+		sdks, sdkTotal, err := s.listSDKs(qCtx, orgID, params.SDKLimit, params.SDKOffset)
+		cancel()
+		if err != nil {
+			s.logger.Warn("console GetIntegrations: SDKs unavailable", "org_id", orgID, "error", err)
+		}
+		integrations.SDKs = domain.NewPaginatedList(sdks, sdkTotal, params.SDKLimit, params.SDKOffset)
 	}
 
 	// Agents — customer agents only; NEVER internal platform agents.
-	agents, err := s.listCustomerAgents(ctx, orgID)
-	if err != nil {
-		s.logger.Warn("console GetIntegrations: agents unavailable", "org_id", orgID, "error", err)
-	} else {
-		integrations.Agents = agents
+	{
+		qCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+		agents, agentTotal, err := s.listCustomerAgents(qCtx, orgID, params.AgentLimit, params.AgentOffset)
+		cancel()
+		if err != nil {
+			s.logger.Warn("console GetIntegrations: agents unavailable", "org_id", orgID, "error", err)
+		}
+		integrations.Agents = domain.NewPaginatedList(agents, agentTotal, params.AgentLimit, params.AgentOffset)
 	}
 
 	// API keys.
-	apiKeys, err := s.listAPIKeyStatuses(ctx, orgID)
-	if err != nil {
-		s.logger.Warn("console GetIntegrations: API keys unavailable", "org_id", orgID, "error", err)
-	} else {
-		integrations.APIKeys = apiKeys
+	{
+		qCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+		apiKeys, keyTotal, err := s.listAPIKeyStatuses(qCtx, orgID, params.KeyLimit, params.KeyOffset)
+		cancel()
+		if err != nil {
+			s.logger.Warn("console GetIntegrations: API keys unavailable", "org_id", orgID, "error", err)
+		}
+		integrations.APIKeys = domain.NewPaginatedList(apiKeys, keyTotal, params.KeyLimit, params.KeyOffset)
+	}
+
+	// Governance policies.
+	{
+		qCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+		policies, policyTotal, err := s.listPolicies(qCtx, orgID, params.PolicyLimit, params.PolicyOffset)
+		cancel()
+		if err != nil {
+			s.logger.Warn("console GetIntegrations: policies unavailable", "org_id", orgID, "error", err)
+		}
+		integrations.Policies = domain.NewPaginatedList(policies, policyTotal, params.PolicyLimit, params.PolicyOffset)
 	}
 
 	return integrations, nil
@@ -450,8 +465,11 @@ func (s *ConsoleStore) GetHelpContext(ctx context.Context, orgID, userID string)
 	if userID != "" {
 		var userName, userRole string
 		err := s.pool.QueryRow(ctx,
-			`SELECT COALESCE(name, email), COALESCE(role, 'viewer') FROM users WHERE id = $1`,
-			userID,
+			`SELECT COALESCE(u.name, u.email), COALESCE(om.role, 'viewer')
+					 FROM users u
+					 LEFT JOIN org_members om ON om.user_id = u.id AND om.org_id = $2
+					 WHERE u.id = $1`,
+			userID, orgID,
 		).Scan(&userName, &userRole)
 		if err == nil {
 			hctx.UserName = userName
@@ -460,7 +478,7 @@ func (s *ConsoleStore) GetHelpContext(ctx context.Context, orgID, userID string)
 	}
 
 	// Recent activity: last 5 audit entries.
-	activity, err := s.listRecentActivity(ctx, orgID, 5)
+	activity, _, err := s.listRecentActivity(ctx, orgID, 5, 0)
 	if err != nil {
 		s.logger.Warn("console GetHelpContext: recent activity unavailable",
 			"org_id", orgID, "error", err)
@@ -623,7 +641,7 @@ func (s *ConsoleStore) ToggleFlag(ctx context.Context, orgID, key, action string
 // and recording the deletion timestamp.
 func (s *ConsoleStore) ArchiveFlag(ctx context.Context, orgID, key string) (*domain.ConsoleFlag, error) {
 	tag, err := s.pool.Exec(ctx,
-		`UPDATE flags SET status = $1, deleted_at = NOW(), updated_at = NOW() WHERE org_id = $2 AND key = $3`,
+		`UPDATE flags SET status = $1, updated_at = NOW() WHERE org_id = $2 AND key = $3`,
 		string(domain.StatusArchived), orgID, key,
 	)
 	if err != nil {
@@ -644,15 +662,22 @@ func (s *ConsoleStore) ArchiveFlag(ctx context.Context, orgID, key string) (*dom
 
 // ─── Private helpers ───────────────────────────────────────────────────────
 
-func (s *ConsoleStore) listImpactReports(ctx context.Context, orgID string, limit int) ([]domain.ImpactReport, error) {
+func (s *ConsoleStore) listImpactReports(ctx context.Context, orgID string, limit, offset int) ([]domain.ImpactReport, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM impact_reports WHERE org_id = $1`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listImpactReports count: %w", err)
+	}
+
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, flag_key, flag_id, report, metrics_snapshot,
 		        business_impact, cost_attribution, recommendations,
 		        generated_at, created_at, updated_at
 		 FROM impact_reports WHERE org_id = $1
-		 ORDER BY generated_at DESC LIMIT $2`, orgID, limit)
+		 ORDER BY generated_at DESC LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("listImpactReports: %w", err)
+		return nil, 0, fmt.Errorf("listImpactReports: %w", err)
 	}
 	defer rows.Close()
 
@@ -665,7 +690,7 @@ func (s *ConsoleStore) listImpactReports(ctx context.Context, orgID string, limi
 			&r.BusinessImpact, &r.CostAttribution, &r.Recommendations,
 			&r.GeneratedAt, &r.CreatedAt, &r.UpdatedAt,
 		); err != nil {
-			return nil, fmt.Errorf("listImpactReports scan: %w", err)
+			return nil, 0, fmt.Errorf("listImpactReports scan: %w", err)
 		}
 		if flagID != nil {
 			r.FlagID = *flagID
@@ -675,19 +700,26 @@ func (s *ConsoleStore) listImpactReports(ctx context.Context, orgID string, limi
 	if reports == nil {
 		reports = []domain.ImpactReport{}
 	}
-	return reports, rows.Err()
+	return reports, total, rows.Err()
 }
 
-func (s *ConsoleStore) listOrgLearnings(ctx context.Context, orgID string, limit int) ([]domain.OrgLearning, error) {
+func (s *ConsoleStore) listOrgLearnings(ctx context.Context, orgID string, limit, offset int) ([]domain.OrgLearning, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM org_learnings WHERE org_id = $1`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listOrgLearnings count: %w", err)
+	}
+
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, org_id, total_flags_analyzed, cleanup_candidates,
 		        flags_without_owners, stale_flags, avg_risk_score,
-		        avg_time_to_full_rollout, top_insights,
+		avg_time_to_full_rollout_hours, top_insights,
 		        generated_at, created_at, updated_at
 		 FROM org_learnings WHERE org_id = $1
-		 ORDER BY generated_at DESC LIMIT $2`, orgID, limit)
+		 ORDER BY generated_at DESC LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("listOrgLearnings: %w", err)
+		return nil, 0, fmt.Errorf("listOrgLearnings: %w", err)
 	}
 	defer rows.Close()
 
@@ -700,14 +732,14 @@ func (s *ConsoleStore) listOrgLearnings(ctx context.Context, orgID string, limit
 			&l.AvgTimeToFullRollout, &l.TopInsights,
 			&l.GeneratedAt, &l.CreatedAt, &l.UpdatedAt,
 		); err != nil {
-			return nil, fmt.Errorf("listOrgLearnings scan: %w", err)
+			return nil, 0, fmt.Errorf("listOrgLearnings scan: %w", err)
 		}
 		learnings = append(learnings, l)
 	}
 	if learnings == nil {
 		learnings = []domain.OrgLearning{}
 	}
-	return learnings, rows.Err()
+	return learnings, total, rows.Err()
 }
 
 func (s *ConsoleStore) getLatestCostAttribution(ctx context.Context, orgID string) (*domain.CostAttribution, error) {
@@ -758,18 +790,25 @@ func (s *ConsoleStore) computeTeamVelocity(ctx context.Context, orgID string) (d
 	return v, nil
 }
 
-func (s *ConsoleStore) listRecentActivity(ctx context.Context, orgID string, limit int) ([]domain.ActivityEntry, error) {
+func (s *ConsoleStore) listRecentActivity(ctx context.Context, orgID string, limit, offset int) ([]domain.ActivityEntry, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM audit_logs ae WHERE ae.org_id = $1`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listRecentActivity count: %w", err)
+	}
+
 	rows, err := s.pool.Query(ctx,
 		`SELECT ae.id, ae.action, f.key AS flag_key, f.name AS flag_name,
-		        COALESCE(u.name, u.email, ae.actor_id) AS actor_name,
+		COALESCE(u.name, u.email, ae.actor_id::text) AS actor_name,
 		        ae.created_at AS timestamp
 		 FROM audit_logs ae
 		 LEFT JOIN flags f ON f.id = ae.resource_id AND ae.resource_type = 'flag'
 		 LEFT JOIN users u ON u.id = ae.actor_id
 		 WHERE ae.org_id = $1
-		 ORDER BY ae.created_at DESC LIMIT $2`, orgID, limit)
+		 ORDER BY ae.created_at DESC LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("listRecentActivity: %w", err)
+		return nil, 0, fmt.Errorf("listRecentActivity: %w", err)
 	}
 	defer rows.Close()
 
@@ -778,7 +817,7 @@ func (s *ConsoleStore) listRecentActivity(ctx context.Context, orgID string, lim
 		var e domain.ActivityEntry
 		var flagKey, flagName, actorName *string
 		if err := rows.Scan(&e.ID, &e.Action, &flagKey, &flagName, &actorName, &e.Timestamp); err != nil {
-			return nil, fmt.Errorf("listRecentActivity scan: %w", err)
+			return nil, 0, fmt.Errorf("listRecentActivity scan: %w", err)
 		}
 		if flagKey != nil {
 			e.FlagKey = *flagKey
@@ -794,17 +833,29 @@ func (s *ConsoleStore) listRecentActivity(ctx context.Context, orgID string, lim
 	if entries == nil {
 		entries = []domain.ActivityEntry{}
 	}
-	return entries, rows.Err()
+	return entries, total, rows.Err()
 }
 
-func (s *ConsoleStore) listRepos(ctx context.Context, orgID string) ([]domain.RepoStatus, error) {
+func (s *ConsoleStore) listRepos(ctx context.Context, orgID string, limit, offset int) ([]domain.RepoStatus, int, error) {
+	// Uses janitor_repositories (the canonical repo table from migration 000097).
+	// Derives status from the connected flag; total_prs / open_prs default to 0
+	// (PR counts are tracked in janitor_prs, queried separately when needed).
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM janitor_repositories WHERE org_id = $1`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listRepos count: %w", err)
+	}
+
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, name, provider, default_branch, last_synced_at, status,
-		        total_prs, open_prs
-		 FROM repositories WHERE org_id = $1
-		 ORDER BY name`, orgID)
+		`SELECT id, name, provider, default_branch, last_scanned,
+		        CASE WHEN connected THEN 'connected' ELSE 'disconnected' END AS status,
+		        0 AS total_prs, 0 AS open_prs
+		 FROM janitor_repositories WHERE org_id = $1
+		 ORDER BY name
+		 LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("listRepos: %w", err)
+		return nil, 0, fmt.Errorf("listRepos: %w", err)
 	}
 	defer rows.Close()
 
@@ -813,57 +864,146 @@ func (s *ConsoleStore) listRepos(ctx context.Context, orgID string) ([]domain.Re
 		var r domain.RepoStatus
 		if err := rows.Scan(&r.ID, &r.Name, &r.Provider, &r.DefaultBranch,
 			&r.LastSyncedAt, &r.Status, &r.TotalPRs, &r.OpenPRs); err != nil {
-			return nil, fmt.Errorf("listRepos scan: %w", err)
+			return nil, 0, fmt.Errorf("listRepos scan: %w", err)
 		}
 		repos = append(repos, r)
 	}
 	if repos == nil {
 		repos = []domain.RepoStatus{}
 	}
-	return repos, rows.Err()
+	return repos, total, rows.Err()
 }
 
-func (s *ConsoleStore) listSDKs(ctx context.Context, orgID string) ([]domain.SdkStatus, error) {
-	// SDK status is derived from API key usage — each unique SDK user-agent
-	// seen in the evaluation events (or api_keys table metadata) maps to an SDK.
-	// For now, return an empty list (graceful degradation).
-	return []domain.SdkStatus{}, nil
-}
+func (s *ConsoleStore) listSDKs(ctx context.Context, orgID string, limit, offset int) ([]domain.SdkStatus, int, error) {
+	// SDK status is derived from API key type 'sdk' usage across environments.
+	// Each unique (language, version) pair with active SDK keys maps to an SDK.
+	// We derive language from the key's metadata or the most recent eval event.
 
-func (s *ConsoleStore) listCustomerAgents(ctx context.Context, orgID string) ([]domain.ConsoleAgentStatus, error) {
-	// CRITICAL: Only return customer agents. Internal platform agents are
-	// NEVER exposed in the console. Filter by owner_type = 'customer' or
-	// equivalent guard. Here we assume all agents in the agents table for
-	// this org are customer agents unless a special flag marks them internal.
+	// COUNT uses a subquery because GROUP BY makes direct COUNT tricky.
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM (
+			SELECT 1 FROM api_keys ak
+			WHERE ak.org_id = $1
+			  AND ak.type = 'sdk'
+			  AND ak.revoked_at IS NULL
+			GROUP BY ak.metadata->>'language', ak.metadata->>'version'
+		) sub`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listSDKs count: %w", err)
+	}
+
 	rows, err := s.pool.Query(ctx,
-		`SELECT a.id, a.name, a.type, COALESCE(a.status::text, 'offline'),
-		        a.last_heartbeat,
-		        COALESCE(a.tasks_completed, 0)
-		 FROM agents a
-		 WHERE a.org_id = $1
-		   AND (a.owner_type IS NULL OR a.owner_type = 'customer')
-		 ORDER BY a.name`, orgID)
+		`SELECT
+			COALESCE(ak.metadata->>'language', 'unknown') AS language,
+			COALESCE(ak.metadata->>'version', '0.0.0') AS version,
+			COALESCE(array_agg(DISTINCT e.name ORDER BY e.name) FILTER (WHERE e.name IS NOT NULL), '{}') AS environments,
+			MAX(ak.last_used_at) AS last_seen_at,
+			CASE WHEN MAX(ak.last_used_at) > NOW() - INTERVAL '30 days' THEN 'active' ELSE 'inactive' END AS status
+		FROM api_keys ak
+		LEFT JOIN environments e ON e.id = ak.env_id
+		WHERE ak.org_id = $1
+		  AND ak.type = 'sdk'
+		  AND ak.revoked_at IS NULL
+		GROUP BY ak.metadata->>'language', ak.metadata->>'version'
+		ORDER BY language
+		LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("listCustomerAgents: %w", err)
+		return nil, 0, fmt.Errorf("listSDKs: %w", err)
+	}
+	defer rows.Close()
+
+	var sdks []domain.SdkStatus
+	for rows.Next() {
+		var sdk domain.SdkStatus
+		if err := rows.Scan(&sdk.Language, &sdk.Version, &sdk.Environments,
+			&sdk.LastSeenAt, &sdk.Status); err != nil {
+			return nil, 0, fmt.Errorf("listSDKs scan: %w", err)
+		}
+		sdks = append(sdks, sdk)
+	}
+	if sdks == nil {
+		sdks = []domain.SdkStatus{}
+	}
+	return sdks, total, rows.Err()
+}
+
+func (s *ConsoleStore) listCustomerAgents(ctx context.Context, orgID string, limit, offset int) ([]domain.ConsoleAgentStatus, int, error) {
+	// CRITICAL: Only return customer agents. Internal platform agents are
+	// NEVER exposed in the console. Filter by owner_type = 'customer'.
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM agents a
+		 WHERE a.org_id = $1
+		   AND a.owner_type = 'customer'`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listCustomerAgents count: %w", err)
+	}
+
+	rows, err := s.pool.Query(ctx,
+		`SELECT a.id, a.name, a.agent_type, COALESCE(a.status::text, 'offline'),
+		        a.last_heartbeat,
+		        COALESCE(a.tasks_completed, 0),
+		        COALESCE(a.rate_limits::text, '{}') AS rate_limits_raw,
+		        COALESCE(a.scopes::text, '[]') AS scopes_raw,
+		        COALESCE(am.maturity_level, 1) AS maturity_level
+		 FROM agents a
+		 LEFT JOIN LATERAL (
+		     SELECT maturity_level FROM agent_maturity
+		     WHERE agent_id = a.id
+		     ORDER BY maturity_level DESC
+		     LIMIT 1
+		 ) am ON true
+		 WHERE a.org_id = $1
+		   AND a.owner_type = 'customer'
+		 ORDER BY a.name
+		 LIMIT $2 OFFSET $3`, orgID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("listCustomerAgents: %w", err)
 	}
 	defer rows.Close()
 
 	var agents []domain.ConsoleAgentStatus
 	for rows.Next() {
 		var ag domain.ConsoleAgentStatus
+		var rateLimitsRaw, scopesRaw string
 		if err := rows.Scan(&ag.ID, &ag.Name, &ag.Type, &ag.Status,
-			&ag.LastHeartbeat, &ag.TasksCompleted); err != nil {
-			return nil, fmt.Errorf("listCustomerAgents scan: %w", err)
+			&ag.LastHeartbeat, &ag.TasksCompleted,
+			&rateLimitsRaw, &scopesRaw, &ag.MaturityLevel); err != nil {
+			return nil, 0, fmt.Errorf("listCustomerAgents scan: %w", err)
 		}
+
+		// Parse rate_limits JSONB -> AgentRateLimits
+		if rateLimitsRaw != "" && rateLimitsRaw != "{}" {
+			var rl domain.AgentRateLimits
+			if err := json.Unmarshal([]byte(rateLimitsRaw), &rl); err == nil {
+				ag.RateLimits = &rl
+			}
+		}
+
+		// Parse scopes JSONB -> []string
+		if scopesRaw != "" && scopesRaw != "[]" {
+			if err := json.Unmarshal([]byte(scopesRaw), &ag.Scopes); err == nil {
+				// ok
+			}
+		}
+
 		agents = append(agents, ag)
 	}
 	if agents == nil {
 		agents = []domain.ConsoleAgentStatus{}
 	}
-	return agents, rows.Err()
+	return agents, total, rows.Err()
 }
 
-func (s *ConsoleStore) listAPIKeyStatuses(ctx context.Context, orgID string) ([]domain.ConsoleApiKeyStatus, error) {
+func (s *ConsoleStore) listAPIKeyStatuses(ctx context.Context, orgID string, limit, offset int) ([]domain.ConsoleApiKeyStatus, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM api_keys ak WHERE ak.org_id = $1`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listAPIKeyStatuses count: %w", err)
+	}
+
 	rows, err := s.pool.Query(ctx,
 		`SELECT ak.id, ak.name, COALESCE(ak.type::text, 'server'),
 		        ak.key_prefix, ak.last_used_at,
@@ -876,9 +1016,10 @@ func (s *ConsoleStore) listAPIKeyStatuses(ctx context.Context, orgID string) ([]
 		 FROM api_keys ak
 		 LEFT JOIN environments e ON e.id = ak.env_id
 		 WHERE ak.org_id = $1
-		 ORDER BY ak.created_at DESC`, orgID)
+		 ORDER BY ak.created_at DESC
+		 LIMIT $2 OFFSET $3`, orgID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("listAPIKeyStatuses: %w", err)
+		return nil, 0, fmt.Errorf("listAPIKeyStatuses: %w", err)
 	}
 	defer rows.Close()
 
@@ -887,14 +1028,67 @@ func (s *ConsoleStore) listAPIKeyStatuses(ctx context.Context, orgID string) ([]
 		var k domain.ConsoleApiKeyStatus
 		if err := rows.Scan(&k.ID, &k.Name, &k.Type, &k.KeyPrefix,
 			&k.LastUsedAt, &k.Status, &k.Environment); err != nil {
-			return nil, fmt.Errorf("listAPIKeyStatuses scan: %w", err)
+			return nil, 0, fmt.Errorf("listAPIKeyStatuses scan: %w", err)
 		}
 		keys = append(keys, k)
 	}
 	if keys == nil {
 		keys = []domain.ConsoleApiKeyStatus{}
 	}
-	return keys, rows.Err()
+	return keys, total, rows.Err()
+}
+
+// listPolicies returns governance policies for the CONNECT zone.
+func (s *ConsoleStore) listPolicies(ctx context.Context, orgID string, limit, offset int) ([]domain.ConsolePolicyStatus, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM governance_policies gp WHERE gp.org_id = $1`, orgID,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("listPolicies count: %w", err)
+	}
+
+	rows, err := s.pool.Query(ctx,
+		`SELECT gp.id, gp.name, gp.effect, gp.enabled, gp.priority,
+		        COALESCE(jsonb_array_length(gp.rules), 0) AS rule_count,
+		        gp.rules::text AS rules_raw,
+		        gp.updated_at
+		 FROM governance_policies gp
+		 WHERE gp.org_id = $1
+		 ORDER BY gp.priority ASC, gp.name ASC
+		 LIMIT $2 OFFSET $3`, orgID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("listPolicies: %w", err)
+	}
+	defer rows.Close()
+
+	var policies []domain.ConsolePolicyStatus
+	for rows.Next() {
+		var p domain.ConsolePolicyStatus
+		var rulesRaw string
+		if err := rows.Scan(&p.ID, &p.Name, &p.Effect, &p.Enabled, &p.Priority,
+			&p.RuleCount, &rulesRaw, &p.UpdatedAt); err != nil {
+			return nil, 0, fmt.Errorf("listPolicies scan: %w", err)
+		}
+
+		// Parse the first few rules to give the frontend CEL expressions.
+		if rulesRaw != "" && rulesRaw != "[]" {
+			var rules []domain.PolicyRule
+			if err := json.Unmarshal([]byte(rulesRaw), &rules); err == nil {
+				// Show at most 3 rules in the collapsed view.
+				if len(rules) > 3 {
+					p.Rules = rules[:3]
+				} else {
+					p.Rules = rules
+				}
+			}
+		}
+
+		policies = append(policies, p)
+	}
+	if policies == nil {
+		policies = []domain.ConsolePolicyStatus{}
+	}
+	return policies, total, rows.Err()
 }
 
 // ─── SQL utilities ─────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 package postgres_test
 
 import (
-	"errors"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/featuresignals/server/internal/domain"

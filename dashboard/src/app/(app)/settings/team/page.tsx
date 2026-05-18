@@ -16,6 +16,7 @@
 import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import type { PaginatedResponse } from "@/lib/api";
 import { useAppStore } from "@/stores/app-store";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/toast";
@@ -148,10 +149,16 @@ export default function TeamPage() {
         api.listMembers(token),
         projectId
           ? api.listEnvironments(token, projectId)
-          : Promise.resolve([]),
+          : Promise.resolve({
+              data: [],
+              total: 0,
+              limit: 0,
+              offset: 0,
+              has_more: false,
+            } as PaginatedResponse<Environment>),
       ]);
 
-      const allMembers = all ?? [];
+      const allMembers = all.data;
       const accepted = allMembers.filter(
         (mem) => mem.role !== "pending" && mem.role !== "invited",
       );
@@ -170,7 +177,7 @@ export default function TeamPage() {
 
       setMembers(accepted);
       setPendingInvites(pending);
-      setEnvs((envList as Environment[]) ?? []);
+      setEnvs(envList.data);
     } catch (err: unknown) {
       setLoadError(
         err instanceof Error ? err.message : "Failed to load team data",
@@ -216,10 +223,7 @@ export default function TeamPage() {
         role: inviteForm.role,
       });
 
-      toast(
-        `Invitation sent to ${inviteForm.email.trim()}`,
-        "success",
-      );
+      toast(`Invitation sent to ${inviteForm.email.trim()}`, "success");
       setShowInvite(false);
       setInviteForm({ email: "", role: "developer" });
       await loadData();
@@ -413,7 +417,8 @@ export default function TeamPage() {
                     type="email"
                     className={cn(
                       "mt-1.5",
-                      emailFormatError && "border-[var(--signal-border-danger-emphasis)]",
+                      emailFormatError &&
+                        "border-[var(--signal-border-danger-emphasis)]",
                     )}
                     error={!!fieldError || emailFormatError}
                     aria-invalid={!!fieldError || emailFormatError}
@@ -458,7 +463,12 @@ export default function TeamPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" size="sm" variant="primary" disabled={inviting}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="primary"
+                  disabled={inviting}
+                >
                   {inviting ? (
                     <>
                       <LoaderIcon className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -508,7 +518,10 @@ export default function TeamPage() {
             <div className="space-y-2">
               {paginatedMembers.map((member) => {
                 const isCurrentUser = member.email === user?.email;
-                const memberRecord = member as unknown as Record<string, string>;
+                const memberRecord = member as unknown as Record<
+                  string,
+                  string
+                >;
 
                 return (
                   <div key={member.id}>
@@ -532,7 +545,9 @@ export default function TeamPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--signal-bg-accent-muted)] text-xs font-bold text-[var(--signal-fg-accent)]">
-                          {(member.name ?? member.email).charAt(0).toUpperCase()}
+                          {(member.name ?? member.email)
+                            .charAt(0)
+                            .toUpperCase()}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-[var(--signal-fg-primary)]">

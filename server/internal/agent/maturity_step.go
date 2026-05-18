@@ -57,10 +57,10 @@ func (s *MaturityGovernanceStep) Execute(ctx context.Context, action domain.Agen
 			"tool_name", action.ToolName,
 		)
 		return action, &domain.GovernanceError{
-			Step:    domain.GovStepMaturity,
-			Reason:  "insufficient_maturity",
-			Message: fmt.Sprintf("Agent %q is at maturity L%d but action %q requires L%d. Improve accuracy above 95%% and reduce incidents to progress.", action.AgentID, int(agentLevel), action.ToolName, int(requiredLevel)),
-			RequiresHuman: true,
+			Step:                 domain.GovStepMaturity,
+			Reason:               "insufficient_maturity",
+			Message:              fmt.Sprintf("Agent %q is at maturity L%d but action %q requires L%d. Improve accuracy above 95%% and reduce incidents to progress.", action.AgentID, int(agentLevel), action.ToolName, int(requiredLevel)),
+			RequiresHuman:        true,
 			OverrideInstructions: fmt.Sprintf("A human can override this restriction. The agent needs L%d maturity; currently at L%d.", int(requiredLevel), int(agentLevel)),
 		}
 	}

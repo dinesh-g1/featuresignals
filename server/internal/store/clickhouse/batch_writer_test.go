@@ -97,11 +97,11 @@ func newTestBatchWriter(t *testing.T) (*BatchWriter, *mockEvalEventStore) {
 // testEvent is a helper to create simple domain.EvalEvent values.
 func testEvent(id string) domain.EvalEvent {
 	return domain.EvalEvent{
-		ID:     id,
-		OrgID:  "test-org",
+		ID:      id,
+		OrgID:   "test-org",
 		FlagKey: "test-flag",
-		Value:  "true",
-		Reason: domain.EvalReasonDefault,
+		Value:   "true",
+		Reason:  domain.EvalReasonDefault,
 	}
 }
 

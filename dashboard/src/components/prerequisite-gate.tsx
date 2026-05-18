@@ -440,12 +440,12 @@ export function usePrerequisites() {
     try {
       setLoading(true);
       const projects = await api.listProjects(token);
-      const hasProjects = projects.length > 0;
+      const hasProjects = projects.data.length > 0;
 
       let hasEnvironments = false;
       if (hasProjects && currentProjectId) {
         const envs = await api.listEnvironments(token, currentProjectId);
-        hasEnvironments = envs.length > 0;
+        hasEnvironments = envs.data.length > 0;
       }
 
       setState({

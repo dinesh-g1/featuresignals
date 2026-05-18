@@ -95,17 +95,17 @@ func (p *ComplianceProvider) AnalyzeFlagReferences(ctx context.Context, req Anal
 	// 5. Audit trail
 	duration := time.Since(start)
 	auditRecord := &domain.LLMInteractionRecord{
-		OrgID:       p.orgID,
-		ScanID:      p.scanID,
-		FlagKey:     req.FlagKey,
-		Operation:   "analyze",
+		OrgID:        p.orgID,
+		ScanID:       p.scanID,
+		FlagKey:      req.FlagKey,
+		Operation:    "analyze",
 		ProviderName: p.providerName,
-		Model:       p.providerModel,
-		Endpoint:    p.dataRegion,
-		DataRegion:  p.dataRegion,
-		DurationMs:  int(duration.Milliseconds()),
-		FilePaths:   filePaths,
-		BytesSent:   totalBytesSent,
+		Model:        p.providerModel,
+		Endpoint:     p.dataRegion,
+		DataRegion:   p.dataRegion,
+		DurationMs:   int(duration.Milliseconds()),
+		FilePaths:    filePaths,
+		BytesSent:    totalBytesSent,
 	}
 
 	if err != nil {
@@ -190,16 +190,16 @@ func (p *ComplianceProvider) ValidateCleanup(ctx context.Context, req ValidateRe
 	duration := time.Since(start)
 	if p.auditWriter != nil {
 		auditRecord := &domain.LLMInteractionRecord{
-			OrgID:       p.orgID,
-			ScanID:      p.scanID,
-			FlagKey:     req.FlagKey,
-			Operation:   "validate",
+			OrgID:        p.orgID,
+			ScanID:       p.scanID,
+			FlagKey:      req.FlagKey,
+			Operation:    "validate",
 			ProviderName: p.providerName,
-			Model:       p.providerModel,
-			DataRegion:  p.dataRegion,
-			DurationMs:  int(duration.Milliseconds()),
-			BytesSent:   len(req.OriginalCode) + len(req.CleanedCode),
-			StatusCode:  200,
+			Model:        p.providerModel,
+			DataRegion:   p.dataRegion,
+			DurationMs:   int(duration.Milliseconds()),
+			BytesSent:    len(req.OriginalCode) + len(req.CleanedCode),
+			StatusCode:   200,
 		}
 		if err != nil {
 			auditRecord.StatusCode = 500

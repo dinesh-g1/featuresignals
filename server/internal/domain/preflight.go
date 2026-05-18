@@ -19,8 +19,8 @@ type PreflightReport struct {
 	FlagID           string          `json:"flag_id,omitempty"`
 	ChangeType       string          `json:"change_type"` // rollout, toggle, kill, rollback, archive, update_rules
 	EnvID            string          `json:"env_id"`
-	Report           json.RawMessage `json:"report"`       // Full JSONB report
-	RiskScore        int             `json:"risk_score"`   // 0-100
+	Report           json.RawMessage `json:"report"`     // Full JSONB report
+	RiskScore        int             `json:"risk_score"` // 0-100
 	AffectedFiles    int             `json:"affected_files"`
 	AffectedCodeRefs int             `json:"affected_code_refs"`
 	GeneratedAt      time.Time       `json:"generated_at"`
@@ -35,10 +35,10 @@ type RolloutPhase struct {
 	OrgID         string          `json:"org_id"`
 	FlagID        string          `json:"flag_id"`
 	PhaseNumber   int             `json:"phase_number"`
-	Percentage    int             `json:"percentage"`      // 0-10000 (basis points)
-	DurationHours int             `json:"duration_hours"`  // observation period
-	GuardMetrics  json.RawMessage `json:"guard_metrics"`   // JSONB: [{metric, threshold, operator}]
-	Status        string          `json:"status"`          // pending, active, completed, paused, failed
+	Percentage    int             `json:"percentage"`     // 0-10000 (basis points)
+	DurationHours int             `json:"duration_hours"` // observation period
+	GuardMetrics  json.RawMessage `json:"guard_metrics"`  // JSONB: [{metric, threshold, operator}]
+	Status        string          `json:"status"`         // pending, active, completed, paused, failed
 	StartedAt     *time.Time      `json:"started_at,omitempty"`
 	CompletedAt   *time.Time      `json:"completed_at,omitempty"`
 	CreatedAt     time.Time       `json:"created_at"`

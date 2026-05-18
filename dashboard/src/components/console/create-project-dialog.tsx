@@ -2,7 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { useAppStore } from "@/stores/app-store";
-import { useConsoleStore } from "@/stores/console-store";
+import { useProjects } from "@/hooks/use-console-data";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,8 +48,7 @@ export function CreateProjectDialog({
 }: CreateProjectDialogProps) {
   const token = useAppStore((s) => s.token);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-  const setProjects = useConsoleStore((s) => s.setProjects);
-  const projects = useConsoleStore((s) => s.projects);
+  const { data: projects = [] } = useProjects();
 
   const isEdit = !!project;
 
@@ -125,8 +126,9 @@ export function CreateProjectDialog({
         });
 
         // Update local state
-        setProjects(
-          projects.map((p) => (p.id === updated.id ? updated : p)),
+        queryClient.setQueryData(
+          queryKeys.projects.list(),
+          projects.map((p: Project) => (p.id === updated.id ? updated : p)),
         );
 
         onUpdated?.(updated);
@@ -140,7 +142,10 @@ export function CreateProjectDialog({
         });
 
         // Add to local state
-        setProjects([...projects, created]);
+        queryClient.setQueryData(queryKeys.projects.list(), [
+          ...projects,
+          created,
+        ]);
         setCurrentProject(created.id);
 
         setCreatedProject({ name: created.name, slug: created.slug });
@@ -151,9 +156,7 @@ export function CreateProjectDialog({
         }, 2500);
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to save project",
-      );
+      setError(err instanceof Error ? err.message : "Failed to save project");
     } finally {
       setSubmitting(false);
     }
@@ -171,23 +174,22 @@ export function CreateProjectDialog({
       await api.deleteProject(token, project.id);
 
       // Remove from local state
-      setProjects(projects.filter((p) => p.id !== project.id));
+      queryClient.setQueryData(
+        queryKeys.projects.list(),
+        projects.filter((p: Project) => p.id !== project.id),
+      );
 
       onDeleted?.(project.id);
       handleOpenChange(false);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete project",
-      );
+      setError(err instanceof Error ? err.message : "Failed to delete project");
     } finally {
       setDeleting(false);
     }
   };
 
   const canSubmit =
-    name.trim().length > 0 &&
-    slug.trim().length > 0 &&
-    !submitting;
+    name.trim().length > 0 && slug.trim().length > 0 && !submitting;
 
   const canDelete =
     deleteConfirmName.trim().toLowerCase() === project?.name?.toLowerCase();
@@ -246,14 +248,18 @@ export function CreateProjectDialog({
                     This action cannot be undone
                   </p>
                   <p className="text-xs text-[var(--signal-fg-secondary)] mt-1">
-                    All flags, environments, and history in this project will
-                    be permanently deleted.
+                    All flags, environments, and history in this project will be
+                    permanently deleted.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="delete-confirm">
-                    Type <strong className="text-[var(--signal-fg-danger)]">{project?.name}</strong> to confirm
+                    Type{" "}
+                    <strong className="text-[var(--signal-fg-danger)]">
+                      {project?.name}
+                    </strong>{" "}
+                    to confirm
                   </Label>
                   <Input
                     id="delete-confirm"

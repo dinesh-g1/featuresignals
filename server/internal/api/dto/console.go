@@ -153,3 +153,33 @@ func parseIntQuery(r *http.Request, key string, defaultVal int) int {
 	}
 	return v
 }
+
+// ParseConsoleInsightsParams extracts pagination params for GET /v1/console/insights.
+// Defaults: 5 per category.
+func ParseConsoleInsightsParams(r *http.Request) domain.ConsoleInsightsParams {
+	return domain.ConsoleInsightsParams{
+		ReportLimit:    parseIntQuery(r, "report_limit", 5),
+		ReportOffset:   parseIntQuery(r, "report_offset", 0),
+		LearningLimit:  parseIntQuery(r, "learning_limit", 5),
+		LearningOffset: parseIntQuery(r, "learning_offset", 0),
+		ActivityLimit:  parseIntQuery(r, "activity_limit", 10),
+		ActivityOffset: parseIntQuery(r, "activity_offset", 0),
+	}
+}
+
+// ParseConsoleIntegrationsParams extracts pagination params for GET /v1/console/integrations.
+// Defaults: 5 per category.
+func ParseConsoleIntegrationsParams(r *http.Request) domain.ConsoleIntegrationsParams {
+	return domain.ConsoleIntegrationsParams{
+		RepoLimit:    parseIntQuery(r, "repo_limit", 5),
+		RepoOffset:   parseIntQuery(r, "repo_offset", 0),
+		SDKLimit:     parseIntQuery(r, "sdk_limit", 5),
+		SDKOffset:    parseIntQuery(r, "sdk_offset", 0),
+		AgentLimit:   parseIntQuery(r, "agent_limit", 5),
+		AgentOffset:  parseIntQuery(r, "agent_offset", 0),
+		KeyLimit:     parseIntQuery(r, "key_limit", 5),
+		KeyOffset:    parseIntQuery(r, "key_offset", 0),
+		PolicyLimit:  parseIntQuery(r, "policy_limit", 5),
+		PolicyOffset: parseIntQuery(r, "policy_offset", 0),
+	}
+}

@@ -59,16 +59,16 @@ func TestCode2FlagStore_ScanResult_CreateAndGet(t *testing.T) {
 	proj := seedProjectForC2F(t, org.ID)
 
 	sr := &domain.ScanResult{
-		OrgID:            org.ID,
-		ProjectID:        proj.ID,
-		Repository:       "github.com/example/repo",
-		FilePath:         "src/features.ts",
-		LineNumber:       42,
-		ConditionalType:  domain.ConditionalTypeIfStatement,
-		ConditionalText:  "if (process.env.FEATURE_X === 'true')",
-		Confidence:       0.95,
-		Status:           domain.ScanResultStatusUnreviewed,
-		SuggestedFlagKey: "feature-x",
+		OrgID:             org.ID,
+		ProjectID:         proj.ID,
+		Repository:        "github.com/example/repo",
+		FilePath:          "src/features.ts",
+		LineNumber:        42,
+		ConditionalType:   domain.ConditionalTypeIfStatement,
+		ConditionalText:   "if (process.env.FEATURE_X === 'true')",
+		Confidence:        0.95,
+		Status:            domain.ScanResultStatusUnreviewed,
+		SuggestedFlagKey:  "feature-x",
 		SuggestedFlagName: "Feature X",
 	}
 
@@ -544,8 +544,8 @@ func TestCode2FlagStore_GeneratedFlag_ListAndCount(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		gf := &domain.GeneratedFlag{
 			OrgID: org.ID, ProjectID: proj.ID,
-			Key: "list-flag-" + string(rune('a'+i)),
-			Name: "List Flag " + string(rune('A'+i)),
+			Key:      "list-flag-" + string(rune('a'+i)),
+			Name:     "List Flag " + string(rune('A'+i)),
 			FlagType: "boolean", Status: domain.GeneratedFlagStatusProposed,
 		}
 		if err := c2f.CreateGeneratedFlag(ctx, gf); err != nil {
@@ -743,7 +743,7 @@ func TestCode2FlagStore_CleanupEntry_Update(t *testing.T) {
 	}
 
 	err := c2f.UpdateCleanupEntry(ctx, ce.ID, map[string]interface{}{
-		"status":                  domain.CleanupStatusPRCreated,
+		"status":                 domain.CleanupStatusPRCreated,
 		"days_since_100_percent": 90,
 	})
 	if err != nil {

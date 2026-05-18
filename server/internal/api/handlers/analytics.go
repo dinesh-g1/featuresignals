@@ -29,12 +29,12 @@ func NewAnalyticsHandler(store analyticsStore) *AnalyticsHandler {
 }
 
 type kpiResponse struct {
-	Period          string         `json:"period"`
-	ActiveWorkspaces int           `json:"active_workspaces"`
-	ActiveUsers     int            `json:"active_users"`
-	Funnel          map[string]int `json:"funnel"`
-	Plans           map[string]int `json:"plan_distribution"`
-	EventCounts     map[string]int `json:"event_counts"`
+	Period           string         `json:"period"`
+	ActiveWorkspaces int            `json:"active_workspaces"`
+	ActiveUsers      int            `json:"active_users"`
+	Funnel           map[string]int `json:"funnel"`
+	Plans            map[string]int `json:"plan_distribution"`
+	EventCounts      map[string]int `json:"event_counts"`
 }
 
 // Overview returns aggregated KPI metrics for the internal dashboard.

@@ -79,7 +79,7 @@ export function StepWelcome({
     if (projectId) {
       router.push(`/projects/${projectId}/dashboard`);
     } else {
-      router.push("/projects");
+      router.push("/console");
     }
   };
 
@@ -216,8 +216,8 @@ export function StepNameProject({
         } catch {
           // Try to list environments if creation fails (might have auto-created)
           const envs = await api.listEnvironments(token, projectId);
-          if (envs && envs.length > 0) {
-            envId = envs[0].id;
+          if (envs && envs.data.length > 0) {
+            envId = envs.data[0].id;
           } else {
             throw new Error(
               "Could not create or find an environment. Please try again.",
@@ -365,7 +365,7 @@ export function StepInstantFlag({ state, onFinish }: StepInstantFlagProps) {
     if (projectId) {
       router.push(`/projects/${projectId}/dashboard`);
     } else {
-      router.push("/projects");
+      router.push("/console");
     }
   };
 

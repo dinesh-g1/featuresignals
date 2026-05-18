@@ -39,10 +39,10 @@ func (p *Provider) Name() string { return gatewayName }
 // and returns the redirect URL for the customer.
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req payment.CheckoutRequest) (*payment.CheckoutResult, error) {
 	params := &stripe.CheckoutSessionCreateParams{
-		Mode:            stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		CustomerEmail:   stripe.String(req.UserEmail),
-		SuccessURL:      stripe.String(req.SuccessURL),
-		CancelURL:       stripe.String(req.CancelURL),
+		Mode:              stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		CustomerEmail:     stripe.String(req.UserEmail),
+		SuccessURL:        stripe.String(req.SuccessURL),
+		CancelURL:         stripe.String(req.CancelURL),
 		ClientReferenceID: stripe.String(req.OrgID),
 		LineItems: []*stripe.CheckoutSessionCreateLineItemParams{
 			{

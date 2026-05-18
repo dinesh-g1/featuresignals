@@ -28,8 +28,8 @@ type ConditionEvaluator interface {
 // DAGEngine implements domain.WorkflowDAGEngine.
 // It is stateless and safe for concurrent use.
 type DAGEngine struct {
-	cel      ConditionEvaluator
-	logger   *slog.Logger
+	cel    ConditionEvaluator
+	logger *slog.Logger
 }
 
 // NewDAGEngine creates a new DAGEngine with the given condition evaluator.

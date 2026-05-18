@@ -12,12 +12,12 @@ import (
 
 func TestEvaluateProgression_L1ToL2_MeetsAllCriteria(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       150,
-		Accuracy:             0.90,
-		IncidentsCaused:      1,
-		HumanOverrideRate:    0.05,
+		TotalDecisions:        150,
+		Accuracy:              0.90,
+		IncidentsCaused:       1,
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 10,
-		AvgConfidence:        0.75,
+		AvgConfidence:         0.75,
 	}
 
 	result := EvaluateProgression(stats, MaturityL1Shadow)
@@ -38,12 +38,12 @@ func TestEvaluateProgression_L1ToL2_MeetsAllCriteria(t *testing.T) {
 
 func TestEvaluateProgression_L2ToL3_MeetsCriteria(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       600,
-		Accuracy:             0.92,
-		IncidentsCaused:      3,
-		HumanOverrideRate:    0.05,
+		TotalDecisions:        600,
+		Accuracy:              0.92,
+		IncidentsCaused:       3,
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 20,
-		AvgConfidence:        0.85,
+		AvgConfidence:         0.85,
 	}
 
 	result := EvaluateProgression(stats, MaturityL2Assist)
@@ -61,12 +61,12 @@ func TestEvaluateProgression_L2ToL3_MeetsCriteria(t *testing.T) {
 
 func TestEvaluateProgression_InsufficientDecisions(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       50, // below L1→L2 threshold of 100
-		Accuracy:             0.95,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.01,
+		TotalDecisions:        50, // below L1→L2 threshold of 100
+		Accuracy:              0.95,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.01,
 		DaysSinceLastIncident: 30,
-		AvgConfidence:        0.90,
+		AvgConfidence:         0.90,
 	}
 
 	result := EvaluateProgression(stats, MaturityL1Shadow)
@@ -84,12 +84,12 @@ func TestEvaluateProgression_InsufficientDecisions(t *testing.T) {
 
 func TestEvaluateProgression_LowAccuracy(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       500,
-		Accuracy:             0.82, // below L2→L3 threshold of 0.90
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.01,
+		TotalDecisions:        500,
+		Accuracy:              0.82, // below L2→L3 threshold of 0.90
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.01,
 		DaysSinceLastIncident: 30,
-		AvgConfidence:        0.90,
+		AvgConfidence:         0.90,
 	}
 
 	result := EvaluateProgression(stats, MaturityL2Assist)
@@ -104,12 +104,12 @@ func TestEvaluateProgression_LowAccuracy(t *testing.T) {
 
 func TestEvaluateProgression_TooManyIncidents(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       200,
-		Accuracy:             0.90,
-		IncidentsCaused:      4, // above L1→L2 threshold of 3
-		HumanOverrideRate:    0.05,
+		TotalDecisions:        200,
+		Accuracy:              0.90,
+		IncidentsCaused:       4, // above L1→L2 threshold of 3
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 10,
-		AvgConfidence:        0.80,
+		AvgConfidence:         0.80,
 	}
 
 	result := EvaluateProgression(stats, MaturityL1Shadow)
@@ -121,12 +121,12 @@ func TestEvaluateProgression_TooManyIncidents(t *testing.T) {
 
 func TestEvaluateProgression_HighOverrideRate(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       2500,
-		Accuracy:             0.96,
-		IncidentsCaused:      1,
-		HumanOverrideRate:    0.08, // above L3→L4 threshold of 0.05
+		TotalDecisions:        2500,
+		Accuracy:              0.96,
+		IncidentsCaused:       1,
+		HumanOverrideRate:     0.08, // above L3→L4 threshold of 0.05
 		DaysSinceLastIncident: 40,
-		AvgConfidence:        0.90,
+		AvgConfidence:         0.90,
 	}
 
 	result := EvaluateProgression(stats, MaturityL3Supervised)
@@ -138,12 +138,12 @@ func TestEvaluateProgression_HighOverrideRate(t *testing.T) {
 
 func TestEvaluateProgression_InsufficientDaysSinceIncident(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       150,
-		Accuracy:             0.90,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.05,
+		TotalDecisions:        150,
+		Accuracy:              0.90,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 3, // below L1→L2 threshold of 7
-		AvgConfidence:        0.80,
+		AvgConfidence:         0.80,
 	}
 
 	result := EvaluateProgression(stats, MaturityL1Shadow)
@@ -155,12 +155,12 @@ func TestEvaluateProgression_InsufficientDaysSinceIncident(t *testing.T) {
 
 func TestEvaluateProgression_LowAvgConfidence(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       150,
-		Accuracy:             0.90,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.05,
+		TotalDecisions:        150,
+		Accuracy:              0.90,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 10,
-		AvgConfidence:        0.65, // below L1→L2 threshold of 0.70
+		AvgConfidence:         0.65, // below L1→L2 threshold of 0.70
 	}
 
 	result := EvaluateProgression(stats, MaturityL1Shadow)
@@ -172,12 +172,12 @@ func TestEvaluateProgression_LowAvgConfidence(t *testing.T) {
 
 func TestEvaluateProgression_AlreadyMaxLevel(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       50000,
-		Accuracy:             0.99,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.001,
+		TotalDecisions:        50000,
+		Accuracy:              0.99,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.001,
 		DaysSinceLastIncident: 365,
-		AvgConfidence:        0.99,
+		AvgConfidence:         0.99,
 	}
 
 	result := EvaluateProgression(stats, MaturityL5Sentinel)
@@ -195,12 +195,12 @@ func TestEvaluateProgression_AlreadyMaxLevel(t *testing.T) {
 
 func TestEvaluateProgression_L3ToL4_MeetsCriteria(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       2500,
-		Accuracy:             0.96,
-		IncidentsCaused:      1,
-		HumanOverrideRate:    0.02,
+		TotalDecisions:        2500,
+		Accuracy:              0.96,
+		IncidentsCaused:       1,
+		HumanOverrideRate:     0.02,
 		DaysSinceLastIncident: 45,
-		AvgConfidence:        0.88,
+		AvgConfidence:         0.88,
 	}
 
 	result := EvaluateProgression(stats, MaturityL3Supervised)
@@ -215,12 +215,12 @@ func TestEvaluateProgression_L3ToL4_MeetsCriteria(t *testing.T) {
 
 func TestEvaluateProgression_L4ToL5_MeetsCriteria(t *testing.T) {
 	stats := MaturityStats{
-		TotalDecisions:       15000,
-		Accuracy:             0.99,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.01,
+		TotalDecisions:        15000,
+		Accuracy:              0.99,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.01,
 		DaysSinceLastIncident: 100,
-		AvgConfidence:        0.92,
+		AvgConfidence:         0.92,
 	}
 
 	result := EvaluateProgression(stats, MaturityL4Autonomous)
@@ -237,9 +237,9 @@ func TestEvaluateProgression_L4ToL5_MeetsCriteria(t *testing.T) {
 
 func TestEvaluateDemotion_L3ToL2_AccuracyBelowThreshold(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.80, // below L3 demotion threshold of 0.85
-		IncidentsCaused:      2,
-		HumanOverrideRate:    0.10,
+		Accuracy:              0.80, // below L3 demotion threshold of 0.85
+		IncidentsCaused:       2,
+		HumanOverrideRate:     0.10,
 		DaysSinceLastIncident: 10,
 	}
 
@@ -261,9 +261,9 @@ func TestEvaluateDemotion_L3ToL2_AccuracyBelowThreshold(t *testing.T) {
 
 func TestEvaluateDemotion_TooManyIncidents(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.90,
-		IncidentsCaused:      6, // above L2 demotion threshold of 5
-		HumanOverrideRate:    0.10,
+		Accuracy:              0.90,
+		IncidentsCaused:       6, // above L2 demotion threshold of 5
+		HumanOverrideRate:     0.10,
 		DaysSinceLastIncident: 5,
 	}
 
@@ -279,9 +279,9 @@ func TestEvaluateDemotion_TooManyIncidents(t *testing.T) {
 
 func TestEvaluateDemotion_HighOverrideRate(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.95,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.30, // above L2 demotion threshold of 0.25
+		Accuracy:              0.95,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.30, // above L2 demotion threshold of 0.25
 		DaysSinceLastIncident: 10,
 	}
 
@@ -297,9 +297,9 @@ func TestEvaluateDemotion_HighOverrideRate(t *testing.T) {
 
 func TestEvaluateDemotion_AtMinLevel(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.50, // terrible
-		IncidentsCaused:      100,
-		HumanOverrideRate:    0.90,
+		Accuracy:              0.50, // terrible
+		IncidentsCaused:       100,
+		HumanOverrideRate:     0.90,
 		DaysSinceLastIncident: 0,
 	}
 
@@ -318,9 +318,9 @@ func TestEvaluateDemotion_AtMinLevel(t *testing.T) {
 
 func TestEvaluateDemotion_HealthyNoChange(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.95,
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.02,
+		Accuracy:              0.95,
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.02,
 		DaysSinceLastIncident: 60,
 	}
 
@@ -336,9 +336,9 @@ func TestEvaluateDemotion_HealthyNoChange(t *testing.T) {
 
 func TestEvaluateDemotion_L5ToL4_AccuracyDrop(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.90, // below L5 demotion threshold of 0.92
-		IncidentsCaused:      0,
-		HumanOverrideRate:    0.05,
+		Accuracy:              0.90, // below L5 demotion threshold of 0.92
+		IncidentsCaused:       0,
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 30,
 	}
 
@@ -354,9 +354,9 @@ func TestEvaluateDemotion_L5ToL4_AccuracyDrop(t *testing.T) {
 
 func TestEvaluateDemotion_L4ToL3_IncidentSpike(t *testing.T) {
 	stats := MaturityStats{
-		Accuracy:             0.95,
-		IncidentsCaused:      4, // above L4 demotion threshold of 3
-		HumanOverrideRate:    0.05,
+		Accuracy:              0.95,
+		IncidentsCaused:       4, // above L4 demotion threshold of 3
+		HumanOverrideRate:     0.05,
 		DaysSinceLastIncident: 10,
 	}
 
@@ -379,12 +379,12 @@ func TestProgressionDemotion_OscillationProtection(t *testing.T) {
 
 	// Agent at L2 with stats that barely meet L2→L3 progression
 	progressionStats := MaturityStats{
-		TotalDecisions:       600,
-		Accuracy:             0.91, // just above 0.90 threshold
-		IncidentsCaused:      3,
-		HumanOverrideRate:    0.09, // just under 0.10 threshold
+		TotalDecisions:        600,
+		Accuracy:              0.91, // just above 0.90 threshold
+		IncidentsCaused:       3,
+		HumanOverrideRate:     0.09, // just under 0.10 threshold
 		DaysSinceLastIncident: 15,
-		AvgConfidence:        0.81, // just above 0.80 threshold
+		AvgConfidence:         0.81, // just above 0.80 threshold
 	}
 
 	// Should promote
@@ -410,9 +410,9 @@ func TestProgressionDemotion_OscillationProtection(t *testing.T) {
 func TestProgressionDemotion_RapidCyclePrevented(t *testing.T) {
 	// An agent at L3 with stats that would demote to L2
 	demotionStats := MaturityStats{
-		Accuracy:             0.82, // below L3 demotion threshold of 0.85
-		IncidentsCaused:      4,
-		HumanOverrideRate:    0.18,
+		Accuracy:              0.82, // below L3 demotion threshold of 0.85
+		IncidentsCaused:       4,
+		HumanOverrideRate:     0.18,
 		DaysSinceLastIncident: 5,
 	}
 

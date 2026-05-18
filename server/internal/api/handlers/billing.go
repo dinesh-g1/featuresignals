@@ -735,8 +735,8 @@ func (h *BillingHandler) GetSubscription(w http.ResponseWriter, r *http.Request)
 		for _, bal := range creditBals {
 			bearer, _ := h.store.GetCostBearer(r.Context(), bal.BearerID)
 			info := dto.CreditBalanceInfo{
-				BearerID:   bal.BearerID,
-				Balance:    bal.Balance,
+				BearerID:     bal.BearerID,
+				Balance:      bal.Balance,
 				LifetimeUsed: bal.LifetimeUsed,
 			}
 			if bearer != nil {
@@ -802,8 +802,8 @@ func (h *BillingHandler) GetUsage(w http.ResponseWriter, r *http.Request) {
 			included = 10000
 		}
 		cu := dto.CreditUsageInfo{
-			BearerID:        b.ID,
-			BearerName:      b.DisplayName,
+			BearerID:         b.ID,
+			BearerName:       b.DisplayName,
 			IncludedPerMonth: included,
 		}
 		if bal != nil {

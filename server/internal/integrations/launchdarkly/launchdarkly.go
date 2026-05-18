@@ -24,12 +24,12 @@ type LDEnvironment struct {
 
 // LDFlag represents a LaunchDarkly feature flag.
 type LDFlag struct {
-	Key         string `json:"key"`
-	Name        string `json:"name"`
-	Kind        string `json:"kind"`
-	Description string `json:"description"`
-	Archived    bool   `json:"archived"`
-	Temporary   bool   `json:"temporary"`
+	Key         string        `json:"key"`
+	Name        string        `json:"name"`
+	Kind        string        `json:"kind"`
+	Description string        `json:"description"`
+	Archived    bool          `json:"archived"`
+	Temporary   bool          `json:"temporary"`
 	Variations  []LDVariation `json:"variations"`
 }
 
@@ -88,8 +88,8 @@ type ldImporter struct {
 	client *Client
 }
 
-func (i *ldImporter) Name() string         { return "launchdarkly" }
-func (i *ldImporter) DisplayName() string   { return "LaunchDarkly" }
+func (i *ldImporter) Name() string           { return "launchdarkly" }
+func (i *ldImporter) DisplayName() string    { return "LaunchDarkly" }
 func (i *ldImporter) Capabilities() []string { return []string{"flags", "environments", "segments"} }
 
 func (i *ldImporter) ValidateConnection(ctx context.Context) error {

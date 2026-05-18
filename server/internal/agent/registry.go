@@ -75,8 +75,8 @@ func (r *InMemoryToolRegistry) Execute(ctx context.Context, toolName string, cal
 	// Check maturity requirement
 	if caller.Maturity.CurrentLevel < tool.MaturityRequired {
 		return nil, &domain.GovernanceError{
-			Step:    domain.GovStepMaturity,
-			Reason:  "insufficient_maturity",
+			Step:   domain.GovStepMaturity,
+			Reason: "insufficient_maturity",
 			Message: fmt.Sprintf("agent %q maturity L%d < required L%d for tool %q",
 				caller.ID, caller.Maturity.CurrentLevel, tool.MaturityRequired, toolName),
 			RequiresHuman: true,

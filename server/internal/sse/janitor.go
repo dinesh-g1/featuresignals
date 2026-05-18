@@ -23,13 +23,13 @@ type ScanEvent struct {
 
 // Event type constants
 const (
-	EventScanStarted     = "scan.started"
-	EventRepoProgress    = "scan.repo.progress"
-	EventRepoComplete    = "scan.repo.complete"
-	EventFlagAnalyzed    = "scan.flag.analyzed"
-	EventLLMAnalysis     = "scan.llm.analysis"
-	EventScanComplete    = "scan.complete"
-	EventScanError       = "scan.error"
+	EventScanStarted  = "scan.started"
+	EventRepoProgress = "scan.repo.progress"
+	EventRepoComplete = "scan.repo.complete"
+	EventFlagAnalyzed = "scan.flag.analyzed"
+	EventLLMAnalysis  = "scan.llm.analysis"
+	EventScanComplete = "scan.complete"
+	EventScanError    = "scan.error"
 )
 
 // ─── Event Bus ────────────────────────────────────────────────────────────

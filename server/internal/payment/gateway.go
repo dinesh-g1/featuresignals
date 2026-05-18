@@ -81,8 +81,8 @@ type SubscriptionDetail struct {
 
 // Webhook event type constants used across providers.
 const (
-	EventCheckoutCompleted     = "checkout.completed"
-	EventSubscriptionUpdated   = "subscription.updated"
-	EventSubscriptionCanceled  = "subscription.canceled"
-	EventPaymentFailed         = "payment.failed"
+	EventCheckoutCompleted    = "checkout.completed"
+	EventSubscriptionUpdated  = "subscription.updated"
+	EventSubscriptionCanceled = "subscription.canceled"
+	EventPaymentFailed        = "payment.failed"
 )

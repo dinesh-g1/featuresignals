@@ -374,12 +374,12 @@ func (h *GitHubWebhookHandler) handlePushEvent(ctx context.Context, body []byte,
 type githubPREventPayload struct {
 	Action      string `json:"action"`
 	PullRequest *struct {
-		Number  int    `json:"number"`
-		URL     string `json:"html_url"`
-		Title   string `json:"title"`
-		State   string `json:"state"`
-		Merged  *bool  `json:"merged"`
-		Head    *struct {
+		Number int    `json:"number"`
+		URL    string `json:"html_url"`
+		Title  string `json:"title"`
+		State  string `json:"state"`
+		Merged *bool  `json:"merged"`
+		Head   *struct {
 			Ref string `json:"ref"`
 		} `json:"head"`
 	} `json:"pull_request"`

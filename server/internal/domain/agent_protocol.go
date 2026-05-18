@@ -54,24 +54,24 @@ type AgentMessageType string
 
 const (
 	// Task assignment and execution
-	AgentMsgTaskAssign    AgentMessageType = "task.assign"    // Platform → Agent: execute this task
-	AgentMsgTaskAccept    AgentMessageType = "task.accept"    // Agent → Platform: I'll do it
-	AgentMsgTaskReject    AgentMessageType = "task.reject"    // Agent → Platform: can't do it
-	AgentMsgTaskComplete  AgentMessageType = "task.complete"  // Agent → Platform: done, here's the result
-	AgentMsgTaskProgress  AgentMessageType = "task.progress"  // Agent → Platform: still working
+	AgentMsgTaskAssign   AgentMessageType = "task.assign"   // Platform → Agent: execute this task
+	AgentMsgTaskAccept   AgentMessageType = "task.accept"   // Agent → Platform: I'll do it
+	AgentMsgTaskReject   AgentMessageType = "task.reject"   // Agent → Platform: can't do it
+	AgentMsgTaskComplete AgentMessageType = "task.complete" // Agent → Platform: done, here's the result
+	AgentMsgTaskProgress AgentMessageType = "task.progress" // Agent → Platform: still working
 
 	// Agent discovery and capability
-	AgentMsgDiscover      AgentMessageType = "discover"       // Agent → Registry: what agents exist?
-	AgentMsgCapabilities  AgentMessageType = "capabilities"   // Agent → Agent: here's what I can do
-	AgentMsgRegister      AgentMessageType = "register"       // Agent → Registry: I'm online
-	AgentMsgUnregister    AgentMessageType = "unregister"     // Agent → Registry: I'm going offline
-	AgentMsgHeartbeat     AgentMessageType = "heartbeat"      // Agent → Registry: still alive
+	AgentMsgDiscover     AgentMessageType = "discover"     // Agent → Registry: what agents exist?
+	AgentMsgCapabilities AgentMessageType = "capabilities" // Agent → Agent: here's what I can do
+	AgentMsgRegister     AgentMessageType = "register"     // Agent → Registry: I'm online
+	AgentMsgUnregister   AgentMessageType = "unregister"   // Agent → Registry: I'm going offline
+	AgentMsgHeartbeat    AgentMessageType = "heartbeat"    // Agent → Registry: still alive
 
 	// Inter-agent collaboration
-	AgentMsgRequest       AgentMessageType = "request"        // Agent → Agent: I need help
-	AgentMsgResponse      AgentMessageType = "response"       // Agent → Agent: here's the help
-	AgentMsgTeach         AgentMessageType = "teach"          // Agent → Agent: learn from my experience
-	AgentMsgDelegate      AgentMessageType = "delegate"       // Agent → Agent: you handle this subtask
+	AgentMsgRequest  AgentMessageType = "request"  // Agent → Agent: I need help
+	AgentMsgResponse AgentMessageType = "response" // Agent → Agent: here's the help
+	AgentMsgTeach    AgentMessageType = "teach"    // Agent → Agent: learn from my experience
+	AgentMsgDelegate AgentMessageType = "delegate" // Agent → Agent: you handle this subtask
 
 	// Human interaction
 	AgentMsgHumanApproval AgentMessageType = "human.approval" // Agent → Human: approve this action
@@ -79,19 +79,19 @@ const (
 	AgentMsgHumanQuery    AgentMessageType = "human.query"    // Agent → Human: I have a question
 
 	// Governance and audit
-	AgentMsgGovernanceCheck AgentMessageType = "governance.check"  // Agent → Pipeline: validate this action
-	AgentMsgGovernancePass  AgentMessageType = "governance.pass"   // Pipeline → Agent: approved
+	AgentMsgGovernanceCheck  AgentMessageType = "governance.check"  // Agent → Pipeline: validate this action
+	AgentMsgGovernancePass   AgentMessageType = "governance.pass"   // Pipeline → Agent: approved
 	AgentMsgGovernanceReject AgentMessageType = "governance.reject" // Pipeline → Agent: denied
-	AgentMsgAuditLog        AgentMessageType = "audit.log"         // Agent → Audit: record this
+	AgentMsgAuditLog         AgentMessageType = "audit.log"         // Agent → Audit: record this
 )
 
 // ─── Common payload types ──────────────────────────────────────────────────
 
 // TaskAssignPayload is the body of a task.assign message.
 type TaskAssignPayload struct {
-	Task      Task         `json:"task"`
-	Context   AgentContext `json:"context"`
-	AssignedBy string      `json:"assigned_by"` // agent ID or "platform"
+	Task       Task         `json:"task"`
+	Context    AgentContext `json:"context"`
+	AssignedBy string       `json:"assigned_by"` // agent ID or "platform"
 }
 
 // TaskCompletePayload is the body of a task.complete message.
@@ -110,13 +110,13 @@ type TaskRejectPayload struct {
 
 // AgentCapabilitiesPayload is the body of a capabilities message.
 type AgentCapabilitiesPayload struct {
-	AgentID   string   `json:"agent_id"`
-	AgentType string   `json:"agent_type"`
-	BrainType BrainType `json:"brain_type"`
-	Tools     []string `json:"tools"`       // tool names this agent has access to
-	Scopes    []string `json:"scopes"`      // authorized scopes
-	Maturity  MaturityLevel `json:"maturity"`
-	MaxConcurrency int   `json:"max_concurrency"`
+	AgentID        string        `json:"agent_id"`
+	AgentType      string        `json:"agent_type"`
+	BrainType      BrainType     `json:"brain_type"`
+	Tools          []string      `json:"tools"`  // tool names this agent has access to
+	Scopes         []string      `json:"scopes"` // authorized scopes
+	Maturity       MaturityLevel `json:"maturity"`
+	MaxConcurrency int           `json:"max_concurrency"`
 }
 
 // HumanApprovalPayload is the body of a human.approval message.
@@ -129,10 +129,10 @@ type HumanApprovalPayload struct {
 
 // HumanOverridePayload is the body of a human.override message.
 type HumanOverridePayload struct {
-	ActionID  string          `json:"action_id"`
-	NewDecision Decision      `json:"new_decision"`
-	OverrideReason string     `json:"override_reason"`
-	OverriddenBy   string     `json:"overridden_by"` // user ID
+	ActionID       string   `json:"action_id"`
+	NewDecision    Decision `json:"new_decision"`
+	OverrideReason string   `json:"override_reason"`
+	OverriddenBy   string   `json:"overridden_by"` // user ID
 }
 
 // TeachPayload is the body of a teach message (agent → agent learning).

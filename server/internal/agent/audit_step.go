@@ -81,10 +81,10 @@ func buildAuditEntry(action domain.AgentAction) *domain.AuditEntry {
 	// Serialize action metadata for the audit record
 	beforeState := json.RawMessage("null")
 	afterState, err := json.Marshal(map[string]any{
-		"decision":    action.Decision.Action,
-		"confidence":  action.Decision.Confidence,
-		"tool_name":   action.ToolName,
-		"tool_params": string(action.ToolParams),
+		"decision":       action.Decision.Action,
+		"confidence":     action.Decision.Confidence,
+		"tool_name":      action.ToolName,
+		"tool_params":    string(action.ToolParams),
 		"pipeline_stage": action.PipelineStage,
 	})
 	if err != nil {

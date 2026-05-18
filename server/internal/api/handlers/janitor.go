@@ -102,14 +102,14 @@ type ScanResponse struct {
 }
 
 type RepositoryResponse struct {
-	ID            string  `json:"id"`
-	Provider      string  `json:"provider"`
-	Name          string  `json:"name"`
-	FullName      string  `json:"full_name"`
-	DefaultBranch string  `json:"default_branch"`
-	Private       bool    `json:"private"`
-	Connected     bool    `json:"connected"`
-	LastScanned   string  `json:"last_scanned,omitempty"`
+	ID            string `json:"id"`
+	Provider      string `json:"provider"`
+	Name          string `json:"name"`
+	FullName      string `json:"full_name"`
+	DefaultBranch string `json:"default_branch"`
+	Private       bool   `json:"private"`
+	Connected     bool   `json:"connected"`
+	LastScanned   string `json:"last_scanned,omitempty"`
 }
 
 type PRResponse struct {
@@ -281,8 +281,8 @@ func (h *JanitorHandler) Scan(w http.ResponseWriter, r *http.Request) {
 
 	// Create scan record
 	scan := &store.JanitorScan{
-		OrgID:     orgID,
-		Status:    "pending",
+		OrgID:      orgID,
+		Status:     "pending",
 		TotalRepos: len(repos),
 		TotalFlags: len(allFlags),
 	}
@@ -357,10 +357,10 @@ func (h *JanitorHandler) runScan(ctx context.Context, scanID, orgID string, conf
 
 		progress := (i * 100) / totalFlags
 		h.eventBus.Publish(ctx, scanID, sse.EventFlagAnalyzed, map[string]interface{}{
-			"flag_key": flag.Key,
+			"flag_key":  flag.Key,
 			"flag_name": flag.Name,
-			"status":   "analyzing",
-			"progress": progress,
+			"status":    "analyzing",
+			"progress":  progress,
 		})
 
 		// Check if flag is stale: it must be a boolean flag with all evaluations
@@ -448,7 +448,7 @@ func (h *JanitorHandler) runScan(ctx context.Context, scanID, orgID string, conf
 		// Update scan progress periodically
 		if i%5 == 0 || i == totalFlags-1 {
 			_ = h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
-				"progress":         progress,
+				"progress":          progress,
 				"stale_flags_found": staleFlagsFound,
 			})
 		}
@@ -459,18 +459,18 @@ func (h *JanitorHandler) runScan(ctx context.Context, scanID, orgID string, conf
 
 func (h *JanitorHandler) completeScan(ctx context.Context, scanID string, staleFlagsFound int, logger *slog.Logger) {
 	if err := h.janitorStore.UpdateScan(ctx, scanID, map[string]interface{}{
-		"status":           "completed",
-		"completed_at":     time.Now().UTC(),
-		"progress":         100,
+		"status":            "completed",
+		"completed_at":      time.Now().UTC(),
+		"progress":          100,
 		"stale_flags_found": staleFlagsFound,
 	}); err != nil {
 		logger.Error("failed to complete scan", "error", err)
 	}
 
 	h.eventBus.Publish(ctx, scanID, sse.EventScanComplete, map[string]interface{}{
-		"scan_id":              scanID,
-		"total_stale":          staleFlagsFound,
-		"duration_ms":          time.Now().UTC().Sub(time.Now().UTC().Add(-time.Second)),
+		"scan_id":     scanID,
+		"total_stale": staleFlagsFound,
+		"duration_ms": time.Now().UTC().Sub(time.Now().UTC().Add(-time.Second)),
 	})
 }
 
@@ -510,8 +510,6 @@ func (h *JanitorHandler) CancelScan(w http.ResponseWriter, r *http.Request) {
 	logger.Info("survey cancelled")
 	httputil.JSON(w, http.StatusOK, map[string]string{"status": "cancelled"})
 }
-
-
 
 func (h *JanitorHandler) GetScanStatus(w http.ResponseWriter, r *http.Request) {
 	scanID := chi.URLParam(r, "id")
@@ -873,18 +871,18 @@ This PR was generated automatically. Please review carefully before merging:
 	// Store PR record
 	now := time.Now().UTC()
 	prRecord := &store.JanitorPR{
-		OrgID:        orgID,
-		FlagKey:      flagKey,
-		StaleFlagID:  staleFlag.ID,
-		RepositoryID: repo.ID,
-		Provider:     repo.Provider,
-		PRNumber:     pr.Number,
-		PRURL:        pr.URL,
-		BranchName:   branchName,
-		Status:       "open",
+		OrgID:         orgID,
+		FlagKey:       flagKey,
+		StaleFlagID:   staleFlag.ID,
+		RepositoryID:  repo.ID,
+		Provider:      repo.Provider,
+		PRNumber:      pr.Number,
+		PRURL:         pr.URL,
+		BranchName:    branchName,
+		Status:        "open",
 		FilesModified: len(changes),
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 	if err := h.janitorStore.CreateJanitorPR(r.Context(), prRecord); err != nil {
 		logger.Error("failed to store PR record", "error", err)

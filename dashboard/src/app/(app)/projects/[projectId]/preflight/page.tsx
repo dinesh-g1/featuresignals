@@ -304,8 +304,8 @@ function PreflightInner() {
     ])
       .then(([flagsResult, envsResult]) => {
         if (cancelled) return;
-        setFlags(flagsResult ?? []);
-        setEnvs(envsResult ?? []);
+        setFlags(flagsResult.data);
+        setEnvs(envsResult.data);
         setFlagsAndEnvsLoading(false);
       })
       .catch(() => {
@@ -335,14 +335,12 @@ function PreflightInner() {
     if (!token) return;
     // Use the existing approvals endpoint for governance approvals
     api
-      .listApprovals(token, projectId ?? undefined)
+      .listApprovals(
+        token,
+        projectId ? { status: "pending" } : { status: "pending" },
+      )
       .then((res) => {
-        const data = Array.isArray(res)
-          ? res
-          : ((res as { data: Array<{ status: string }> }).data ?? []);
-        const pending = data.filter(
-          (a: { status: string }) => a.status === "pending",
-        ).length;
+        const pending = res.data.filter((a) => a.status === "pending").length;
         setPendingCount(pending);
       })
       .catch(() => {

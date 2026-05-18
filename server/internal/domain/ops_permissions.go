@@ -22,30 +22,30 @@ const (
 type Action string
 
 const (
-	ActionCreate Action = "create"
-	ActionRead   Action = "read"
-	ActionUpdate Action = "update"
-	ActionDelete Action = "delete"
+	ActionCreate  Action = "create"
+	ActionRead    Action = "read"
+	ActionUpdate  Action = "update"
+	ActionDelete  Action = "delete"
 	ActionExecute Action = "execute" // For actions like deploy, restart, SSH
-	ActionExport Action = "export"   // For data exports
+	ActionExport  Action = "export"  // For data exports
 )
 
 // PermissionCondition defines optional constraints on permissions.
 type PermissionCondition string
 
 const (
-	ConditionOwnSandboxOnly      PermissionCondition = "own_sandbox_only"
-	ConditionTemporaryDebug      PermissionCondition = "temporary_debug"
-	ConditionPerfEnvAutoDelete   PermissionCondition = "perf_env_auto_delete"
-	ConditionSandboxAutoExpire   PermissionCondition = "sandbox_auto_expire"
+	ConditionOwnSandboxOnly       PermissionCondition = "own_sandbox_only"
+	ConditionTemporaryDebug       PermissionCondition = "temporary_debug"
+	ConditionPerfEnvAutoDelete    PermissionCondition = "perf_env_auto_delete"
+	ConditionSandboxAutoExpire    PermissionCondition = "sandbox_auto_expire"
 	ConditionCostViewInternalOnly PermissionCondition = "cost_view_internal_only"
 )
 
 // Permission represents a single permission grant.
 type Permission struct {
-	Resource  Resource             `json:"resource"`
-	Action    Action               `json:"action"`
-	Condition PermissionCondition  `json:"condition,omitempty"` // Empty string means no condition
+	Resource  Resource            `json:"resource"`
+	Action    Action              `json:"action"`
+	Condition PermissionCondition `json:"condition,omitempty"` // Empty string means no condition
 }
 
 // OpsRole defines the permission levels for the ops portal.
@@ -176,16 +176,16 @@ var rolePermissions = map[OpsRole][]Permission{
 type PermissionContext struct {
 	// For ConditionOwnSandboxOnly
 	IsOwner bool `json:"is_owner,omitempty"`
-	
+
 	// For ConditionTemporaryDebug
 	DebugEnabledUntil string `json:"debug_enabled_until,omitempty"` // RFC3339 timestamp
-	
+
 	// For sandbox/perf environment limits
 	SandboxCount int `json:"sandbox_count,omitempty"`
 	MaxSandboxes int `json:"max_sandboxes,omitempty"`
-	
+
 	// Additional context fields as needed
-	UserID   string `json:"user_id,omitempty"`
+	UserID     string `json:"user_id,omitempty"`
 	ResourceID string `json:"resource_id,omitempty"`
 }
 

@@ -305,15 +305,15 @@ func TestImpactStore_OrgLearning_CreateAndGet(t *testing.T) {
 	org := seedOrg(t, postgres.NewStore(pool))
 
 	l := &domain.OrgLearning{
-		OrgID:                   org.ID,
-		TotalFlagsAnalyzed:      42,
-		CleanupCandidates:       8,
-		FlagsWithoutOwners:      3,
-		StaleFlags:              5,
-		AvgRiskScore:            35.5,
-		AvgTimeToFullRollout:    72.0,
-		TopInsights:             json.RawMessage(`[{"insight":"80% of flags rolled out within 3 days"}]`),
-		GeneratedAt:             time.Now().UTC(),
+		OrgID:                org.ID,
+		TotalFlagsAnalyzed:   42,
+		CleanupCandidates:    8,
+		FlagsWithoutOwners:   3,
+		StaleFlags:           5,
+		AvgRiskScore:         35.5,
+		AvgTimeToFullRollout: 72.0,
+		TopInsights:          json.RawMessage(`[{"insight":"80% of flags rolled out within 3 days"}]`),
+		GeneratedAt:          time.Now().UTC(),
 	}
 
 	if err := is.CreateOrgLearning(ctx, l); err != nil {
@@ -361,12 +361,12 @@ func TestImpactStore_OrgLearning_List(t *testing.T) {
 	now := time.Now().UTC()
 	for i := 0; i < 3; i++ {
 		l := &domain.OrgLearning{
-			OrgID:               org.ID,
-			TotalFlagsAnalyzed:  10 + i,
-			AvgRiskScore:        float64(20 + i*5),
+			OrgID:                org.ID,
+			TotalFlagsAnalyzed:   10 + i,
+			AvgRiskScore:         float64(20 + i*5),
 			AvgTimeToFullRollout: float64(48 + i*12),
-			TopInsights:         json.RawMessage(`[]`),
-			GeneratedAt:         now.Add(-time.Duration(2-i) * 24 * time.Hour),
+			TopInsights:          json.RawMessage(`[]`),
+			GeneratedAt:          now.Add(-time.Duration(2-i) * 24 * time.Hour),
 		}
 		if err := is.CreateOrgLearning(ctx, l); err != nil {
 			t.Fatalf("CreateOrgLearning %d: %v", i, err)

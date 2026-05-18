@@ -17,17 +17,17 @@ import (
 // IncidentCorrelation links a production incident to potentially-causal flag
 // changes that occurred within a configurable window before the incident.
 type IncidentCorrelation struct {
-	ID                string          `json:"id"`
-	OrgID             string          `json:"org_id"`
-	IncidentStartedAt time.Time       `json:"incident_started_at"`
-	IncidentEndedAt   *time.Time      `json:"incident_ended_at,omitempty"`
-	ServicesAffected  []string        `json:"services_affected,omitempty"`
-	EnvID             string          `json:"env_id,omitempty"`
-	TotalFlagsChanged int             `json:"total_flags_changed"`
-	CorrelatedChanges json.RawMessage `json:"correlated_changes"`  // JSONB array of CorrelatedChange
-	HighestCorrelation float64        `json:"highest_correlation"` // 0.0-1.0
-	CreatedAt         time.Time       `json:"created_at"`
-	UpdatedAt         time.Time       `json:"updated_at"`
+	ID                 string          `json:"id"`
+	OrgID              string          `json:"org_id"`
+	IncidentStartedAt  time.Time       `json:"incident_started_at"`
+	IncidentEndedAt    *time.Time      `json:"incident_ended_at,omitempty"`
+	ServicesAffected   []string        `json:"services_affected,omitempty"`
+	EnvID              string          `json:"env_id,omitempty"`
+	TotalFlagsChanged  int             `json:"total_flags_changed"`
+	CorrelatedChanges  json.RawMessage `json:"correlated_changes"`  // JSONB array of CorrelatedChange
+	HighestCorrelation float64         `json:"highest_correlation"` // 0.0-1.0
+	CreatedAt          time.Time       `json:"created_at"`
+	UpdatedAt          time.Time       `json:"updated_at"`
 }
 
 // AutoRemediation records an automated remediation action taken on a flag in

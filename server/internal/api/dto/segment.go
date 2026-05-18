@@ -7,14 +7,14 @@ import (
 )
 
 type SegmentResponse struct {
-	ID          string           `json:"id"`
-	Key         string           `json:"key"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	MatchType   domain.MatchType `json:"match_type"`
+	ID          string             `json:"id"`
+	Key         string             `json:"key"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	MatchType   domain.MatchType   `json:"match_type"`
 	Rules       []domain.Condition `json:"rules"`
-	CreatedAt   time.Time        `json:"created_at"`
-	UpdatedAt   time.Time        `json:"updated_at"`
+	CreatedAt   time.Time          `json:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at"`
 }
 
 func SegmentFromDomain(s *domain.Segment) *SegmentResponse {

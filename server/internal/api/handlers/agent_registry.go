@@ -56,8 +56,8 @@ type agentRegistryStore interface {
 
 // AgentRegistryHandler manages the agent registry CRUD and maturity tracking.
 type AgentRegistryHandler struct {
-	store agentRegistryStore
-	instr *observability.Instruments
+	store  agentRegistryStore
+	instr  *observability.Instruments
 	logger *slog.Logger
 }
 
@@ -70,25 +70,25 @@ func NewAgentRegistryHandler(store agentRegistryStore, logger *slog.Logger, inst
 
 // CreateAgentRequest is the payload for registering a new agent.
 type CreateAgentRequest struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Version     string                 `json:"version,omitempty"`
-	BrainType   string                 `json:"brain_type,omitempty"`
-	Scopes      []string               `json:"scopes,omitempty"`
-	RateLimits  domain.AgentRateLimits `json:"rate_limits,omitempty"`
+	ID          string                  `json:"id"`
+	Name        string                  `json:"name"`
+	Type        string                  `json:"type"`
+	Version     string                  `json:"version,omitempty"`
+	BrainType   string                  `json:"brain_type,omitempty"`
+	Scopes      []string                `json:"scopes,omitempty"`
+	RateLimits  domain.AgentRateLimits  `json:"rate_limits,omitempty"`
 	CostProfile domain.AgentCostProfile `json:"cost_profile,omitempty"`
 }
 
 // UpdateAgentRequest is the payload for updating an existing agent.
 type UpdateAgentRequest struct {
-	Name        *string                 `json:"name,omitempty"`
-	Type        *string                 `json:"type,omitempty"`
-	Version     *string                 `json:"version,omitempty"`
-	BrainType   *string                 `json:"brain_type,omitempty"`
-	Status      *string                 `json:"status,omitempty"`
-	Scopes      *[]string               `json:"scopes,omitempty"`
-	RateLimits  *domain.AgentRateLimits `json:"rate_limits,omitempty"`
+	Name        *string                  `json:"name,omitempty"`
+	Type        *string                  `json:"type,omitempty"`
+	Version     *string                  `json:"version,omitempty"`
+	BrainType   *string                  `json:"brain_type,omitempty"`
+	Status      *string                  `json:"status,omitempty"`
+	Scopes      *[]string                `json:"scopes,omitempty"`
+	RateLimits  *domain.AgentRateLimits  `json:"rate_limits,omitempty"`
 	CostProfile *domain.AgentCostProfile `json:"cost_profile,omitempty"`
 }
 
@@ -441,7 +441,9 @@ func (h *AgentRegistryHandler) EvaluateMaturity(w http.ResponseWriter, r *http.R
 }
 
 // Ensure AgentRegistryHandler implements HasRoutes for testability.
-var _ interface{ Create(http.ResponseWriter, *http.Request) } = (*AgentRegistryHandler)(nil)
+var _ interface {
+	Create(http.ResponseWriter, *http.Request)
+} = (*AgentRegistryHandler)(nil)
 
 // Ensure mockAgentRegistryStore satisfies agentRegistryStore at compile time.
 var _ agentRegistryStore = (*mockAgentRegistryStore)(nil)

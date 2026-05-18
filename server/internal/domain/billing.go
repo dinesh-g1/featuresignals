@@ -61,8 +61,8 @@ type Invoice struct {
 	PeriodStart          time.Time  `json:"period_start"`
 	PeriodEnd            time.Time  `json:"period_end"`
 	LineItems            []LineItem `json:"line_items"`
-	PlatformFeePaise     int64      `json:"platform_fee_paise"`      // e.g., 199900 = INR 1,999.00
-	CreditPurchasesPaise int64      `json:"credit_purchases_paise"`  // sum of credit pack purchases this period
+	PlatformFeePaise     int64      `json:"platform_fee_paise"`     // e.g., 199900 = INR 1,999.00
+	CreditPurchasesPaise int64      `json:"credit_purchases_paise"` // sum of credit pack purchases this period
 	TaxPaise             int64      `json:"tax_paise"`
 	TotalPaise           int64      `json:"total_paise"`
 	Currency             string     `json:"currency"` // "INR" or "USD"
@@ -77,8 +77,6 @@ type LineItem struct {
 	Description string `json:"description"`  // e.g., "Pro Plan (May 1-31)"
 	AmountPaise int64  `json:"amount_paise"` // e.g., 199900
 }
-
-
 
 // ─── Errors ───────────────────────────────────────────────────────────────
 

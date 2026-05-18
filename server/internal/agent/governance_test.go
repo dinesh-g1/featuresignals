@@ -38,10 +38,10 @@ func newTestAction(agentID, orgID string) domain.AgentAction {
 			Metadata:      make(map[string]any),
 		},
 		BlastRadius: domain.BlastRadiusEstimate{
-			AffectedEntities:    100,
-			AffectedPercentage:  1.0,
-			RiskLevel:           "low",
-			Rationale:           "test action",
+			AffectedEntities:   100,
+			AffectedPercentage: 1.0,
+			RiskLevel:          "low",
+			Rationale:          "test action",
 		},
 		Decision: domain.Decision{
 			Action:     "sweep",
@@ -279,10 +279,10 @@ func TestBlastRadiusStep_PassesWithLowRisk(t *testing.T) {
 	step := NewBlastRadiusGovernanceStep(testLogger())
 	action := newTestAction("agt_123", "org_123")
 	action.BlastRadius = domain.BlastRadiusEstimate{
-		AffectedEntities:    50,
-		AffectedPercentage:  0.5,
-		RiskLevel:           "low",
-		Rationale:           "test",
+		AffectedEntities:   50,
+		AffectedPercentage: 0.5,
+		RiskLevel:          "low",
+		Rationale:          "test",
 	}
 	result, err := step.Execute(context.Background(), action)
 	if err != nil {
@@ -297,10 +297,10 @@ func TestBlastRadiusStep_RejectsExcessiveEntities(t *testing.T) {
 	step := NewBlastRadiusGovernanceStep(testLogger())
 	action := newTestAction("agt_123", "org_123")
 	action.BlastRadius = domain.BlastRadiusEstimate{
-		AffectedEntities:    50000,
-		AffectedPercentage:  5.0,
-		RiskLevel:           "medium",
-		Rationale:           "test",
+		AffectedEntities:   50000,
+		AffectedPercentage: 5.0,
+		RiskLevel:          "medium",
+		Rationale:          "test",
 	}
 	_, err := step.Execute(context.Background(), action)
 	if err == nil {
@@ -319,10 +319,10 @@ func TestBlastRadiusStep_RejectsExcessivePercentage(t *testing.T) {
 	step := NewBlastRadiusGovernanceStep(testLogger())
 	action := newTestAction("agt_123", "org_123")
 	action.BlastRadius = domain.BlastRadiusEstimate{
-		AffectedEntities:    100,
-		AffectedPercentage:  25.0,
-		RiskLevel:           "medium",
-		Rationale:           "test",
+		AffectedEntities:   100,
+		AffectedPercentage: 25.0,
+		RiskLevel:          "medium",
+		Rationale:          "test",
 	}
 	_, err := step.Execute(context.Background(), action)
 	if err == nil {
@@ -341,10 +341,10 @@ func TestBlastRadiusStep_RequiresHumanForHighRisk(t *testing.T) {
 	step := NewBlastRadiusGovernanceStep(testLogger())
 	action := newTestAction("agt_123", "org_123")
 	action.BlastRadius = domain.BlastRadiusEstimate{
-		AffectedEntities:    100,
-		AffectedPercentage:  1.0,
-		RiskLevel:           "high",
-		Rationale:           "test",
+		AffectedEntities:   100,
+		AffectedPercentage: 1.0,
+		RiskLevel:          "high",
+		Rationale:          "test",
 	}
 	_, err := step.Execute(context.Background(), action)
 	if err == nil {

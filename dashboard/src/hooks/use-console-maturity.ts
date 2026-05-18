@@ -8,11 +8,13 @@
  * whether approvals/policies/workflows are enabled, and what
  * CONNECT/LEARN zone features are surfaced.
  *
- * Fetches once on mount. Provides convenience booleans and a
- * filtered visibleStages array for downstream consumption.
+ * Uses TanStack Query with a 5-minute staleTime (maturity rarely changes).
+ * Provides convenience booleans and a filtered visibleStages array.
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 import { LIFECYCLE_STAGES } from "@/lib/console-constants";
@@ -22,19 +24,9 @@ import type {
   LifecycleStage,
 } from "@/lib/console-types";
 
-// ─── Module-level cache ─────────────────────────────────────────────
-// Avoids re-fetching across remounts within the same session.
-
-let cachedConfig: MaturityConfig | null = null;
-let fetchPromise: Promise<MaturityConfig> | null = null;
-
-function clearMaturityCache(): void {
-  cachedConfig = null;
-  fetchPromise = null;
-}
-
 // ─── Default Maturity Config (L1 Solo) ──────────────────────────────
-// Used when the API is unavailable or the org has no config yet.
+// Used when the API returns no config (org hasn't configured yet) or
+// when the API is unreachable.
 
 const DEFAULT_MATURITY: MaturityConfig = {
   level: 1,
@@ -51,8 +43,8 @@ const DEFAULT_MATURITY: MaturityConfig = {
 // ─── Hook ───────────────────────────────────────────────────────────
 
 export interface UseConsoleMaturityReturn {
-  config: MaturityConfig | null;
-  loading: boolean;
+  config: MaturityConfig;
+  isLoading: boolean;
   error: string | null;
   isL1: boolean;
   isL2: boolean;
@@ -66,80 +58,15 @@ export interface UseConsoleMaturityReturn {
 
 export function useConsoleMaturity(): UseConsoleMaturityReturn {
   const token = useAppStore((s) => s.token);
-  const [config, setConfig] = useState<MaturityConfig | null>(cachedConfig);
-  const [loading, setLoading] = useState<boolean>(!cachedConfig);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: queryKeys.console.maturity,
+    queryFn: () => api.console.getMaturity(token!),
+    enabled: !!token,
+    staleTime: 5 * 60_000,
+  });
 
-    // Use cached config if available on subsequent calls
-    if (cachedConfig && config === cachedConfig) {
-      return;
-    }
-
-    // Deduplicate concurrent fetches
-    if (fetchPromise) {
-      try {
-        const result = await fetchPromise;
-        setConfig(result);
-        setError(null);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load maturity config",
-        );
-      }
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    if (!api.console) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[useConsoleMaturity] api.console is undefined");
-      }
-      setLoading(false);
-      return;
-    }
-
-    fetchPromise = api.console
-      .getMaturity(token)
-      .then((data) => {
-        cachedConfig = data;
-        fetchPromise = null;
-        return data;
-      })
-      .catch((err) => {
-        fetchPromise = null;
-        // Fall back to default on API failure (org hasn't configured yet)
-        cachedConfig = DEFAULT_MATURITY;
-        throw err;
-      });
-
-    try {
-      const data = await fetchPromise;
-      setConfig(data);
-    } catch (err) {
-      setConfig(DEFAULT_MATURITY);
-      setError(
-        err instanceof Error ? err.message : "Failed to load maturity config",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [token, config]);
-
-  // Fetch on mount
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  const currentConfig = config ?? DEFAULT_MATURITY;
+  const currentConfig = query.data ?? DEFAULT_MATURITY;
   const level = (currentConfig.level as MaturityLevel) || 1;
 
   // ── Derived values ──────────────────────────────────────────────
@@ -149,10 +76,8 @@ export function useConsoleMaturity(): UseConsoleMaturityReturn {
       !currentConfig.visibleStages ||
       currentConfig.visibleStages.length === 0
     ) {
-      // If no stages specified, show all 14 (fallback)
       return LIFECYCLE_STAGES.map((s) => s.id);
     }
-    // Filter to only valid stage IDs
     const allStageIds = new Set<string>(
       LIFECYCLE_STAGES.map((s) => s.id as string),
     );
@@ -163,8 +88,8 @@ export function useConsoleMaturity(): UseConsoleMaturityReturn {
 
   return {
     config: currentConfig,
-    loading,
-    error,
+    isLoading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
     isL1: level === 1,
     isL2: level === 2,
     isL3: level === 3,
@@ -172,8 +97,6 @@ export function useConsoleMaturity(): UseConsoleMaturityReturn {
     isL5: level === 5,
     level,
     visibleStages,
-    refetch: fetch,
+    refetch: () => query.refetch(),
   };
 }
-
-export { clearMaturityCache };

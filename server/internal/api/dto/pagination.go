@@ -39,15 +39,15 @@ func ParsePagination(r *http.Request) PaginationParams {
 // ─── Sort params ─────────────────────────────────────────────────────
 
 var allowedSortFields = map[string][]string{
-	"flags":         {"key", "name", "created_at", "updated_at", "status"},
-	"segments":      {"key", "name", "created_at", "updated_at"},
-	"environments":  {"name", "created_at", "updated_at"},
-	"projects":      {"name", "created_at", "updated_at"},
-	"api_keys":      {"name", "created_at", "last_used_at"},
-	"webhooks":      {"name", "created_at", "updated_at"},
-	"approvals":     {"created_at", "updated_at", "status"},
-	"audit":         {"created_at", "action", "resource_type"},
-	"members":       {"created_at", "name", "email", "role"},
+	"flags":        {"key", "name", "created_at", "updated_at", "status"},
+	"segments":     {"key", "name", "created_at", "updated_at"},
+	"environments": {"name", "created_at", "updated_at"},
+	"projects":     {"name", "created_at", "updated_at"},
+	"api_keys":     {"name", "created_at", "last_used_at"},
+	"webhooks":     {"name", "created_at", "updated_at"},
+	"approvals":    {"created_at", "updated_at", "status"},
+	"audit":        {"created_at", "action", "resource_type"},
+	"members":      {"created_at", "name", "email", "role"},
 }
 
 // ParseSort extracts sort param and validates against the allowlist for the resource type.
@@ -103,16 +103,16 @@ type PaginationMeta struct {
 }
 
 type PaginationInfo struct {
-	Page         int  `json:"page"`
-	PerPage      int  `json:"per_page"`
-	TotalEntries int  `json:"total_entries"`
-	LastPage     int  `json:"last_page"`
+	Page         int `json:"page"`
+	PerPage      int `json:"per_page"`
+	TotalEntries int `json:"total_entries"`
+	LastPage     int `json:"last_page"`
 }
 
 type PaginatedResponse[T any] struct {
 	Data  []T            `json:"data"`
 	Meta  PaginationMeta `json:"meta"`
-	Links domain.Links    `json:"_links,omitempty"`
+	Links domain.Links   `json:"_links,omitempty"`
 	// ── Backward-compatible flat fields ──────────────────────────
 	Total   int  `json:"total"`
 	Limit   int  `json:"limit"`

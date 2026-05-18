@@ -59,15 +59,15 @@ func FlagSliceFromDomain(fs []domain.Flag) []FlagResponse {
 }
 
 type FlagStateResponse struct {
-	ID                 string            `json:"id"`
-	Enabled            bool              `json:"enabled"`
-	DefaultValue       json.RawMessage   `json:"default_value,omitempty"`
+	ID                 string                 `json:"id"`
+	Enabled            bool                   `json:"enabled"`
+	DefaultValue       json.RawMessage        `json:"default_value,omitempty"`
 	Rules              []domain.TargetingRule `json:"rules"`
-	PercentageRollout  int               `json:"percentage_rollout"`
-	Variants           []domain.Variant  `json:"variants,omitempty"`
-	ScheduledEnableAt  *time.Time        `json:"scheduled_enable_at,omitempty"`
-	ScheduledDisableAt *time.Time        `json:"scheduled_disable_at,omitempty"`
-	UpdatedAt          time.Time         `json:"updated_at"`
+	PercentageRollout  int                    `json:"percentage_rollout"`
+	Variants           []domain.Variant       `json:"variants,omitempty"`
+	ScheduledEnableAt  *time.Time             `json:"scheduled_enable_at,omitempty"`
+	ScheduledDisableAt *time.Time             `json:"scheduled_disable_at,omitempty"`
+	UpdatedAt          time.Time              `json:"updated_at"`
 }
 
 func FlagStateFromDomain(s *domain.FlagState) *FlagStateResponse {

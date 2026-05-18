@@ -258,15 +258,14 @@ export function FlagTimeline({ flagId }: FlagTimelineProps) {
     setError(null);
     try {
       // Fetch audit entries — pass projectId if available for scoping
-      const auditEntries = await api.listAudit(
-        token,
-        50,
-        0,
-        projectId ?? undefined,
-      );
+      const auditEntries = await api.listAudit(token, {
+        limit: 50,
+        offset: 0,
+        projectId: projectId ?? undefined,
+      });
 
       // Filter to entries relevant to this flag and map to timeline events
-      const flagEvents = auditEntries
+      const flagEvents = auditEntries.data
         .filter((entry: AuditEntry) => {
           // Match by resource_id (flag ID) or resource_type
           const matchesResource = entry.resource_id === flagId;

@@ -1,62 +1,39 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { useConsoleStore } from "@/stores/console-store";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 
 /**
- * useConsoleIntegrations — fetches integration status for the CONNECT Zone.
+ * useConsoleIntegrations — TanStack Query hook for the CONNECT Zone
+ * integration status.
  *
- * Fetches on mount, on retryTrigger change, and polls every 60 seconds
- * (SDK/agent status changes less frequently than flag state).
+ * Polls every 60 seconds (SDK/agent status changes less frequently than
+ * flag state). Components that previously read `integrations`,
+ * `loading.integrations`, and `errors.integrations` from the Zustand
+ * store should use this instead.
  */
 export function useConsoleIntegrations() {
   const token = useAppStore((s) => s.token);
 
-  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
-  const setIntegrations = useConsoleStore((s) => s.setIntegrations);
-  const setZoneLoading = useConsoleStore((s) => s.setZoneLoading);
-  const setZoneError = useConsoleStore((s) => s.setZoneError);
-
-  const fetch = useCallback(async () => {
-    if (!token) return;
-    if (!api.console) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[useConsoleIntegrations] api.console is undefined");
-      }
-      return;
-    }
-    setZoneLoading("integrations", true);
-    setZoneError("integrations", null);
-    try {
-      const result = await api.console.getIntegrations(token);
-      setIntegrations(result);
-    } catch (err) {
-      setZoneError(
-        "integrations",
-        err instanceof Error ? err.message : "Failed to load integrations",
-      );
-    } finally {
-      setZoneLoading("integrations", false);
-    }
-  }, [token, setIntegrations, setZoneLoading, setZoneError]);
-
-  // Fetch on mount
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  // Refetch on manual retry
-  useEffect(() => {
-    if (retryTrigger > 0) fetch();
-  }, [retryTrigger, fetch]);
-
-  // Poll every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(fetch, 60_000);
-    return () => clearInterval(interval);
-  }, [fetch]);
-
-  return { refetch: fetch };
+  return useQuery({
+    queryKey: queryKeys.console.integrations({
+      repo_limit: 5,
+      sdk_limit: 5,
+      agent_limit: 5,
+      key_limit: 5,
+      policy_limit: 5,
+    }),
+    queryFn: () =>
+      api.console.getIntegrations(token!, {
+        repo_limit: 5,
+        sdk_limit: 5,
+        agent_limit: 5,
+        key_limit: 5,
+        policy_limit: 5,
+      }),
+    enabled: !!token,
+    refetchInterval: 60_000,
+  });
 }

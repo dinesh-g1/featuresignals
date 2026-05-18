@@ -17,11 +17,11 @@ import (
 // ── Mock Impact Store ──────────────────────────────────────────────────────
 
 type mockImpactStore struct {
-	reports       map[string]*domain.ImpactReport // keyed by "orgID/flagKey"
-	learnings     map[string]*domain.OrgLearning  // keyed by orgID
-	costs         map[string][]domain.CostAttribution // keyed by "orgID/flagKey"
-	flags         map[string]*domain.Flag           // keyed by "projectID/key"
-	scanResults   map[string][]domain.ScanResult    // keyed by "orgID/projectID"
+	reports     map[string]*domain.ImpactReport     // keyed by "orgID/flagKey"
+	learnings   map[string]*domain.OrgLearning      // keyed by orgID
+	costs       map[string][]domain.CostAttribution // keyed by "orgID/flagKey"
+	flags       map[string]*domain.Flag             // keyed by "projectID/key"
+	scanResults map[string][]domain.ScanResult      // keyed by "orgID/projectID"
 }
 
 func newMockImpactStore() *mockImpactStore {
@@ -429,7 +429,7 @@ func TestImpactHandler_GetReport_LongFlagName(t *testing.T) {
 	// Flag with a long key
 	store.flags["proj-1/my-very-long-feature-flag-key-with-special-chars"] = &domain.Flag{
 		ID: "flag-long", OrgID: testOrgID, ProjectID: "proj-1",
-		Key: "my-very-long-feature-flag-key-with-special-chars",
+		Key:      "my-very-long-feature-flag-key-with-special-chars",
 		FlagType: domain.FlagTypeBoolean, Status: domain.StatusActive,
 	}
 	h := newTestImpactHandler(store)
@@ -445,5 +445,3 @@ func TestImpactHandler_GetReport_LongFlagName(t *testing.T) {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
 	}
 }
-
-

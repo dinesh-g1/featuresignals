@@ -336,11 +336,11 @@ type AgentCostProfile struct {
 type MaturityLevel int
 
 const (
-	MaturityL1Shadow   MaturityLevel = 1 // Shadow mode: observes, recommends, no action
-	MaturityL2Assist   MaturityLevel = 2 // Assist mode: acts with human approval
+	MaturityL1Shadow     MaturityLevel = 1 // Shadow mode: observes, recommends, no action
+	MaturityL2Assist     MaturityLevel = 2 // Assist mode: acts with human approval
 	MaturityL3Supervised MaturityLevel = 3 // Supervised: acts autonomously, human reviews
 	MaturityL4Autonomous MaturityLevel = 4 // Autonomous: acts, human override available
-	MaturityL5Sentinel  MaturityLevel = 5 // Sentinel: full autonomy, self-healing, teaches others
+	MaturityL5Sentinel   MaturityLevel = 5 // Sentinel: full autonomy, self-healing, teaches others
 )
 
 // AgentMaturity tracks capability per operational context. An agent may

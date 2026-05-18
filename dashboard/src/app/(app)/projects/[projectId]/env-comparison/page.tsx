@@ -30,7 +30,7 @@ export default function EnvComparisonPage() {
     if (!token || !projectId) return;
     api
       .listEnvironments(token, projectId)
-      .then((e) => setEnvs(e ?? []))
+      .then((e) => setEnvs(e.data))
       .catch(() => {});
   }, [token, projectId]);
 

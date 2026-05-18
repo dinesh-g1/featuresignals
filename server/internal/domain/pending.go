@@ -18,8 +18,8 @@ type PendingRegistration struct {
 }
 
 const (
-	OTPLength          = 6
-	OTPExpiryMinutes   = 10
-	OTPMaxAttempts     = 5
-	OTPResendCooldown  = 60 // seconds
+	OTPLength         = 6
+	OTPExpiryMinutes  = 10
+	OTPMaxAttempts    = 5
+	OTPResendCooldown = 60 // seconds
 )

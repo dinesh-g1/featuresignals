@@ -20,14 +20,10 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
+import { useProjects } from "@/hooks/use-console-data";
 import { cn } from "@/lib/utils";
 import { ENV_COLORS } from "@/lib/console-constants";
-import {
-  ChevronRight,
-  ChevronDown,
-  Building2,
-  Folder,
-} from "lucide-react";
+import { ChevronRight, ChevronDown, Building2, Folder } from "lucide-react";
 import type { EnvironmentType } from "@/lib/console-types";
 
 // ─── Constants ─────────────────────────────────────────────────────
@@ -148,9 +144,13 @@ export function ContextStrip() {
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
   const setEnvironment = useConsoleStore((s) => s.setEnvironment);
   const setCommandPaletteOpen = useConsoleStore((s) => s.setCommandPaletteOpen);
-  const projects = useConsoleStore((s) => s.projects);
-  const projectsLoading = useConsoleStore((s) => s.projectsLoading);
-  const projectsError = useConsoleStore((s) => s.projectsError);
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    error: projectsQueryError,
+  } = useProjects();
+  const projectsError =
+    projectsQueryError instanceof Error ? projectsQueryError.message : null;
 
   // ── Maturity ─────────────────────────────────────────────────────
   const { isL1 } = useConsoleMaturity();
@@ -224,120 +224,124 @@ export function ContextStrip() {
       )}
 
       {/* ═══ > ═══════════════════════════════════════════════════════ */}
-      {!isL1 && <ChevronRight className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />}
+      {!isL1 && (
+        <ChevronRight className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
+      )}
 
       {/* ═══ Project ═════════════════════════════════════════════════ */}
       {!isL1 && (
-      <MiniDropdown open={projectOpen} onOpenChange={setProjectOpen}>
-        <button
-          type="button"
-          onClick={() => setProjectOpen((o) => !o)}
-          className={cn(
-            "flex items-center gap-1 px-1.5 py-0.5 rounded",
-            "hover:bg-[var(--signal-bg-secondary)] transition-colors",
-            "text-[var(--signal-fg-secondary)]",
-            projectOpen && "bg-[var(--signal-bg-secondary)]",
-          )}
-          title="Switch project"
-        >
-          <Folder className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
-          {projectsLoading ? (
-            <span className="text-[var(--signal-fg-tertiary)] italic animate-pulse">
-              Loading…
-            </span>
-          ) : projectLabel ? (
-            <span className="font-medium truncate max-w-[120px]">
-              {projectLabel}
-            </span>
-          ) : (
-            <span className="text-[var(--signal-fg-tertiary)] italic">
-              {projectsError ? "Error" : "No project"}
-            </span>
-          )}
-          <ChevronDown
+        <MiniDropdown open={projectOpen} onOpenChange={setProjectOpen}>
+          <button
+            type="button"
+            onClick={() => setProjectOpen((o) => !o)}
             className={cn(
-              "h-2.5 w-2.5 shrink-0 text-[var(--signal-fg-tertiary)] transition-transform",
-              projectOpen && "rotate-180",
+              "flex items-center gap-1 px-1.5 py-0.5 rounded",
+              "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+              "text-[var(--signal-fg-secondary)]",
+              projectOpen && "bg-[var(--signal-bg-secondary)]",
             )}
-          />
-        </button>
+            title="Switch project"
+          >
+            <Folder className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
+            {projectsLoading ? (
+              <span className="text-[var(--signal-fg-tertiary)] italic animate-pulse">
+                Loading…
+              </span>
+            ) : projectLabel ? (
+              <span className="font-medium truncate max-w-[120px]">
+                {projectLabel}
+              </span>
+            ) : (
+              <span className="text-[var(--signal-fg-tertiary)] italic">
+                {projectsError ? "Error" : "No project"}
+              </span>
+            )}
+            <ChevronDown
+              className={cn(
+                "h-2.5 w-2.5 shrink-0 text-[var(--signal-fg-tertiary)] transition-transform",
+                projectOpen && "rotate-180",
+              )}
+            />
+          </button>
 
-        <MiniDropdownPanel open={projectOpen}>
-          {/* Loading state */}
-          {projectsLoading && (
-            <div className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)] italic">
-              Loading projects…
-            </div>
-          )}
+          <MiniDropdownPanel open={projectOpen}>
+            {/* Loading state */}
+            {projectsLoading && (
+              <div className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)] italic">
+                Loading projects…
+              </div>
+            )}
 
-          {/* Error state */}
-          {!projectsLoading && projectsError && (
-            <div className="px-3 py-2">
-              <p className="text-[11px] text-[var(--signal-fg-danger)]">
-                {projectsError}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  // triggerRetry increments retryTrigger, which causes
-                  // useConsoleData to re-fetch projects (H4 fix).
-                  consoleStore.getState().triggerRetry();
-                }}
-                className="mt-1 text-[10px] text-[var(--signal-fg-accent)] hover:underline"
-              >
-                Retry
-              </button>
-            </div>
-          )}
+            {/* Error state */}
+            {!projectsLoading && projectsError && (
+              <div className="px-3 py-2">
+                <p className="text-[11px] text-[var(--signal-fg-danger)]">
+                  {projectsError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // triggerRetry increments retryTrigger, which causes
+                    // useConsoleData to re-fetch projects (H4 fix).
+                    consoleStore.getState().triggerRetry();
+                  }}
+                  className="mt-1 text-[10px] text-[var(--signal-fg-accent)] hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
-          {/* Empty state */}
-          {!projectsLoading && !projectsError && projects.length === 0 && (
-            <div className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)]">
-              No projects yet
-            </div>
-          )}
+            {/* Empty state */}
+            {!projectsLoading && !projectsError && projects.length === 0 && (
+              <div className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)]">
+                No projects yet
+              </div>
+            )}
 
-          {/* Project list */}
-          {!projectsLoading &&
-            !projectsError &&
-            projects.map((project) => (
-              <MiniDropdownItem
-                key={project.id}
-                active={project.id === currentProjectId}
-                onClick={() => handleSelectProject(project.id)}
-              >
-                <Folder className="h-3 w-3 shrink-0" />
-                <span className="truncate">{project.name}</span>
-                {project.id === currentProjectId && (
-                  <span className="ml-auto text-[9px] text-[var(--signal-fg-tertiary)]">
-                    Active
+            {/* Project list */}
+            {!projectsLoading &&
+              !projectsError &&
+              projects.map((project) => (
+                <MiniDropdownItem
+                  key={project.id}
+                  active={project.id === currentProjectId}
+                  onClick={() => handleSelectProject(project.id)}
+                >
+                  <Folder className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{project.name}</span>
+                  {project.id === currentProjectId && (
+                    <span className="ml-auto text-[9px] text-[var(--signal-fg-tertiary)]">
+                      Active
+                    </span>
+                  )}
+                </MiniDropdownItem>
+              ))}
+
+            {/* Footer: open command palette for full management */}
+            {!projectsLoading && !projectsError && projects.length > 0 && (
+              <>
+                <div className="mx-3 my-1 h-px bg-[var(--signal-border-subtle)]" />
+                <MiniDropdownItem
+                  onClick={() => {
+                    setProjectOpen(false);
+                    setCommandPaletteOpen(true);
+                  }}
+                >
+                  <span className="text-[var(--signal-fg-accent)]">
+                    Manage projects…
                   </span>
-                )}
-              </MiniDropdownItem>
-            ))}
-
-          {/* Footer: open command palette for full management */}
-          {!projectsLoading && !projectsError && projects.length > 0 && (
-            <>
-              <div className="mx-3 my-1 h-px bg-[var(--signal-border-subtle)]" />
-              <MiniDropdownItem
-                onClick={() => {
-                  setProjectOpen(false);
-                  setCommandPaletteOpen(true);
-                }}
-              >
-                <span className="text-[var(--signal-fg-accent)]">
-                  Manage projects…
-                </span>
-              </MiniDropdownItem>
-            </>
-          )}
-        </MiniDropdownPanel>
-      </MiniDropdown>
+                </MiniDropdownItem>
+              </>
+            )}
+          </MiniDropdownPanel>
+        </MiniDropdown>
       )}
 
       {/* ═══ > ═══════════════════════════════════════════════════════ */}
-      {!isL1 && <ChevronRight className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />}
+      {!isL1 && (
+        <ChevronRight className="h-3 w-3 shrink-0 text-[var(--signal-fg-tertiary)]" />
+      )}
 
       {/* ═══ Environment ═════════════════════════════════════════════ */}
       <MiniDropdown open={envOpen} onOpenChange={setEnvOpen}>
@@ -357,10 +361,7 @@ export function ContextStrip() {
             style={{ backgroundColor: envInfo.badge }}
             aria-hidden="true"
           />
-          <span
-            className="font-medium"
-            style={{ color: envInfo.badge }}
-          >
+          <span className="font-medium" style={{ color: envInfo.badge }}>
             {envInfo.label}
           </span>
           <ChevronDown

@@ -14,10 +14,10 @@ import (
 )
 
 type mockScheduleStore struct {
-	mu         sync.Mutex
-	states     map[string]*domain.FlagState // "flagID:envID" -> state
-	audits     []domain.AuditEntry
-	idCounter  int
+	mu        sync.Mutex
+	states    map[string]*domain.FlagState // "flagID:envID" -> state
+	audits    []domain.AuditEntry
+	idCounter int
 }
 
 func newMockScheduleStore() *mockScheduleStore {
@@ -63,7 +63,6 @@ func (m *mockScheduleStore) CreateAuditEntry(ctx context.Context, entry *domain.
 	return nil
 }
 
-
 func (m *mockScheduleStore) DeleteExpiredPendingRegistrations(ctx context.Context, before time.Time) (int, error) {
 	return 0, nil
 }
@@ -86,7 +85,7 @@ func (m *mockScheduleStore) GetOrganization(ctx context.Context, id string) (*do
 	return nil, fmt.Errorf("not found")
 }
 
-func (m *mockScheduleStore) CleanExpiredRevocations(_ context.Context) error { return nil }
+func (m *mockScheduleStore) CleanExpiredRevocations(_ context.Context) error     { return nil }
 func (m *mockScheduleStore) CleanExpiredGracePeriodKeys(_ context.Context) error { return nil }
 func (m *mockScheduleStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error) {
 	return 0, nil

@@ -31,13 +31,11 @@ export default function FlagHealthPage() {
     api
       .listFlags(token, projectId)
       .then((f) => {
-        setFlags(f ?? []);
+        setFlags(f.data);
         setLoading(false);
       })
       .catch((err) => {
-        setError(
-          err instanceof Error ? err.message : "Failed to load flags",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load flags");
         setLoading(false);
       });
   }, [token, projectId]);
@@ -175,7 +173,9 @@ export default function FlagHealthPage() {
           <p className={cn("mt-2 text-3xl font-bold sm:text-5xl", scoreColor)}>
             {healthScore}
           </p>
-          <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">out of 100</p>
+          <p className="mt-1 text-xs text-[var(--signal-fg-secondary)]">
+            out of 100
+          </p>
         </div>
         <HealthStatCard
           label="Total Flags"
@@ -328,8 +328,12 @@ function HealthSection({
   return (
     <Card className="hover:shadow-lg hover:border-[var(--signal-border-emphasis)]">
       <CardHeader>
-        <h2 className="font-semibold text-[var(--signal-fg-primary)]">{title}</h2>
-        <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">{subtitle}</p>
+        <h2 className="font-semibold text-[var(--signal-fg-primary)]">
+          {title}
+        </h2>
+        <p className="mt-0.5 text-xs text-[var(--signal-fg-secondary)]">
+          {subtitle}
+        </p>
       </CardHeader>
       <div className="divide-y divide-slate-100">{children}</div>
     </Card>

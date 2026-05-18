@@ -31,11 +31,11 @@ func TestIncidentStore_Correlation_CreateAndGet(t *testing.T) {
 
 	incidentStarted := time.Now().UTC().Add(-1 * time.Hour)
 	c := &domain.IncidentCorrelation{
-		OrgID:             org.ID,
-		IncidentStartedAt: incidentStarted,
-		ServicesAffected:  []string{"api-gateway", "user-service"},
-		TotalFlagsChanged: 3,
-		CorrelatedChanges: json.RawMessage(`[{"flag_key":"feature-x","change_type":"rollout","correlation_score":0.95}]`),
+		OrgID:              org.ID,
+		IncidentStartedAt:  incidentStarted,
+		ServicesAffected:   []string{"api-gateway", "user-service"},
+		TotalFlagsChanged:  3,
+		CorrelatedChanges:  json.RawMessage(`[{"flag_key":"feature-x","change_type":"rollout","correlation_score":0.95}]`),
 		HighestCorrelation: 0.95,
 	}
 
@@ -81,11 +81,11 @@ func TestIncidentStore_Correlation_ListAndCount(t *testing.T) {
 	now := time.Now().UTC()
 	for i := 0; i < 3; i++ {
 		c := &domain.IncidentCorrelation{
-			OrgID:             org.ID,
-			IncidentStartedAt: now.Add(-time.Duration(i+1) * time.Hour),
-			ServicesAffected:  []string{"svc"},
-			TotalFlagsChanged: i + 1,
-			CorrelatedChanges: json.RawMessage(`[]`),
+			OrgID:              org.ID,
+			IncidentStartedAt:  now.Add(-time.Duration(i+1) * time.Hour),
+			ServicesAffected:   []string{"svc"},
+			TotalFlagsChanged:  i + 1,
+			CorrelatedChanges:  json.RawMessage(`[]`),
 			HighestCorrelation: float64(i) * 0.3,
 		}
 		if err := is.CreateIncidentCorrelation(ctx, c); err != nil {
@@ -320,7 +320,7 @@ func TestIncidentStore_Remediation_UpdateStatus(t *testing.T) {
 	org := seedOrg(t, postgres.NewStore(pool))
 
 	r := &domain.AutoRemediation{
-		OrgID:  org.ID,
+		OrgID:   org.ID,
 		FlagKey: "feature-x",
 		Action:  domain.RemediationActionPause,
 		Status:  domain.RemediationStatusConfirmationNeeded,
@@ -361,7 +361,7 @@ func TestIncidentStore_Remediation_InvalidUpdateColumn(t *testing.T) {
 	org := seedOrg(t, postgres.NewStore(pool))
 
 	r := &domain.AutoRemediation{
-		OrgID:  org.ID,
+		OrgID:   org.ID,
 		FlagKey: "feature-x",
 		Action:  domain.RemediationActionPause,
 		Status:  domain.RemediationStatusConfirmationNeeded,
@@ -404,10 +404,10 @@ func TestIncidentStore_Remediation_WithCorrelation(t *testing.T) {
 
 	// Create correlation first
 	corr := &domain.IncidentCorrelation{
-		OrgID:             org.ID,
-		IncidentStartedAt: time.Now().UTC().Add(-30 * time.Minute),
-		TotalFlagsChanged: 2,
-		CorrelatedChanges: json.RawMessage(`[{"flag_key":"feature-y","change_type":"rollout","correlation_score":0.88}]`),
+		OrgID:              org.ID,
+		IncidentStartedAt:  time.Now().UTC().Add(-30 * time.Minute),
+		TotalFlagsChanged:  2,
+		CorrelatedChanges:  json.RawMessage(`[{"flag_key":"feature-y","change_type":"rollout","correlation_score":0.88}]`),
 		HighestCorrelation: 0.88,
 	}
 	if err := is.CreateIncidentCorrelation(ctx, corr); err != nil {

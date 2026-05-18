@@ -13,7 +13,14 @@
  * "Your Agents" = customer's OWN agents (not internal platform agents).
  */
 
-import { type ReactNode, useState, useCallback } from "react";
+import {
+  type ReactNode,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
@@ -30,10 +37,17 @@ import {
   Sparkles,
   ShieldCheck,
   FileSearch,
+  BookOpen,
+  Zap,
 } from "lucide-react";
 import { useConsoleStore } from "@/stores/console-store";
 import { useAppStore } from "@/stores/app-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
+import { useConsoleInsights } from "@/hooks/use-console-insights";
+import {
+  useConsoleSetupProgress,
+  type SetupPhase,
+} from "@/hooks/use-console-setup-progress";
 import { api } from "@/lib/api";
 import type {
   ImpactReport,
@@ -42,6 +56,7 @@ import type {
   OrgLearning,
   ActivityEntry,
 } from "@/lib/console-types";
+import type { LearnSection } from "@/components/console/learn-icon-strip";
 import type { ImpactReportResponse } from "@/lib/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -180,6 +195,15 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
     [token, expandedKey],
   );
 
+  // Dispatch wide/normal events when detailed report is viewed
+  useEffect(() => {
+    if (expandedKey) {
+      window.dispatchEvent(new CustomEvent("fs:learn-wide"));
+    } else {
+      window.dispatchEvent(new CustomEvent("fs:learn-normal"));
+    }
+  }, [expandedKey]);
+
   return (
     <LearnCard icon={TrendingUp} title="Impact Reports">
       {reports.length === 0 ? (
@@ -200,11 +224,11 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
         <div className="space-y-1">
           {reports.slice(0, 3).map((report) => {
             const isExpanded = expandedKey === report.flag_key;
-                        return (
-                          <div key={report.flag_key}>
-                            <button
-                              type="button"
-                              onClick={() => handleExpand(report.flag_key)}
+            return (
+              <div key={report.flag_key}>
+                <button
+                  type="button"
+                  onClick={() => handleExpand(report.flag_key)}
                   className="flex w-full items-start gap-2 py-1 text-left transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] rounded-[var(--signal-radius-sm)] -mx-1 px-1 group"
                   aria-expanded={isExpanded}
                 >
@@ -220,31 +244,33 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                       )}
                     </div>
                     {report.ai_summary && !isExpanded && (
-                                          <p className="text-[10px] text-[var(--signal-fg-secondary)] mt-0.5 line-clamp-2 leading-relaxed">
-                                            {report.ai_summary}
+                      <p className="text-[10px] text-[var(--signal-fg-secondary)] mt-0.5 line-clamp-2 leading-relaxed">
+                        {report.ai_summary}
                       </p>
                     )}
-                    {report.metric_changes && report.metric_changes.length > 0 && !isExpanded && (
-                                          <div className="flex flex-wrap gap-1.5 mt-1">
-                                            {report.metric_changes.slice(0, 3).map((mc) => (
-                          <span
-                            key={mc.metric}
-                            className="inline-flex items-center gap-0.5 text-[10px]"
-                            style={{
-                              color:
-                                mc.direction === "up"
-                                  ? "var(--signal-fg-success)"
-                                  : mc.direction === "down"
-                                    ? "var(--signal-fg-danger)"
-                                    : "var(--signal-fg-tertiary)",
-                            }}
-                          >
-                            <TrendIcon direction={mc.direction} />
-                            {mc.metric}: {formatPercent(mc.percentChange)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {report.metric_changes &&
+                      report.metric_changes.length > 0 &&
+                      !isExpanded && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {report.metric_changes.slice(0, 3).map((mc) => (
+                            <span
+                              key={mc.metric}
+                              className="inline-flex items-center gap-0.5 text-[10px]"
+                              style={{
+                                color:
+                                  mc.direction === "up"
+                                    ? "var(--signal-fg-success)"
+                                    : mc.direction === "down"
+                                      ? "var(--signal-fg-danger)"
+                                      : "var(--signal-fg-tertiary)",
+                              }}
+                            >
+                              <TrendIcon direction={mc.direction} />
+                              {mc.metric}: {formatPercent(mc.percentChange)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     <p className="text-[10px] text-[var(--signal-fg-tertiary)] mt-0.5">
                       {formatRelativeTime(report.generated_at)}
                     </p>
@@ -305,10 +331,7 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                                 </div>
                                 <div>
                                   <div className="text-xs font-bold font-mono text-[var(--signal-fg-primary)]">
-                                    {
-                                      reportDetail.metricsSummary
-                                        .avgLatencyUs
-                                    }
+                                    {reportDetail.metricsSummary.avgLatencyUs}
                                     µs
                                   </div>
                                   <p className="text-[8px] text-[var(--signal-fg-tertiary)]">
@@ -363,42 +386,43 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
                         ) : (
                           <div className="space-y-1.5 py-1">
                             {report.ai_summary && (
-                                                          <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed">
-                                                            {report.ai_summary}
+                              <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed">
+                                {report.ai_summary}
                               </p>
                             )}
-                            {report.metric_changes && report.metric_changes.length > 0 && (
-                                                          <div className="space-y-1">
-                                                            <span className="text-[9px] font-semibold text-[var(--signal-fg-tertiary)]">
-                                                              All Metrics
-                                                            </span>
-                                                            <div className="flex flex-wrap gap-1">
-                                                              {report.metric_changes.map((mc) => (
-                                    <span
-                                      key={mc.metric}
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]"
-                                    >
-                                      <TrendIcon direction={mc.direction} />
-                                      <span className="text-[var(--signal-fg-primary)]">
-                                        {mc.metric}
-                                      </span>
+                            {report.metric_changes &&
+                              report.metric_changes.length > 0 && (
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-semibold text-[var(--signal-fg-tertiary)]">
+                                    All Metrics
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {report.metric_changes.map((mc) => (
                                       <span
-                                        style={{
-                                          color:
-                                            mc.direction === "up"
-                                              ? "var(--signal-fg-success)"
-                                              : mc.direction === "down"
-                                                ? "var(--signal-fg-danger)"
-                                                : "var(--signal-fg-tertiary)",
-                                        }}
+                                        key={mc.metric}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-secondary)]"
                                       >
-                                        {formatPercent(mc.percentChange)}
+                                        <TrendIcon direction={mc.direction} />
+                                        <span className="text-[var(--signal-fg-primary)]">
+                                          {mc.metric}
+                                        </span>
+                                        <span
+                                          style={{
+                                            color:
+                                              mc.direction === "up"
+                                                ? "var(--signal-fg-success)"
+                                                : mc.direction === "down"
+                                                  ? "var(--signal-fg-danger)"
+                                                  : "var(--signal-fg-tertiary)",
+                                          }}
+                                        >
+                                          {formatPercent(mc.percentChange)}
+                                        </span>
                                       </span>
-                                    </span>
-                                  ))}
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
                           </div>
                         )}
                       </div>
@@ -409,9 +433,12 @@ function ImpactReportsCard({ reports }: { reports: ImpactReport[] }) {
             );
           })}
           {reports.length > 3 && (
-            <p className="text-[10px] text-[var(--signal-fg-tertiary)] text-center">
-              +{reports.length - 3} more reports
-            </p>
+            <Link
+              href="/console/insights"
+              className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
+            >
+              View all {reports.length} impact reports
+            </Link>
           )}
         </div>
       )}
@@ -436,9 +463,9 @@ function CostTrackingCard({ cost }: { cost: CostAttribution }) {
             No cost data yet
           </p>
           <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed max-w-[200px] mx-auto">
-            Cost attribution shows how much each feature costs in
-            infrastructure and latency. Data populates once features are
-            shipped and serving traffic.
+            Cost attribution shows how much each feature costs in infrastructure
+            and latency. Data populates once features are shipped and serving
+            traffic.
           </p>
         </div>
       ) : (
@@ -487,9 +514,12 @@ function CostTrackingCard({ cost }: { cost: CostAttribution }) {
           </div>
 
           {features.length > 3 && (
-            <p className="text-[10px] text-[var(--signal-fg-tertiary)] text-center mt-2">
-              +{features.length - 3} more
-            </p>
+            <Link
+              href="/console/insights"
+              className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
+            >
+              View all {features.length} cost items
+            </Link>
           )}
         </div>
       )}
@@ -517,8 +547,8 @@ function TeamVelocityCard({ velocity }: { velocity: TeamVelocity }) {
           </p>
           <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed max-w-[200px] mx-auto">
             Team velocity tracks features shipped, average time to ship, and
-            in-progress work. Metrics appear as your team moves features
-            through the lifecycle.
+            in-progress work. Metrics appear as your team moves features through
+            the lifecycle.
           </p>
         </div>
       ) : (
@@ -635,9 +665,12 @@ function OrgLearningsCard({ learnings }: { learnings: OrgLearning[] }) {
             </div>
           ))}
           {learnings.length > 3 && (
-            <p className="text-[10px] text-[var(--signal-fg-tertiary)] text-center">
-              +{learnings.length - 3} more insights
-            </p>
+            <Link
+              href="/console/insights"
+              className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
+            >
+              View all {learnings.length} insights
+            </Link>
           )}
         </div>
       )}
@@ -760,9 +793,12 @@ function RecentActivityCard({ activity }: { activity: ActivityEntry[] }) {
             <ActivityItem key={entry.id} entry={entry} />
           ))}
           {activity.length > MAX_ACTIVITY_ENTRIES && (
-            <p className="text-[10px] text-[var(--signal-fg-tertiary)] text-center pt-1">
-              +{activity.length - MAX_ACTIVITY_ENTRIES} more
-            </p>
+            <Link
+              href="/settings/audit-log"
+              className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] py-1.5 text-[11px] font-medium text-[var(--signal-fg-secondary)] transition-colors duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]"
+            >
+              View all {activity.length} entries
+            </Link>
           )}
         </div>
       )}
@@ -834,9 +870,195 @@ function LearnError({ message }: { message: string }) {
   );
 }
 
-// ─── Empty State ─────────────────────────────────────────────────────
+// ─── Early-Phase Getting Started Card ────────────────────────────
+// Shown in 'new' and 'has_project' phases — replaces all individual
+// empty section cards with a single unified message.
 
-function LearnEmpty() {
+function LearnGettingStarted() {
+  return (
+    <div className="rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)] overflow-hidden transition-shadow duration-[var(--signal-duration-fast)] hover:shadow-[var(--signal-shadow-sm)]">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Zap className="h-4 w-4 shrink-0 text-[var(--signal-fg-accent)]" />
+        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
+          Getting Started
+        </span>
+        <span className="inline-flex items-center h-4 px-1.5 rounded text-[9px] font-semibold bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]">
+          Insights
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="border-t border-[var(--signal-border-subtle)] px-3 py-3">
+        <p className="text-xs font-medium text-[var(--signal-fg-primary)] mb-3">
+          Insights appear after you ship features
+        </p>
+        <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed mb-4">
+          Once you create feature flags, connect your tools, and ship to
+          production, the LearnZone fills with data-driven insights about your
+          feature delivery pipeline.
+        </p>
+
+        {/* What you'll see */}
+        <div className="space-y-2 mb-4">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+            What you&apos;ll get
+          </p>
+          <div className="grid gap-1.5">
+            <InsightPreview
+              icon={TrendingUp}
+              label="Impact Reports"
+              description="Measure how each feature affects your key metrics — latency, errors, revenue, and conversions."
+            />
+            <InsightPreview
+              icon={DollarSign}
+              label="Cost Tracking"
+              description="See infrastructure and latency costs attributed to each feature flag in production."
+            />
+            <InsightPreview
+              icon={Gauge}
+              label="Team Velocity"
+              description="Track feature cycle time from plan to learn — see where your team speeds up or stalls."
+            />
+            <InsightPreview
+              icon={Lightbulb}
+              label="Org Learnings"
+              description="AI-generated patterns and recommendations from your team's feature delivery data."
+            />
+          </div>
+        </div>
+
+        {/* Documentation link */}
+        <a
+          href="/docs/console/learn-zone"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-[10px] font-medium text-[var(--signal-fg-accent)] hover:text-[var(--signal-fg-accent-emphasis)] transition-colors"
+        >
+          <BookOpen className="h-3 w-3" />
+          Learn more in docs
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── Insight Preview Row (used in Getting Started card) ───────────
+
+interface InsightPreviewProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  description: string;
+}
+
+function InsightPreview({
+  icon: Icon,
+  label,
+  description,
+}: InsightPreviewProps) {
+  return (
+    <div className="flex items-start gap-2 py-1">
+      <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--signal-fg-tertiary)]" />
+      <div className="min-w-0">
+        <p className="text-[10px] font-medium text-[var(--signal-fg-primary)]">
+          {label}
+        </p>
+        <p className="text-[9px] text-[var(--signal-fg-secondary)] leading-relaxed mt-0.5">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Waiting-for-Data Card Wrapper ─────────────────────────────────
+// Used in 'has_features' phase to show section cards with placeholder
+// messaging that guides the user to ship features.
+
+interface WaitingCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  accentBorder?: string;
+}
+
+function WaitingCard({
+  icon: Icon,
+  title,
+  description,
+  accentBorder,
+}: WaitingCardProps) {
+  return (
+    <div
+      className="rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)] overflow-hidden transition-shadow duration-[var(--signal-duration-fast)] hover:shadow-[var(--signal-shadow-sm)]"
+      style={
+        accentBorder ? { borderLeft: `3px solid ${accentBorder}` } : undefined
+      }
+    >
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Icon className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)]" />
+        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--signal-fg-secondary)]">
+          {title}
+        </span>
+      </div>
+      <div className="border-t border-[var(--signal-border-subtle)] px-3 py-3 text-center">
+        <p className="text-[10px] text-[var(--signal-fg-secondary)] leading-relaxed max-w-[200px] mx-auto">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty State (Phase-Aware) ─────────────────────────────────────
+
+function LearnEmpty({ phase }: { phase: SetupPhase }) {
+  // 'new' / 'has_project': show unified getting-started card
+  if (phase === "new" || phase === "has_project") {
+    return (
+      <div className="space-y-2 px-3 pb-3">
+        <LearnGettingStarted />
+      </div>
+    );
+  }
+
+  // 'has_features': show section cards with "Waiting for data" placeholders
+  if (phase === "has_features") {
+    return (
+      <div className="space-y-2 px-3 pb-3">
+        <WaitingCard
+          icon={TrendingUp}
+          title="Impact Reports"
+          description="Ship a feature to production to see impact reports showing metric changes, cost attribution, and recommendations."
+          accentBorder="var(--signal-fg-accent)"
+        />
+        <WaitingCard
+          icon={DollarSign}
+          title="Cost Tracking"
+          description="Connect your SDK to start collecting evaluation data. Cost attribution appears as features serve traffic."
+          accentBorder="var(--signal-fg-warning)"
+        />
+        <WaitingCard
+          icon={Gauge}
+          title="Team Velocity"
+          description="Velocity metrics populate as your team moves features through the lifecycle — plan, flag, ship, learn."
+        />
+        <WaitingCard
+          icon={Lightbulb}
+          title="Org Learnings"
+          description="AI-generated insights appear after sufficient data is collected across multiple shipped features."
+          accentBorder="var(--signal-fg-info)"
+        />
+        <WaitingCard
+          icon={Clock}
+          title="Recent Activity"
+          description="Your audit log shows here as your team creates, ships, and manages features."
+        />
+      </div>
+    );
+  }
+
+  // 'has_integrations' / 'complete': fallback original empty
   return (
     <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--signal-bg-accent-muted)] ring-1 ring-[var(--signal-border-accent-muted)] shadow-sm mb-4">
@@ -846,9 +1068,9 @@ function LearnEmpty() {
         Feature insights
       </h3>
       <p className="mt-1.5 text-xs text-[var(--signal-fg-secondary)] leading-relaxed max-w-[240px]">
-        Create your first feature flag to start seeing impact reports,
-        cost attribution, team velocity, and AI-generated learnings
-        powered by your team&apos;s release data.
+        Create your first feature flag to start seeing impact reports, cost
+        attribution, team velocity, and AI-generated learnings powered by your
+        team&apos;s release data.
       </p>
     </div>
   );
@@ -857,10 +1079,14 @@ function LearnEmpty() {
 // ─── Main Component ──────────────────────────────────────────────────
 
 export function LearnZone() {
-  const insights = useConsoleStore((s) => s.insights);
-  const loading = useConsoleStore((s) => s.loading.insights);
-  const error = useConsoleStore((s) => s.errors.insights);
+  const {
+    data: insights,
+    isLoading: loading,
+    error: queryError,
+  } = useConsoleInsights();
+  const error = queryError instanceof Error ? queryError.message : null;
   const { isL1, isL2, isL4, isL5 } = useConsoleMaturity();
+  const { phase } = useConsoleSetupProgress();
 
   // Maturity-based card visibility:
   // L1: Only Recent Activity
@@ -878,11 +1104,29 @@ export function LearnZone() {
 
   const isEmpty =
     insights &&
-    (insights.impact_reports?.length ?? 0) === 0 &&
+    (insights.impact_reports?.data?.length ?? 0) === 0 &&
     (insights.cost_attribution?.per_feature?.length ?? 0) === 0 &&
     (insights.team_velocity?.total_flags_shipped ?? 0) === 0 &&
-    (insights.org_learnings?.length ?? 0) === 0 &&
-    (insights.recent_activity?.length ?? 0) === 0;
+    (insights.org_learnings?.data?.length ?? 0) === 0 &&
+    (insights.recent_activity?.data?.length ?? 0) === 0;
+
+  // Listen for scroll-to-section from icon strip clicks
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleScrollTo(e: Event) {
+      const detail = (e as CustomEvent<{ section: LearnSection }>).detail;
+      if (!detail?.section || !contentRef.current) return;
+      const sectionEl = contentRef.current.querySelector(
+        `[data-learn-section="${detail.section}"]`,
+      );
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+    window.addEventListener("fs:learn-scroll-to", handleScrollTo);
+    return () =>
+      window.removeEventListener("fs:learn-scroll-to", handleScrollTo);
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -894,34 +1138,90 @@ export function LearnZone() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {(loading || (!insights && !error)) && <LearnSkeleton />}
+      <div ref={contentRef} className="flex-1 overflow-y-auto">
+        {(loading || (!insights && !error)) &&
+          phase !== "new" &&
+          phase !== "has_project" && <LearnSkeleton />}
 
         {!loading && error && <LearnError message={error} />}
 
-        {!loading && !error && isEmpty && insights && <LearnEmpty />}
-
-        {!loading && !error && !isEmpty && insights && (
+        {/* Early phases: show unified getting-started card regardless of data */}
+        {!loading && !error && (phase === "new" || phase === "has_project") && (
           <div className="space-y-2 px-3 pb-3">
-            {showImpactReports && (
-              <ImpactReportsCard reports={insights.impact_reports || []} />
-            )}
-            {showCostTracking && (
-              <CostTrackingCard cost={insights.cost_attribution || { total_cost: 0, currency: "USD", period_start: "", period_end: "", per_feature: [] }} />
-            )}
-            {showTeamVelocity && (
-              <TeamVelocityCard velocity={insights.team_velocity || { avg_days_plan_to_flag: 0, avg_days_flag_to_ship: 0, avg_days_ship_to_learn: 0, total_flags_shipped: 0, total_flags_in_progress: 0 }} />
-            )}
-            {showOrgLearnings && (
-              <OrgLearningsCard learnings={insights.org_learnings || []} />
-            )}
-            {showComplianceReport && <ComplianceReportCard />}
-            {showAuditorAccess && <AuditorAccessCard />}
-            {showRecentActivity && (
-              <RecentActivityCard activity={insights.recent_activity || []} />
-            )}
+            <LearnGettingStarted />
           </div>
         )}
+
+        {/* 'has_features' or later: show phase-aware empty or real data */}
+        {!loading &&
+          !error &&
+          phase !== "new" &&
+          phase !== "has_project" &&
+          isEmpty &&
+          insights && <LearnEmpty phase={phase} />}
+
+        {!loading &&
+          !error &&
+          phase !== "new" &&
+          phase !== "has_project" &&
+          !isEmpty &&
+          insights && (
+            <div className="space-y-2 px-3 pb-3">
+              {showImpactReports && (
+                <div data-learn-section="impact-reports">
+                  <ImpactReportsCard
+                    reports={insights.impact_reports?.data || []}
+                  />
+                </div>
+              )}
+              {showCostTracking && (
+                <div data-learn-section="cost-tracking">
+                  <CostTrackingCard
+                    cost={
+                      insights.cost_attribution || {
+                        total_cost: 0,
+                        currency: "USD",
+                        period_start: "",
+                        period_end: "",
+                        per_feature: [],
+                      }
+                    }
+                  />
+                </div>
+              )}
+              {showTeamVelocity && (
+                <div data-learn-section="team-velocity">
+                  <TeamVelocityCard
+                    velocity={
+                      insights.team_velocity || {
+                        avg_days_plan_to_flag: 0,
+                        avg_days_flag_to_ship: 0,
+                        avg_days_ship_to_learn: 0,
+                        total_flags_shipped: 0,
+                        total_flags_in_progress: 0,
+                      }
+                    }
+                  />
+                </div>
+              )}
+              {showOrgLearnings && (
+                <div data-learn-section="org-learnings">
+                  <OrgLearningsCard
+                    learnings={insights.org_learnings?.data || []}
+                  />
+                </div>
+              )}
+              {showComplianceReport && <ComplianceReportCard />}
+              {showAuditorAccess && <AuditorAccessCard />}
+              {showRecentActivity && (
+                <div data-learn-section="recent-activity">
+                  <RecentActivityCard
+                    activity={insights.recent_activity?.data || []}
+                  />
+                </div>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

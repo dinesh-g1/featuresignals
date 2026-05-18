@@ -24,7 +24,7 @@ type CodeAnalysisProvider interface {
 type AnalyzeRequest struct {
 	FlagKey       string
 	FlagName      string
-	TrueBranch    string            // "true" or "false"
+	TrueBranch    string // "true" or "false"
 	DaysServed    int
 	Files         map[string][]byte // path → content for ALL relevant files
 	Language      string

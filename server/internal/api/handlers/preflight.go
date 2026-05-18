@@ -141,12 +141,12 @@ func (h *PreflightHandler) Assess(w http.ResponseWriter, r *http.Request) {
 
 	// Build the full report as JSON.
 	reportData := map[string]interface{}{
-		"change_type":         req.ChangeType,
-		"target_percentage":   req.TargetPercentage,
-		"observation_period":  req.ObservationPeriodHours,
-		"affected_files":      affectedFiles,
-		"affected_code_refs":  affectedRefs,
-		"compliance_status":   complianceStatus,
+		"change_type":        req.ChangeType,
+		"target_percentage":  req.TargetPercentage,
+		"observation_period": req.ObservationPeriodHours,
+		"affected_files":     affectedFiles,
+		"affected_code_refs": affectedRefs,
+		"compliance_status":  complianceStatus,
 	}
 	reportJSON, err := json.Marshal(reportData)
 	if err != nil {
@@ -157,6 +157,7 @@ func (h *PreflightHandler) Assess(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now().UTC()
 	report := &domain.PreflightReport{
+		ID:               uuid.NewString(),
 		OrgID:            orgID,
 		FlagKey:          req.FlagKey,
 		FlagID:           flag.ID,
@@ -220,9 +221,9 @@ func (h *PreflightHandler) ListAssessments(w http.ResponseWriter, r *http.Reques
 	}
 
 	httputil.JSON(w, http.StatusOK, map[string]interface{}{
-		"data":  data,
-		"total": total,
-		"limit": p.Limit,
+		"data":   data,
+		"total":  total,
+		"limit":  p.Limit,
 		"offset": p.Offset,
 	})
 }

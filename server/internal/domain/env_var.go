@@ -17,19 +17,19 @@ const (
 
 // EnvVar represents an encrypted environment variable stored in the database.
 type EnvVar struct {
-	ID              string     `json:"id"`
-	Scope           string     `json:"scope"`
-	ScopeID         string     `json:"scope_id"`
-	Key             string     `json:"key"`
-	EncryptedValue  []byte     `json:"-"`           // never serialized
-	EncryptionNonce []byte     `json:"-"`           // never serialized
-	ValueHash       string     `json:"value_hash"`
-	IsSecret        bool       `json:"is_secret"`
-	Value           string     `json:"value,omitempty"`   // plaintext for API responses (masked if secret)
-	Source          string     `json:"source,omitempty"`  // "from global", "overridden by cell", etc.
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
-	UpdatedBy       string     `json:"updated_by"`
+	ID              string    `json:"id"`
+	Scope           string    `json:"scope"`
+	ScopeID         string    `json:"scope_id"`
+	Key             string    `json:"key"`
+	EncryptedValue  []byte    `json:"-"` // never serialized
+	EncryptionNonce []byte    `json:"-"` // never serialized
+	ValueHash       string    `json:"value_hash"`
+	IsSecret        bool      `json:"is_secret"`
+	Value           string    `json:"value,omitempty"`  // plaintext for API responses (masked if secret)
+	Source          string    `json:"source,omitempty"` // "from global", "overridden by cell", etc.
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	UpdatedBy       string    `json:"updated_by"`
 }
 
 // EnvVarFilter specifies filtering criteria for listing env vars.

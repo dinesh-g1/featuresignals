@@ -1,9 +1,9 @@
 package postgres_test
 
 import (
-	"errors"
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -20,19 +20,19 @@ func TestABMStore_CreateAndGet(t *testing.T) {
 	org := seedOrg(t, store)
 
 	behavior := &domain.ABMBehavior{
-		OrgID:          org.ID,
-		Key:            "checkout-recommendation",
-		Name:           "Checkout Recommendation",
-		Description:    "AI-powered checkout product recommendations",
-		AgentType:      "recommender",
+		OrgID:       org.ID,
+		Key:         "checkout-recommendation",
+		Name:        "Checkout Recommendation",
+		Description: "AI-powered checkout product recommendations",
+		AgentType:   "recommender",
 		Variants: []domain.ABMVariant{
 			{Key: "control", Name: "Control", Description: "No recommendations", Config: json.RawMessage(`{"mode":"off"}`), Weight: 50},
 			{Key: "treatment-v2", Name: "ML Model v2", Description: "New recommendation model", Config: json.RawMessage(`{"mode":"ml","model":"v2"}`), Weight: 50},
 		},
-		DefaultVariant:   "control",
-		TargetingRules:   []domain.ABMTargetingRule{},
+		DefaultVariant:    "control",
+		TargetingRules:    []domain.ABMTargetingRule{},
 		RolloutPercentage: 100,
-		Status:           "active",
+		Status:            "active",
 	}
 	if err := store.CreateBehavior(ctx, behavior); err != nil {
 		t.Fatalf("create behavior: %v", err)

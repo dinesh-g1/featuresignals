@@ -70,7 +70,7 @@ export function useUserRole(): UseUserRoleResult {
       .listMembers(token)
       .then((members) => {
         if (cancelled) return;
-        const member = members.find((m) => m.email === user.email);
+        const member = members.data.find((m) => m.email === user.email);
         const resolved = (member?.role as UserRole) ?? "viewer";
 
         // Persist to sessionStorage

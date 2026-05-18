@@ -11,15 +11,13 @@ import (
 )
 
 const (
-	defaultBufferSize  = 256
-	defaultBatchSize   = 50
-	defaultFlushEvery  = 5 * time.Second
-	flushMaxRetries    = 3
-	flushRetryBase     = 500 * time.Millisecond
-	flushRetryCap      = 5 * time.Second
+	defaultBufferSize = 256
+	defaultBatchSize  = 50
+	defaultFlushEvery = 5 * time.Second
+	flushMaxRetries   = 3
+	flushRetryBase    = 500 * time.Millisecond
+	flushRetryCap     = 5 * time.Second
 )
-
-
 
 // AsyncEmitter buffers product events in a channel and flushes them to the
 // underlying EventStore in batches. It never blocks the caller — if the
@@ -31,9 +29,9 @@ type AsyncEmitter struct {
 	store  domain.EventStore
 	logger *slog.Logger
 
-	ch     chan domain.ProductEvent
-	done   chan struct{}
-	once   sync.Once
+	ch   chan domain.ProductEvent
+	done chan struct{}
+	once sync.Once
 
 	bufferSize int
 	batchSize  int

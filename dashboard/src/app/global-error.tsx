@@ -63,9 +63,9 @@ export default function GlobalError({
               Try Again
             </Button>
             <Button variant="secondary" size="md" asChild>
-              <Link href="/dashboard">
+              <Link href="/console">
                 <HomeIcon className="mr-1.5 h-4 w-4" />
-                Go to Dashboard
+                Go to Console
               </Link>
             </Button>
             <Button variant="ghost" size="md" asChild>
@@ -134,7 +134,7 @@ function getFriendlyMessage(error: Error): {
     return {
       title: "Page Not Found",
       description:
-        "The page you're looking for doesn't exist or may have been moved. Check the URL or return to the dashboard.",
+        "The page you're looking for doesn't exist or may have been moved. Check the URL or return to the Console."
     };
   }
 
@@ -150,6 +150,6 @@ function getFriendlyMessage(error: Error): {
   return {
     title: "Something Went Wrong",
     description:
-      "An unexpected error occurred while loading the application. Don't worry — your data is safe. You can try again or return to the dashboard.",
+      "An unexpected error occurred while loading the application. Don't worry — your data is safe. You can try again or return to the Console."
   };
 }

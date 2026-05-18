@@ -30,8 +30,13 @@
  */
 
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
+import { useConsoleFeatures } from "@/hooks/use-console-data";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { useConsoleSetupProgress } from "@/hooks/use-console-setup-progress";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -64,6 +69,13 @@ import {
   Eye,
   TrendingUp,
   ShieldCheck,
+  Building2,
+  Flag,
+  Globe,
+  GitBranch,
+  Bot,
+  ArrowRight,
+  CheckCircle,
 } from "lucide-react";
 
 // ─── Product Color Tokens ────────────────────────────────────────────
@@ -72,19 +84,19 @@ const PRODUCT_COLORS: Record<
   ProductId,
   { bg: string; fg: string; border: string; muted: string }
 > = {
-  "code2flag": {
+  code2flag: {
     bg: "var(--signal-bg-accent-muted)",
     fg: "var(--signal-fg-accent)",
     border: "var(--signal-border-accent-muted)",
     muted: "var(--signal-bg-accent-muted)",
   },
-  "preflight": {
+  preflight: {
     bg: "var(--signal-bg-warning-muted)",
     fg: "var(--signal-fg-warning)",
     border: "var(--signal-border-warning-muted)",
     muted: "var(--signal-bg-warning-muted)",
   },
-  "incidentflag": {
+  incidentflag: {
     bg: "var(--signal-bg-danger-muted)",
     fg: "var(--signal-fg-danger)",
     border: "var(--signal-border-danger-emphasis)",
@@ -121,7 +133,16 @@ export function LifecycleZone() {
   }, [visibleStages]);
 
   // ── Store Selectors ──────────────────────────────────────────────
-  const features = useConsoleStore((s) => s.features);
+  const {
+    data: featuresData,
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useConsoleFeatures();
+  const features = featuresData?.data ?? [];
+  const featuresTotal = featuresData?.total ?? 0;
+  const featuresHasMore = featuresData?.has_more ?? false;
+  const error = queryError instanceof Error ? queryError.message : null;
   const selectedStage = useConsoleStore((s) => s.selectedStage);
   const selectedFeature = useConsoleStore((s) => s.selectedFeature);
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
@@ -129,8 +150,6 @@ export function LifecycleZone() {
   const sortBy = useConsoleStore((s) => s.sortBy);
   const typeFilter = useConsoleStore((s) => s.typeFilter);
   const projectFilter = useConsoleStore((s) => s.projectFilter);
-  const loading = useConsoleStore((s) => s.loading.features);
-  const error = useConsoleStore((s) => s.errors.features);
 
   const selectStage = useConsoleStore((s) => s.selectStage);
   const selectFeature = useConsoleStore((s) => s.selectFeature);
@@ -248,9 +267,9 @@ export function LifecycleZone() {
   // ── Features count per product ─────────────────────────────────
   const productFeatureCounts = useMemo(() => {
     const counts: Record<ProductId, number> = {
-      "code2flag": 0,
-      "preflight": 0,
-      "incidentflag": 0,
+      code2flag: 0,
+      preflight: 0,
+      incidentflag: 0,
       "impact-analyzer": 0,
     };
     for (const feature of filteredFeatures) {
@@ -277,16 +296,21 @@ export function LifecycleZone() {
     !loading && !error && features.length > 0 && totalFiltered === 0;
 
   // ── Callbacks ──────────────────────────────────────────────────
-  const handleProductClick = useCallback(
-    (productId: ProductId) => {
-      setExpandedProduct((prev) => (prev === productId ? null : productId));
-    },
-    [],
-  );
+  const handleProductClick = useCallback((productId: ProductId) => {
+    setExpandedProduct((prev) => (prev === productId ? null : productId));
+  }, []);
 
   const handleClearStage = useCallback(() => {
     selectStage(null);
   }, [selectStage]);
+
+  // ── Load More ─────────────────────────────────────────────────
+  const featuresLimit = useConsoleStore((s) => s.featuresLimit);
+  const setFeaturesLimit = useConsoleStore((s) => s.setFeaturesLimit);
+
+  const handleLoadMore = useCallback(() => {
+    setFeaturesLimit(Math.min(featuresLimit + 100, 1000));
+  }, [featuresLimit, setFeaturesLimit]);
 
   // ── Render ─────────────────────────────────────────────────────
   return (
@@ -330,8 +354,7 @@ export function LifecycleZone() {
             All products
           </button>
           <span className="text-xs text-[var(--signal-fg-tertiary)]">
-            Viewing: {STAGE_BY_ID[selectedStage]?.label ?? selectedStage}
-            {" "}·{" "}
+            Viewing: {STAGE_BY_ID[selectedStage]?.label ?? selectedStage} ·{" "}
             {PRODUCT_BY_ID[PRODUCT_BY_STAGE[selectedStage]]?.name ??
               "Unknown product"}
           </span>
@@ -398,6 +421,22 @@ export function LifecycleZone() {
                 </p>
               </div>
             )}
+
+            {/* Load More button */}
+            {featuresHasMore && !loading && (
+              <div className="flex items-center justify-center py-3 px-4">
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--signal-radius-sm)] border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)] px-4 py-2 text-[12px] font-medium text-[var(--signal-fg-secondary)] transition-all duration-[var(--signal-duration-fast)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] hover:border-[var(--signal-border-default)]"
+                >
+                  Load more features
+                  <span className="text-[10px] text-[var(--signal-fg-tertiary)]">
+                    ({featuresTotal} loaded)
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -408,11 +447,29 @@ export function LifecycleZone() {
         onClose={() => setShowCreateDialog(false)}
         onCreated={(newFlag) => {
           setShowCreateDialog(false);
-          const currentFeatures = consoleStore.getState().features;
-          consoleStore.getState().setFeatures(
-            [newFlag, ...currentFeatures],
-            currentFeatures.length + 1,
-          );
+          // Optimistically prepend the new flag to the cached features list
+          const cacheKey = queryKeys.console.features({
+            projectId: undefined,
+            stage: undefined,
+            environment: selectedEnvironment,
+            sort: sortBy,
+            limit: featuresLimit,
+          });
+          queryClient.setQueryData(cacheKey, (old: unknown) => {
+            const paginated = old as {
+              data: FeatureCardData[];
+              total: number;
+              limit: number;
+              offset: number;
+              has_more: boolean;
+            } | null;
+            if (!paginated) return old;
+            return {
+              ...paginated,
+              data: [newFlag, ...paginated.data],
+              total: paginated.total + 1,
+            };
+          });
           selectStage(newFlag.stage);
           if (createTimeoutRef.current !== null) {
             clearTimeout(createTimeoutRef.current);
@@ -605,7 +662,9 @@ function ProductCard({
             "transition-all duration-[var(--signal-duration-fast)]",
           )}
           style={{
-            backgroundColor: isExpanded ? "var(--signal-bg-primary)" : colors.muted,
+            backgroundColor: isExpanded
+              ? "var(--signal-bg-primary)"
+              : colors.muted,
             color: colors.fg,
           }}
         >
@@ -673,10 +732,7 @@ function ProductIcon({
 
 function ProductConnector() {
   return (
-    <div
-      className="flex items-center shrink-0 px-1"
-      aria-hidden="true"
-    >
+    <div className="flex items-center shrink-0 px-1" aria-hidden="true">
       <svg
         width="28"
         height="16"
@@ -733,7 +789,9 @@ function ExpandedProductView({
     return (
       <motion.div
         initial={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
-        animate={prefersReducedMotion ? undefined : { opacity: 1, height: "auto" }}
+        animate={
+          prefersReducedMotion ? undefined : { opacity: 1, height: "auto" }
+        }
         exit={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
         transition={{ duration: 0.2 }}
         className="border-t border-[var(--signal-border-subtle)] px-4 py-6"
@@ -757,7 +815,9 @@ function ExpandedProductView({
     <motion.div
       key={product.id}
       initial={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
-      animate={prefersReducedMotion ? undefined : { opacity: 1, height: "auto" }}
+      animate={
+        prefersReducedMotion ? undefined : { opacity: 1, height: "auto" }
+      }
       exit={prefersReducedMotion ? undefined : { opacity: 0, height: 0 }}
       transition={{
         duration: 0.25,
@@ -771,10 +831,7 @@ function ExpandedProductView({
         style={{ backgroundColor: colors.muted }}
       >
         <ProductIcon productId={product.id} color={colors.fg} />
-        <span
-          className="text-xs font-semibold"
-          style={{ color: colors.fg }}
-        >
+        <span className="text-xs font-semibold" style={{ color: colors.fg }}>
           {product.name}
         </span>
         <span className="text-[11px] text-[var(--signal-fg-tertiary)]">
@@ -791,7 +848,10 @@ function ExpandedProductView({
           const isLast = idx === visibleProductStages.length - 1;
 
           return (
-            <div key={stageId} className="flex items-stretch flex-1 min-w-[220px]">
+            <div
+              key={stageId}
+              className="flex items-stretch flex-1 min-w-[220px]"
+            >
               <div
                 className="flex-1 cursor-pointer"
                 onClick={() => onSelectStage(stageId)}
@@ -1028,19 +1088,481 @@ function FilterBar({
 }
 
 // =====================================================================
-// Empty State — No features at all
+// Empty State — Phase-aware coordinated first-time user experience
 // =====================================================================
 
 function LifecycleEmpty({ onCreateFlag }: { onCreateFlag: () => void }) {
+  const router = useRouter();
+  const progress = useConsoleSetupProgress();
+
+  // ── Cross-zone action helpers ──────────────────────────────────
+  const handleExpandConnect = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("fs:expand-connect"));
+  }, []);
+
+  const handleOpenSdkSnippet = useCallback((language: string) => {
+    window.dispatchEvent(new CustomEvent("fs:expand-connect"));
+    // Small delay so Connect zone can expand before we fire the SDK event
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("fs:open-sdk-snippet", { detail: { language } }),
+      );
+    }, 150);
+  }, []);
+
+  const handleOpenCreateProject = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("fs:open-create-project"));
+  }, []);
+
+  // ── Common icon container classes ──────────────────────────────
+  const iconContainerClasses = cn(
+    "mx-auto flex h-14 w-14 items-center justify-center rounded-2xl",
+    "ring-1",
+    "shadow-[var(--signal-shadow-md)]",
+  );
+
+  const ctaButtonClasses = cn(
+    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold",
+    "bg-[var(--signal-bg-accent-emphasis)] text-[var(--signal-fg-on-emphasis)]",
+    "shadow-[var(--signal-shadow-sm)]",
+    "hover:shadow-[var(--signal-shadow-md)] hover:-translate-y-px",
+    "transition-all duration-[var(--signal-duration-fast)]",
+  );
+
+  const secondaryButtonClasses = cn(
+    "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium",
+    "border border-[var(--signal-border-default)]",
+    "bg-[var(--signal-bg-primary)] text-[var(--signal-fg-secondary)]",
+    "hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
+    "transition-all duration-[var(--signal-duration-fast)]",
+  );
+
+  // ── Step card common classes ───────────────────────────────────
+  const stepCardClasses = (interactive: boolean) =>
+    cn(
+      "flex items-start gap-2.5 p-2.5 rounded-lg text-left",
+      "bg-[var(--signal-bg-primary)]",
+      "border border-[var(--signal-border-subtle)]",
+      interactive &&
+        "cursor-pointer hover:border-[var(--signal-border-accent-muted)] hover:shadow-[var(--signal-shadow-sm)] transition-all duration-[var(--signal-duration-fast)]",
+    );
+
+  const stepBadgeClasses = (completed: boolean) =>
+    cn(
+      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+      completed
+        ? "bg-[var(--signal-bg-success-emphasis)] text-white"
+        : "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]",
+    );
+
+  // ==================================================================
+  // PHASE: 'new' — No project exists yet
+  // ==================================================================
+  if (progress.phase === "new") {
+    return (
+      <div className="flex items-center justify-center h-full px-4">
+        <div className="text-center space-y-5 max-w-md">
+          <div
+            className={cn(
+              iconContainerClasses,
+              "bg-gradient-to-br from-[var(--signal-bg-accent-muted)] to-[var(--signal-bg-info-muted)]",
+              "ring-[var(--signal-border-accent-muted)]",
+            )}
+          >
+            <Building2
+              className="h-7 w-7 text-[var(--signal-fg-accent)]"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-base font-semibold text-[var(--signal-fg-primary)]">
+              Welcome to FeatureSignals
+            </h2>
+            <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed max-w-sm mx-auto">
+              Create your first project to start shipping features with
+              confidence.
+            </p>
+          </div>
+
+          {/* What a project contains */}
+          <div className="text-left space-y-1.5">
+            <p className="text-[11px] font-medium text-[var(--signal-fg-tertiary)] uppercase tracking-wider">
+              A project contains
+            </p>
+            <div className="grid gap-1">
+              {[
+                {
+                  icon: Flag,
+                  label: "Feature flags",
+                  desc: "Toggle, roll out, and experiment",
+                },
+                {
+                  icon: Globe,
+                  label: "Environments",
+                  desc: "Dev, staging, production — each with its own targeting",
+                },
+                {
+                  icon: GitBranch,
+                  label: "Integrations",
+                  desc: "GitHub repos, SDKs, API keys, and agents",
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-2 text-[11px] text-[var(--signal-fg-tertiary)]"
+                >
+                  <item.icon
+                    className="h-3.5 w-3.5 shrink-0 text-[var(--signal-fg-secondary)]"
+                    aria-hidden="true"
+                  />
+                  <span className="font-medium text-[var(--signal-fg-secondary)]">
+                    {item.label}
+                  </span>
+                  <span className="hidden sm:inline">&mdash; {item.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleOpenCreateProject}
+              className={ctaButtonClasses}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Create your first project
+            </button>
+          </div>
+
+          {/* Dimmed product cards preview */}
+          <div className="pt-2">
+            <p className="text-[10px] text-[var(--signal-fg-tertiary)] mb-2">
+              After creating a project, your features will flow through 4
+              products:
+            </p>
+            <div className="grid grid-cols-4 gap-1.5 opacity-40 pointer-events-none">
+              {PRODUCTS.map((product) => {
+                const colors = PRODUCT_COLORS[product.id];
+                return (
+                  <div
+                    key={product.id}
+                    className={cn(
+                      "flex flex-col items-center gap-1 p-2 rounded-md",
+                      "border border-[var(--signal-border-subtle)]",
+                      "bg-[var(--signal-bg-primary)]",
+                    )}
+                  >
+                    <ProductIcon productId={product.id} color={colors.fg} />
+                    <span className="text-[10px] font-medium text-[var(--signal-fg-secondary)] text-center leading-tight">
+                      {product.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================================================================
+  // PHASE: 'has_project' — Project exists, no features, no integrations
+  // ==================================================================
+  if (progress.phase === "has_project") {
+    return (
+      <div className="flex items-center justify-center h-full px-4">
+        <div className="text-center space-y-5 max-w-md">
+          <div
+            className={cn(
+              iconContainerClasses,
+              "bg-gradient-to-br from-[var(--signal-bg-success-muted)] to-[var(--signal-bg-accent-muted)]",
+              "ring-[var(--signal-border-success-muted)]",
+            )}
+          >
+            <Flag
+              className="h-7 w-7 text-[var(--signal-fg-success)]"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-base font-semibold text-[var(--signal-fg-primary)]">
+              Your project is ready — let&rsquo;s create your first feature
+            </h2>
+            <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed max-w-sm mx-auto">
+              Features flow through 4 products from planning to learning.
+            </p>
+          </div>
+
+          {/* Coordinated step cards */}
+          <div className="grid gap-2.5">
+            {/* Step 1: Create a feature flag */}
+            <button
+              type="button"
+              onClick={onCreateFlag}
+              className={stepCardClasses(true)}
+            >
+              <span className={stepBadgeClasses(false)}>1</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Create a feature flag
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Name it after what it controls — like &ldquo;Dark Mode&rdquo;
+                  or &ldquo;New Search&rdquo;
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] self-center"
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* Step 2: Connect your codebase */}
+            <button
+              type="button"
+              onClick={handleExpandConnect}
+              className={stepCardClasses(true)}
+            >
+              <span className={stepBadgeClasses(false)}>2</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Connect your codebase
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Link GitHub to auto-detect flag usage and generate cleanup PRs
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] self-center"
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* Step 3: Install an SDK */}
+            <button
+              type="button"
+              onClick={() => handleOpenSdkSnippet("go")}
+              className={stepCardClasses(true)}
+            >
+              <span className={stepBadgeClasses(false)}>3</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Install an SDK
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Add a 5-line snippet to start evaluating flags in your app
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] self-center"
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onCreateFlag}
+            className={ctaButtonClasses}
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Create your first flag
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================================================================
+  // PHASE: 'has_features' — Has features, no integrations
+  // ==================================================================
+  if (progress.phase === "has_features") {
+    return (
+      <div className="flex items-center justify-center h-full px-4">
+        <div className="text-center space-y-5 max-w-md">
+          <div
+            className={cn(
+              iconContainerClasses,
+              "bg-gradient-to-br from-[var(--signal-bg-warning-muted)] to-[var(--signal-bg-accent-muted)]",
+              "ring-[var(--signal-border-warning-muted)]",
+            )}
+          >
+            <GitBranch
+              className="h-7 w-7 text-[var(--signal-fg-warning)]"
+              aria-hidden="true"
+            />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-base font-semibold text-[var(--signal-fg-primary)]">
+              Your features are flowing — connect your stack
+            </h2>
+            <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed max-w-sm mx-auto">
+              Link repositories, install SDKs, and create API keys to complete
+              your setup.
+            </p>
+          </div>
+
+          {/* Integration-focused step cards */}
+          <div className="grid gap-2.5">
+            {/* Step 1: Connect repo */}
+            <button
+              type="button"
+              onClick={handleExpandConnect}
+              className={stepCardClasses(true)}
+            >
+              <span className={stepBadgeClasses(progress.hasRepo)}>
+                {progress.hasRepo ? (
+                  <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  "1"
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Connect a repository
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Scan your codebase to discover flag candidates and track
+                  lifecycle in code
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] self-center"
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* Step 2: Install SDK */}
+            <button
+              type="button"
+              onClick={() => handleOpenSdkSnippet("go")}
+              className={stepCardClasses(true)}
+            >
+              <span className={stepBadgeClasses(progress.hasSdk)}>
+                {progress.hasSdk ? (
+                  <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  "2"
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Install an SDK
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Add feature flag evaluation to your app in under 5 minutes
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] self-center"
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* Step 3: API Keys */}
+            <button
+              type="button"
+              onClick={() => router.push("/settings/api-keys")}
+              className={stepCardClasses(true)}
+            >
+              <span className={stepBadgeClasses(progress.hasApiKey)}>
+                {progress.hasApiKey ? (
+                  <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  "3"
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Create API keys
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Generate SDK and server keys to authenticate integrations
+                </p>
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-[var(--signal-fg-tertiary)] self-center"
+                aria-hidden="true"
+              />
+            </button>
+
+            {/* Step 4: Agents & Policies (always shown, links to sub-pages) */}
+            <div className={stepCardClasses(false)}>
+              <span
+                className={stepBadgeClasses(
+                  progress.hasAgent || progress.hasPolicy,
+                )}
+              >
+                {progress.hasAgent || progress.hasPolicy ? (
+                  <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  "4"
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
+                  Register agents &amp; policies
+                </p>
+                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
+                  Deploy AI agents with governance guardrails
+                </p>
+                <div className="flex gap-1.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/console/agents");
+                    }}
+                    className={secondaryButtonClasses}
+                  >
+                    <Bot className="h-3 w-3" aria-hidden="true" />
+                    Agents
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/console/policies");
+                    }}
+                    className={secondaryButtonClasses}
+                  >
+                    <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                    Policies
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex items-center justify-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleExpandConnect}
+              className={ctaButtonClasses}
+            >
+              <GitBranch className="h-4 w-4" aria-hidden="true" />
+              Open Connect panel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================================================================
+  // Fallback: Default empty state (should not normally render)
+  // ==================================================================
   return (
     <div className="flex items-center justify-center h-full px-4">
       <div className="text-center space-y-5 max-w-md">
         <div
           className={cn(
-            "mx-auto flex h-14 w-14 items-center justify-center rounded-2xl",
+            iconContainerClasses,
             "bg-gradient-to-br from-[var(--signal-bg-accent-muted)] to-[var(--signal-bg-info-muted)]",
-            "ring-1 ring-[var(--signal-border-accent-muted)]",
-            "shadow-[var(--signal-shadow-md)]",
+            "ring-[var(--signal-border-accent-muted)]",
           )}
         >
           <Rocket
@@ -1053,65 +1575,14 @@ function LifecycleEmpty({ onCreateFlag }: { onCreateFlag: () => void }) {
             Welcome to the Lifecycle Canvas
           </h2>
           <p className="text-sm text-[var(--signal-fg-secondary)] leading-relaxed max-w-sm mx-auto">
-            Your features flow through 4 products — from planning to shipping
-            to learning. Create your first feature flag to get started.
+            Your features flow through 4 products — from planning to shipping to
+            learning. Create your first feature flag to get started.
           </p>
-        </div>
-        <div className="grid gap-2.5 text-left">
-          {[
-            {
-              step: 1,
-              title: "Create a feature flag",
-              desc: "Name it after what it controls — like 'Dark Mode' or 'New Search'",
-            },
-            {
-              step: 2,
-              title: "Connect your codebase",
-              desc: "Link GitHub to auto-detect flag usage and generate cleanup PRs",
-            },
-            {
-              step: 3,
-              title: "Install an SDK",
-              desc: "Add a 5-line snippet to start evaluating flags in your app",
-            },
-          ].map((item) => (
-            <div
-              key={item.step}
-              className={cn(
-                "flex items-start gap-2.5 p-2.5 rounded-lg",
-                "bg-[var(--signal-bg-primary)]",
-                "border border-[var(--signal-border-subtle)]",
-              )}
-            >
-              <span
-                className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                  "bg-[var(--signal-bg-accent-muted)] text-[var(--signal-fg-accent)]",
-                )}
-              >
-                {item.step}
-              </span>
-              <div>
-                <p className="text-xs font-semibold text-[var(--signal-fg-primary)]">
-                  {item.title}
-                </p>
-                <p className="text-[11px] text-[var(--signal-fg-tertiary)] mt-0.5">
-                  {item.desc}
-                </p>
-              </div>
-            </div>
-          ))}
         </div>
         <button
           type="button"
           onClick={onCreateFlag}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold",
-            "bg-[var(--signal-bg-accent-emphasis)] text-[var(--signal-fg-on-emphasis)]",
-            "shadow-[var(--signal-shadow-sm)]",
-            "hover:shadow-[var(--signal-shadow-md)] hover:-translate-y-px",
-            "transition-all duration-[var(--signal-duration-fast)]",
-          )}
+          className={ctaButtonClasses}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create your first flag

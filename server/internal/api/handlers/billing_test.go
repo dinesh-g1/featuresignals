@@ -25,16 +25,16 @@ func billingCtx(r *http.Request, orgID, userID string) context.Context {
 }
 
 type mockGateway struct {
-	name              string
-	checkoutResult    *payment.CheckoutResult
-	checkoutErr       error
-	webhookEvent      *payment.WebhookEvent
-	webhookErr        error
+	name               string
+	checkoutResult     *payment.CheckoutResult
+	checkoutErr        error
+	webhookEvent       *payment.WebhookEvent
+	webhookErr         error
 	subscriptionDetail *payment.SubscriptionDetail
-	subscriptionErr   error
-	cancelErr         error
-	portalURL         string
-	portalErr         error
+	subscriptionErr    error
+	cancelErr          error
+	portalURL          string
+	portalErr          error
 }
 
 func (g *mockGateway) Name() string { return g.name }

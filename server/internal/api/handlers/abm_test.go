@@ -22,17 +22,17 @@ import (
 // ─── Mock ABM Store ────────────────────────────────────────────────────────
 
 type mockABMStore struct {
-	mu              sync.Mutex
-	behaviors       map[string]*domain.ABMBehavior // key = orgID + ":" + behaviorKey
-	events          []domain.ABMTrackEvent
-	getErr          error
-	createErr       error
-	updateErr       error
-	deleteErr       error
-	listErr         error
-	insertErr       error
-	distErr         error
-	distribution    map[string]int
+	mu           sync.Mutex
+	behaviors    map[string]*domain.ABMBehavior // key = orgID + ":" + behaviorKey
+	events       []domain.ABMTrackEvent
+	getErr       error
+	createErr    error
+	updateErr    error
+	deleteErr    error
+	listErr      error
+	insertErr    error
+	distErr      error
+	distribution map[string]int
 }
 
 func newMockABMStore() *mockABMStore {
@@ -188,7 +188,7 @@ func (m *mockABMStore) GetVariantDistribution(_ context.Context, orgID, behavior
 
 // AuditWriter mock (not used in ABM handler but required by interface)
 func (m *mockABMStore) CreateAuditEntry(_ context.Context, _ *domain.AuditEntry) error { return nil }
-func (m *mockABMStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error)   { return 0, nil }
+func (m *mockABMStore) PurgeAuditEntries(_ context.Context, _ time.Time) (int, error)  { return 0, nil }
 
 // testLogger returns a no-op logger for tests.
 func testLogger() *slog.Logger {

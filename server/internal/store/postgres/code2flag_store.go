@@ -53,16 +53,16 @@ var scanResultUpdateColumns = map[string]bool{
 }
 
 var generatedFlagUpdateColumns = map[string]bool{
-	"status":       true,
-	"pr_url":       true,
-	"description":  true,
-	"flag_type":    true,
+	"status":      true,
+	"pr_url":      true,
+	"description": true,
+	"flag_type":   true,
 }
 
 var cleanupEntryUpdateColumns = map[string]bool{
-	"status":                true,
-	"pr_url":               true,
-	"reason":               true,
+	"status":                 true,
+	"pr_url":                 true,
+	"reason":                 true,
 	"days_since_100_percent": true,
 }
 

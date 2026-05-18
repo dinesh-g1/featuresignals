@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/featuresignals/server/internal/api/dto"
 	"github.com/featuresignals/server/internal/auth"
 	"github.com/featuresignals/server/internal/domain"
 )
@@ -137,10 +138,20 @@ func TestSignupHandler_InitiateSignup_WeakPassword(t *testing.T) {
 func TestSignupHandler_InitiateSignup_DuplicateEmail(t *testing.T) {
 	h, store, _ := newTestSignupHandler()
 
-	store.CreateUser(context.Background(), &domain.User{
+	user := &domain.User{
 		Email:        "taken@example.com",
 		PasswordHash: "hash",
 		Name:         "Existing",
+	}
+	store.CreateUser(context.Background(), user)
+
+	// Create an active org for the user so the duplicate email check fires.
+	org := &domain.Organization{Name: "Existing Org", Slug: "existing-org"}
+	store.CreateOrganization(context.Background(), org)
+	store.AddOrgMember(context.Background(), &domain.OrgMember{
+		OrgID:  org.ID,
+		UserID: user.ID,
+		Role:   domain.RoleOwner,
 	})
 
 	body := `{"email":"taken@example.com","password":"Secure@123","name":"A","org_name":"O"}`
@@ -150,6 +161,76 @@ func TestSignupHandler_InitiateSignup_DuplicateEmail(t *testing.T) {
 
 	if w.Code != http.StatusConflict {
 		t.Errorf("expected 409, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// TestSignupHandler_InitiateSignup_UserWithoutOrgs tests that a user whose
+// orgs have all been hard-deleted can re-register with the same email.
+func TestSignupHandler_InitiateSignup_UserWithoutOrgs(t *testing.T) {
+	h, store, _ := newTestSignupHandler()
+
+	store.CreateUser(context.Background(), &domain.User{
+		Email:        "orphan@example.com",
+		PasswordHash: "hash",
+		Name:         "Orphan",
+	})
+
+	body := `{"email":"orphan@example.com","password":"Secure@123","name":"Orphan","org_name":"New Org"}`
+	r := httptest.NewRequest("POST", "/v1/auth/initiate-signup", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.InitiateSignup(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// TestSignupHandler_InitiateSignup_SoftDeletedOrg tests that a user whose
+// only org is soft-deleted gets a special response.
+func TestSignupHandler_InitiateSignup_SoftDeletedOrg(t *testing.T) {
+	h, store, _ := newTestSignupHandler()
+
+	user := &domain.User{
+		Email:        "deleted@example.com",
+		PasswordHash: "hash",
+		Name:         "Deleted",
+	}
+	store.CreateUser(context.Background(), user)
+
+	deletedAt := time.Now().Add(-24 * time.Hour)
+	org := &domain.Organization{
+		Name:      "My Old Org",
+		Slug:      "my-old-org",
+		DeletedAt: &deletedAt,
+	}
+	store.CreateOrganization(context.Background(), org)
+	store.AddOrgMember(context.Background(), &domain.OrgMember{
+		OrgID:  org.ID,
+		UserID: user.ID,
+		Role:   domain.RoleOwner,
+	})
+
+	body := `{"email":"deleted@example.com","password":"Secure@123","name":"Deleted","org_name":"New Org"}`
+	r := httptest.NewRequest("POST", "/v1/auth/initiate-signup", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	h.InitiateSignup(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp dto.OrgDeletedSignupResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if resp.Code != "email_has_deleted_org" {
+		t.Errorf("expected code email_has_deleted_org, got %s", resp.Code)
+	}
+	if resp.OrgName != "My Old Org" {
+		t.Errorf("expected org_name 'My Old Org', got '%s'", resp.OrgName)
+	}
+	if !resp.CanRecover {
+		t.Error("expected can_recover to be true")
 	}
 }
 

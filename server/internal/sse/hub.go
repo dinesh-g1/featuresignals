@@ -323,9 +323,9 @@ type FlagAdvancedPayload struct {
 
 // FlagShippedPayload is sent when a flag is shipped (rolled out).
 type FlagShippedPayload struct {
-	Key            string `json:"key"`
-	TargetPercent  int    `json:"target_percent"`
-	Environment    string `json:"environment"`
+	Key           string `json:"key"`
+	TargetPercent int    `json:"target_percent"`
+	Environment   string `json:"environment"`
 }
 
 // FlagToggledPayload is sent when a flag is paused or resumed.

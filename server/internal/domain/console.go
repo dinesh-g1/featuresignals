@@ -81,39 +81,64 @@ func ValidStage(s string) bool {
 // lifecycle stage, evaluation volume, health metrics, AI suggestions, and
 // dependency graph information.
 type ConsoleFlag struct {
-	Key                string    `json:"key"`
-	Name               string    `json:"name"`
-	Description        string    `json:"description"`
-	Stage              string    `json:"stage"`
-	Status             string    `json:"status"`
-	Environment        string    `json:"environment"`
-	EnvironmentName    string    `json:"environment_name"`
-	Type               string    `json:"type"`
-	EvalVolume         int64     `json:"eval_volume"`
-	EvalTrend          float64   `json:"eval_trend"`
-	RolloutPercent     int       `json:"rollout_percent"`
-	HealthScore        int       `json:"health_score"`
-	LastAction         string    `json:"last_action"`
+	Key                string     `json:"key"`
+	Name               string     `json:"name"`
+	Description        string     `json:"description"`
+	Stage              string     `json:"stage"`
+	Status             string     `json:"status"`
+	Environment        string     `json:"environment"`
+	EnvironmentName    string     `json:"environment_name"`
+	Type               string     `json:"type"`
+	EvalVolume         int64      `json:"eval_volume"`
+	EvalTrend          float64    `json:"eval_trend"`
+	RolloutPercent     int        `json:"rollout_percent"`
+	HealthScore        int        `json:"health_score"`
+	LastAction         string     `json:"last_action"`
 	LastActionAt       *time.Time `json:"last_action_at"`
-	LastActionBy       string    `json:"last_action_by"`
-	AISuggestion       *string   `json:"ai_suggestion,omitempty"`
-	AISuggestionType   *string   `json:"ai_suggestion_type,omitempty"`
-	AIConfidence       *float64  `json:"ai_confidence,omitempty"`
-	AIExecuted         bool      `json:"ai_executed"`
-	CodeReferenceCount int       `json:"code_reference_count"`
-	DependsOn          []string  `json:"depends_on,omitempty"`
-	DependedOnBy       []string  `json:"depended_on_by,omitempty"`
+	LastActionBy       string     `json:"last_action_by"`
+	AISuggestion       *string    `json:"ai_suggestion,omitempty"`
+	AISuggestionType   *string    `json:"ai_suggestion_type,omitempty"`
+	AIConfidence       *float64   `json:"ai_confidence,omitempty"`
+	AIExecuted         bool       `json:"ai_executed"`
+	CodeReferenceCount int        `json:"code_reference_count"`
+	DependsOn          []string   `json:"depends_on,omitempty"`
+	DependedOnBy       []string   `json:"depended_on_by,omitempty"`
+}
+
+// ─── Paginated List (generic wrapper) ─────────────────────────────────────
+
+// PaginatedList wraps any slice with pagination metadata for the Console surface.
+type PaginatedList[T any] struct {
+	Data    []T  `json:"data"`
+	Total   int  `json:"total"`
+	Limit   int  `json:"limit"`
+	Offset  int  `json:"offset"`
+	HasMore bool `json:"has_more"`
+}
+
+// NewPaginatedList constructs a PaginatedList with computed HasMore.
+func NewPaginatedList[T any](data []T, total, limit, offset int) PaginatedList[T] {
+	if data == nil {
+		data = make([]T, 0)
+	}
+	return PaginatedList[T]{
+		Data:    data,
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
+		HasMore: offset+len(data) < total,
+	}
 }
 
 // ─── Console Insights (LEARN Zone) ─────────────────────────────────────────
 
 // ConsoleInsights aggregates all post-rollout learning data for the LEARN zone.
 type ConsoleInsights struct {
-	ImpactReports  []ImpactReport  `json:"impact_reports"`
-	CostAttribution CostAttribution `json:"cost_attribution"`
-	TeamVelocity   TeamVelocity    `json:"team_velocity"`
-	OrgLearnings   []OrgLearning   `json:"org_learnings"`
-	RecentActivity []ActivityEntry `json:"recent_activity"`
+	ImpactReports   PaginatedList[ImpactReport]  `json:"impact_reports"`
+	CostAttribution CostAttribution              `json:"cost_attribution"`
+	TeamVelocity    TeamVelocity                 `json:"team_velocity"`
+	OrgLearnings    PaginatedList[OrgLearning]   `json:"org_learnings"`
+	RecentActivity  PaginatedList[ActivityEntry] `json:"recent_activity"`
 }
 
 // TeamVelocity tracks how quickly the team moves through the lifecycle.
@@ -139,53 +164,71 @@ type ActivityEntry struct {
 
 // ConsoleIntegrations aggregates all integration statuses for the CONNECT zone.
 type ConsoleIntegrations struct {
-	Repositories []RepoStatus         `json:"repositories"`
-	SDKs         []SdkStatus          `json:"sdks"`
-	Agents       []ConsoleAgentStatus `json:"agents"`
-	APIKeys      []ConsoleApiKeyStatus `json:"api_keys"`
+	Repositories PaginatedList[RepoStatus]          `json:"repositories"`
+	SDKs         PaginatedList[SdkStatus]           `json:"sdks"`
+	Agents       PaginatedList[ConsoleAgentStatus]  `json:"agents"`
+	APIKeys      PaginatedList[ConsoleApiKeyStatus] `json:"api_keys"`
+	Policies     PaginatedList[ConsolePolicyStatus] `json:"policies"`
 }
 
 // RepoStatus represents the connection state of a linked repository.
 type RepoStatus struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Provider      string    `json:"provider"`
-	DefaultBranch string    `json:"default_branch"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Provider      string     `json:"provider"`
+	DefaultBranch string     `json:"default_branch"`
 	LastSyncedAt  *time.Time `json:"last_synced_at"`
-	Status        string    `json:"status"`
-	TotalPRs      int       `json:"total_prs"`
-	OpenPRs       int       `json:"open_prs"`
+	Status        string     `json:"status"`
+	TotalPRs      int        `json:"total_prs"`
+	OpenPRs       int        `json:"open_prs"`
 }
 
 // SdkStatus represents an SDK integration in the customer's stack.
 type SdkStatus struct {
-	Language   string    `json:"language"`
-	Version    string    `json:"version"`
-	Environments []string `json:"environments"`
-	LastSeenAt *time.Time `json:"last_seen_at"`
-	Status     string    `json:"status"`
+	Language     string     `json:"language"`
+	Version      string     `json:"version"`
+	Environments []string   `json:"environments"`
+	LastSeenAt   *time.Time `json:"last_seen_at"`
+	Status       string     `json:"status"`
 }
 
-// AgentStatus is the console-oriented view of a registered agent.
+// ConsoleAgentStatus is the console-oriented view of a registered agent.
 // Distinct from domain.AgentStatus (the enum) — this is a display type.
 type ConsoleAgentStatus struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Type          string    `json:"type"`
-	Status        string    `json:"status"`
-	LastHeartbeat *time.Time `json:"last_heartbeat"`
-	TasksCompleted int64    `json:"tasks_completed"`
+	ID             string           `json:"id"`
+	Name           string           `json:"name"`
+	Type           string           `json:"type"`
+	Status         string           `json:"status"`
+	LastHeartbeat  *time.Time       `json:"last_heartbeat"`
+	TasksCompleted int64            `json:"tasks_completed"`
+	RateLimits     *AgentRateLimits `json:"rate_limits,omitempty"`
+	Scopes         []string         `json:"scopes,omitempty"`
+	MaturityLevel  int              `json:"maturity_level"`
 }
 
-// ApiKeyStatus is the console-oriented view of an API key.
+// ConsoleApiKeyStatus is the console-oriented view of an API key.
 type ConsoleApiKeyStatus struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	Type       string    `json:"type"`
-	KeyPrefix  string    `json:"key_prefix"`
-	LastUsedAt *time.Time `json:"last_used_at"`
-	Status     string    `json:"status"`
-	Environment string   `json:"environment"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Type        string     `json:"type"`
+	KeyPrefix   string     `json:"key_prefix"`
+	LastUsedAt  *time.Time `json:"last_used_at"`
+	Status      string     `json:"status"`
+	Environment string     `json:"environment"`
+}
+
+// ─── Console Policy Status ─────────────────────────────────────────────────
+
+// ConsolePolicyStatus is the console-oriented view of a governance policy.
+type ConsolePolicyStatus struct {
+	ID        string       `json:"id"`
+	Name      string       `json:"name"`
+	Effect    string       `json:"effect"`
+	Enabled   bool         `json:"enabled"`
+	Priority  int          `json:"priority"`
+	RuleCount int          `json:"rule_count"`
+	Rules     []PolicyRule `json:"rules,omitempty"`
+	UpdatedAt *time.Time   `json:"updated_at"`
 }
 
 // ─── Mutating Operation Types ──────────────────────────────────────────────
@@ -214,16 +257,16 @@ type ShipResult struct {
 // HelpContext provides the AI assistant with the current state of the user's
 // console session for contextual suggestions.
 type HelpContext struct {
-	CurrentStage       *string        `json:"current_stage,omitempty"`
-	CurrentFeature     *string        `json:"current_feature,omitempty"`
-	CurrentEnvironment *string        `json:"current_environment,omitempty"`
+	CurrentStage       *string         `json:"current_stage,omitempty"`
+	CurrentFeature     *string         `json:"current_feature,omitempty"`
+	CurrentEnvironment *string         `json:"current_environment,omitempty"`
 	RecentActions      []ActivityEntry `json:"recent_actions"`
-	LastError          *LastError     `json:"last_error,omitempty"`
-	OrgID              string         `json:"org_id"`
-	OrgName            string         `json:"org_name"`
-	UserName           string         `json:"user_name"`
-	UserRole           string         `json:"user_role"`
-	Plan               string         `json:"plan"`
+	LastError          *LastError      `json:"last_error,omitempty"`
+	OrgID              string          `json:"org_id"`
+	OrgName            string          `json:"org_name"`
+	UserName           string          `json:"user_name"`
+	UserRole           string          `json:"user_role"`
+	Plan               string          `json:"plan"`
 }
 
 // LastError captures the most recent API error for contextual debugging.
@@ -241,9 +284,33 @@ type LastError struct {
 type ConsoleReader interface {
 	ListFlags(ctx context.Context, orgID string, params ConsoleListParams) ([]ConsoleFlag, int, error)
 	GetFlag(ctx context.Context, orgID, key string) (*ConsoleFlag, error)
-	GetInsights(ctx context.Context, orgID string) (*ConsoleInsights, error)
-	GetIntegrations(ctx context.Context, orgID string) (*ConsoleIntegrations, error)
+	GetInsights(ctx context.Context, orgID string, params ConsoleInsightsParams) (*ConsoleInsights, error)
+	GetIntegrations(ctx context.Context, orgID string, params ConsoleIntegrationsParams) (*ConsoleIntegrations, error)
 	GetHelpContext(ctx context.Context, orgID, userID string) (*HelpContext, error)
+}
+
+// ConsoleInsightsParams carries pagination limits for each insights sub-category.
+type ConsoleInsightsParams struct {
+	ReportLimit    int
+	ReportOffset   int
+	LearningLimit  int
+	LearningOffset int
+	ActivityLimit  int
+	ActivityOffset int
+}
+
+// ConsoleIntegrationsParams carries pagination limits for each integrations sub-category.
+type ConsoleIntegrationsParams struct {
+	RepoLimit    int
+	RepoOffset   int
+	SDKLimit     int
+	SDKOffset    int
+	AgentLimit   int
+	AgentOffset  int
+	KeyLimit     int
+	KeyOffset    int
+	PolicyLimit  int
+	PolicyOffset int
 }
 
 // ConsoleWriter provides mutating operations for the Console surface.

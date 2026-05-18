@@ -147,7 +147,12 @@ interface WebhookDialogProps {
   onSaved: () => void;
 }
 
-function WebhookDialog({ open, onOpenChange, editing, onSaved }: WebhookDialogProps) {
+function WebhookDialog({
+  open,
+  onOpenChange,
+  editing,
+  onSaved,
+}: WebhookDialogProps) {
   const token = useAppStore((s) => s.token);
 
   const [form, setForm] = useState<WebhookFormData>({
@@ -156,11 +161,16 @@ function WebhookDialog({ open, onOpenChange, editing, onSaved }: WebhookDialogPr
     secret: "",
     events: editing?.events ?? [],
   });
-  const [fieldErrors, setFieldErrors] = useState<{ name?: string; url?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    url?: string;
+  }>({});
   const [submitting, setSubmitting] = useState(false);
   const [urlTouched, setUrlTouched] = useState(false);
   const [showPayloadPreview, setShowPayloadPreview] = useState(false);
-  const [selectedPreviewEvent, setSelectedPreviewEvent] = useState<string>(EVENT_TYPES[0]);
+  const [selectedPreviewEvent, setSelectedPreviewEvent] = useState<string>(
+    EVENT_TYPES[0],
+  );
 
   const urlValid = form.url === "" || URL_REGEX.test(form.url);
   const urlShowError = urlTouched && form.url !== "" && !urlValid;
@@ -318,7 +328,11 @@ function WebhookDialog({ open, onOpenChange, editing, onSaved }: WebhookDialogPr
               id="wh-secret"
               value={form.secret}
               onChange={(e) => setForm({ ...form, secret: e.target.value })}
-              placeholder={editing ? "Leave blank to keep current" : "Optional shared secret"}
+              placeholder={
+                editing
+                  ? "Leave blank to keep current"
+                  : "Optional shared secret"
+              }
               className="mt-1.5"
             />
           </div>
@@ -354,7 +368,9 @@ function WebhookDialog({ open, onOpenChange, editing, onSaved }: WebhookDialogPr
               ) : (
                 <EyeIcon className="h-3.5 w-3.5" />
               )}
-              {showPayloadPreview ? "Hide sample payload" : "View sample payload"}
+              {showPayloadPreview
+                ? "Hide sample payload"
+                : "View sample payload"}
             </button>
             {showPayloadPreview && (
               <div className="mt-2 rounded-lg border border-[var(--signal-border-default)] bg-white overflow-hidden">
@@ -385,7 +401,11 @@ function WebhookDialog({ open, onOpenChange, editing, onSaved }: WebhookDialogPr
                   </button>
                 </div>
                 <pre className="p-3 text-[11px] leading-relaxed font-mono text-[var(--signal-fg-primary)] overflow-x-auto max-h-48 overflow-y-auto">
-                  {JSON.stringify(SAMPLE_PAYLOADS[selectedPreviewEvent], null, 2)}
+                  {JSON.stringify(
+                    SAMPLE_PAYLOADS[selectedPreviewEvent],
+                    null,
+                    2,
+                  )}
                 </pre>
               </div>
             )}
@@ -429,7 +449,7 @@ export default function WebhooksPage() {
     error,
     reload,
   } = usePageData<Webhook[]>(
-    () => api.listWebhooks(token!),
+    () => api.listWebhooks(token!).then((r) => r.data),
     [token],
     { enabled: !!token, initialData: [] },
   );
@@ -487,7 +507,7 @@ export default function WebhooksPage() {
         return;
       }
       const d = await api.listWebhookDeliveries(token, webhookId);
-      setDeliveries(d ?? []);
+      setDeliveries(d.data);
       setExpandedId(webhookId);
     },
     [token, expandedId],
@@ -522,8 +542,7 @@ export default function WebhooksPage() {
           [wh.id]: {
             success: false,
             status: 0,
-            message:
-              err instanceof Error ? err.message : "Failed to send test",
+            message: err instanceof Error ? err.message : "Failed to send test",
           },
         }));
         toast("Failed to test webhook", "error");
@@ -709,7 +728,11 @@ export default function WebhooksPage() {
                     <div className="flex flex-wrap items-center gap-2 shrink-0 ml-5 sm:ml-0">
                       <div className="hidden sm:flex flex-wrap gap-1">
                         {(wh.events ?? []).slice(0, 3).map((e) => (
-                          <Badge key={e} variant="primary" className="text-[10px]">
+                          <Badge
+                            key={e}
+                            variant="primary"
+                            className="text-[10px]"
+                          >
                             {e}
                           </Badge>
                         ))}
@@ -743,7 +766,9 @@ export default function WebhooksPage() {
                         )}
                         role="switch"
                         aria-checked={wh.enabled}
-                        title={wh.enabled ? "Disable webhook" : "Enable webhook"}
+                        title={
+                          wh.enabled ? "Disable webhook" : "Enable webhook"
+                        }
                       >
                         <span
                           className={cn(

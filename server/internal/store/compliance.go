@@ -9,15 +9,15 @@ import (
 
 // LLMInteractionFilter for querying the audit log.
 type LLMInteractionFilter struct {
-	Operation  string
-	Provider   string
-	FlagKey    string
-	ScanID     string
-	FromDate   *time.Time
-	ToDate     *time.Time
-	Status     int // 0 = all, 200 = success, 500 = error
-	Limit      int
-	Offset     int
+	Operation string
+	Provider  string
+	FlagKey   string
+	ScanID    string
+	FromDate  *time.Time
+	ToDate    *time.Time
+	Status    int // 0 = all, 200 = success, 500 = error
+	Limit     int
+	Offset    int
 }
 
 // ComplianceStore defines the interface for compliance-related data persistence.

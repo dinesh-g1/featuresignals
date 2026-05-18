@@ -310,7 +310,7 @@ function APIKeyHelper() {
             </div>
           </div>
         ))}
-        <Link href="/api-keys" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--signal-fg-accent)] hover:underline transition-colors mt-1">Manage API keys<ChevronRightIcon className="h-3.5 w-3.5" /></Link>
+        <Link href="/settings/api-keys" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--signal-fg-accent)] hover:underline transition-colors mt-1">Manage API keys<ChevronRightIcon className="h-3.5 w-3.5" /></Link>
       </CardContent>
     </Card>
   );

@@ -20,6 +20,9 @@ const settingsTabs: SettingsTab[] = [
   { href: "/settings/general", label: "General" },
   { href: "/settings/integrations", label: "Integrations" },
   { href: "/settings/notifications", label: "Notifications" },
+  { href: "/settings/api-keys", label: "API Keys" },
+  { href: "/settings/webhooks", label: "Webhooks" },
+  { href: "/settings/team", label: "Team" },
 ];
 
 export default function SettingsLayout({

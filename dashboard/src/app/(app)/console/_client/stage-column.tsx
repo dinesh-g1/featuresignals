@@ -20,10 +20,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn, timeAgo } from "@/lib/utils";
 import { useConsoleStore } from "@/stores/console-store";
-import type {
-  StageDefinition,
-  FeatureCardData,
-} from "@/lib/console-types";
+import type { StageDefinition, FeatureCardData } from "@/lib/console-types";
 import { ENV_COLORS, STATUS_STYLES } from "@/lib/console-constants";
 import {
   Lightbulb,
@@ -418,7 +415,7 @@ function FeatureCard({
         onClick={handleClick}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => {
+        onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             handleClick();

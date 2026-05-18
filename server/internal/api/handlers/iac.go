@@ -15,13 +15,13 @@ import (
 
 // GenerateRequest requests IaC config generation from current resources.
 type GenerateRequest struct {
-	Format         string `json:"format"`          // "terraform", "pulumi", "ansible", "all"
-	IncludeFlags   bool   `json:"include_flags"`
-	IncludeEnvs    bool   `json:"include_environments"`
-	IncludeSegments bool  `json:"include_segments"`
-	IncludeWebhooks bool  `json:"include_webhooks"`
-	IncludeAPIKeys bool    `json:"include_api_keys"`
-	Namespace      string `json:"namespace,omitempty"`
+	Format          string `json:"format"` // "terraform", "pulumi", "ansible", "all"
+	IncludeFlags    bool   `json:"include_flags"`
+	IncludeEnvs     bool   `json:"include_environments"`
+	IncludeSegments bool   `json:"include_segments"`
+	IncludeWebhooks bool   `json:"include_webhooks"`
+	IncludeAPIKeys  bool   `json:"include_api_keys"`
+	Namespace       string `json:"namespace,omitempty"`
 }
 
 // PreviewRequest requests a preview of what generated configs would look like.
@@ -309,4 +309,3 @@ func (h *IaCHandler) Preview(w http.ResponseWriter, r *http.Request) {
 		Format:   req.Format,
 	})
 }
-

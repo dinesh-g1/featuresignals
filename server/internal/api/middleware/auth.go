@@ -37,7 +37,7 @@ func JWTAuth(jwtMgr auth.TokenManager, revoker ...RevocationChecker) func(http.H
 				next.ServeHTTP(w, r)
 				return
 			}
-			
+
 			header := r.Header.Get("Authorization")
 			if header == "" {
 				httputil.Error(w, http.StatusUnauthorized, "missing authorization header")

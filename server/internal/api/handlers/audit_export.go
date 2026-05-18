@@ -20,8 +20,8 @@ const (
 )
 
 type AuditExportHandler struct {
-	store domain.AuditReader
-	instr *observability.Instruments
+	store  domain.AuditReader
+	instr  *observability.Instruments
 	logger *slog.Logger
 }
 

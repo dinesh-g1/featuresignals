@@ -48,7 +48,7 @@ export default function APIKeysPage() {
   useEffect(() => {
     if (!token || !projectId) return;
     api.listEnvironments(token, projectId).then((e) => {
-      const list = e ?? [];
+      const list = e?.data ?? [];
       setEnvs(list);
       if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
     });
@@ -60,7 +60,7 @@ export default function APIKeysPage() {
     setError(null);
     api
       .listAPIKeys(token, selectedEnv)
-      .then((k) => setKeys(k ?? []))
+      .then((k) => setKeys(k?.data ?? []))
       .catch((err) =>
         setError(
           err instanceof Error ? err.message : "Failed to load API keys",

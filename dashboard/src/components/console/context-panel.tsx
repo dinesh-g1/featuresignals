@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useConsoleStore } from "@/stores/console-store";
+import { useConsoleFeatures } from "@/hooks/use-console-data";
 import { cn } from "@/lib/utils";
 import { FeatureDetailPanel } from "@/components/console/feature-detail-panel";
 import { ShipWizard } from "@/components/console/ship-wizard";
@@ -66,10 +67,10 @@ const panelVariants = {
 const PANEL_TITLES: Record<string, string> = {
   "flag-detail": "Feature details",
   "ship-wizard": "Ship feature",
-  "incident": "Incident monitor",
-  "preflight": "Preflight assessment",
-  "janitor": "Flag janitor",
-  "approval": "Approval review",
+  incident: "Incident monitor",
+  preflight: "Preflight assessment",
+  janitor: "Flag janitor",
+  approval: "Approval review",
 };
 
 // ─── Component ──────────────────────────────────────────────────────
@@ -78,7 +79,8 @@ export function ContextPanel() {
   const activePanel = useConsoleStore((s) => s.activePanel);
   const setActivePanel = useConsoleStore((s) => s.setActivePanel);
   const selectedFeatureKey = useConsoleStore((s) => s.selectedFeature);
-  const features = useConsoleStore((s) => s.features);
+  const { data: featuresData } = useConsoleFeatures();
+  const features = featuresData?.data ?? [];
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
 
   const feature = useMemo(() => {
@@ -113,13 +115,17 @@ export function ContextPanel() {
           )}
           role="complementary"
           aria-label={
-            activePanel ? PANEL_TITLES[activePanel] ?? "Context panel" : undefined
+            activePanel
+              ? (PANEL_TITLES[activePanel] ?? "Context panel")
+              : undefined
           }
         >
           {/* ── Header ──────────────────────────────────────────── */}
           <div className="flex items-center justify-between shrink-0 px-4 py-3 border-b border-[var(--signal-border-subtle)]">
             <span className="text-sm font-medium text-[var(--signal-fg-primary)]">
-              {activePanel ? PANEL_TITLES[activePanel] ?? "Context panel" : ""}
+              {activePanel
+                ? (PANEL_TITLES[activePanel] ?? "Context panel")
+                : ""}
             </span>
             <button
               type="button"

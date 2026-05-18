@@ -48,29 +48,28 @@ type Variant struct {
 	Weight int             `json:"weight"` // relative weight (basis points summed to 10000)
 }
 
-
 // Flag is the top-level definition of a feature flag.
 // It belongs to a Project and holds a default value that applies when the flag
 // is disabled or no environment-specific state exists.
 type Flag struct {
-	ID           string          `json:"id" db:"id"`
-	ProjectID    string          `json:"project_id" db:"project_id"`
-	OrgID        string          `json:"org_id" db:"org_id"`
-	Key          string          `json:"key" db:"key"`
-	Name         string          `json:"name" db:"name"`
-	Description  string          `json:"description" db:"description"`
-	FlagType     FlagType        `json:"flag_type" db:"flag_type"`
-	Category     FlagCategory    `json:"category" db:"category"`
-	Status       FlagStatus      `json:"status" db:"status"`
-	DefaultValue json.RawMessage `json:"default_value" db:"default_value"`
-	Tags          []string        `json:"tags" db:"tags"`
-	Labels        json.RawMessage `json:"labels" db:"labels"`
-	Protection    json.RawMessage `json:"protection" db:"protection"`
-	ExpiresAt     *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
+	ID                   string          `json:"id" db:"id"`
+	ProjectID            string          `json:"project_id" db:"project_id"`
+	OrgID                string          `json:"org_id" db:"org_id"`
+	Key                  string          `json:"key" db:"key"`
+	Name                 string          `json:"name" db:"name"`
+	Description          string          `json:"description" db:"description"`
+	FlagType             FlagType        `json:"flag_type" db:"flag_type"`
+	Category             FlagCategory    `json:"category" db:"category"`
+	Status               FlagStatus      `json:"status" db:"status"`
+	DefaultValue         json.RawMessage `json:"default_value" db:"default_value"`
+	Tags                 []string        `json:"tags" db:"tags"`
+	Labels               json.RawMessage `json:"labels" db:"labels"`
+	Protection           json.RawMessage `json:"protection" db:"protection"`
+	ExpiresAt            *time.Time      `json:"expires_at,omitempty" db:"expires_at"`
 	Prerequisites        []string        `json:"prerequisites,omitempty" db:"prerequisites"`
-	MutualExclusionGroup string         `json:"mutual_exclusion_group,omitempty" db:"mutual_exclusion_group"`
-	CreatedAt            time.Time      `json:"created_at" db:"created_at"`
-	UpdatedAt            time.Time      `json:"updated_at" db:"updated_at"`
+	MutualExclusionGroup string          `json:"mutual_exclusion_group,omitempty" db:"mutual_exclusion_group"`
+	CreatedAt            time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time       `json:"updated_at" db:"updated_at"`
 }
 
 // SetDefaults applies safe defaults for a Flag when creating via agent API.

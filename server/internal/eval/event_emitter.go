@@ -38,14 +38,14 @@ type EvalEventEmitter struct {
 	logger *slog.Logger
 
 	// Buffered channel for async emission
-	ch      chan domain.EvalEvent
-	done    chan struct{}
-	once    sync.Once
+	ch   chan domain.EvalEvent
+	done chan struct{}
+	once sync.Once
 
 	// Metrics
-	emittedTotal  int64
-	droppedTotal  int64
-	mu            sync.Mutex
+	emittedTotal int64
+	droppedTotal int64
+	mu           sync.Mutex
 }
 
 // EvalEventEmitterOption configures the emitter.
@@ -116,16 +116,16 @@ func (e *EvalEventEmitter) maybeEmit(flagKey string, ctx domain.EvalContext, rul
 
 	// Create the event
 	event := domain.EvalEvent{
-		ID:        uuid.NewString(),
-		OrgID:     ruleset.OrgID,
-		ProjectID: ruleset.ProjectID,
+		ID:            uuid.NewString(),
+		OrgID:         ruleset.OrgID,
+		ProjectID:     ruleset.ProjectID,
 		EnvironmentID: ruleset.EnvID,
-		FlagKey:   flagKey,
-		Value:     valueToString(result.Value),
-		Reason:    result.Reason,
-		Variant:   result.VariantKey,
-		LatencyUs: latencyUs,
-		EvaluatedAt: time.Now().UTC(),
+		FlagKey:       flagKey,
+		Value:         valueToString(result.Value),
+		Reason:        result.Reason,
+		Variant:       result.VariantKey,
+		LatencyUs:     latencyUs,
+		EvaluatedAt:   time.Now().UTC(),
 	}
 
 	// Apply attribute filtering for privacy
@@ -245,14 +245,14 @@ func (e *EvalEventEmitter) run() {
 		}
 
 		evalBatch := domain.EvalEventBatch{
-			ID:             batchID,
-			OrgID:          batch[0].OrgID,
-			EnvironmentID:  batch[0].EnvironmentID,
-			Events:         batch,
-			BatchSize:      len(batch),
-			WindowStart:    batch[0].EvaluatedAt,
-			WindowEnd:      batch[len(batch)-1].EvaluatedAt,
-			EmittedAt:      now,
+			ID:            batchID,
+			OrgID:         batch[0].OrgID,
+			EnvironmentID: batch[0].EnvironmentID,
+			Events:        batch,
+			BatchSize:     len(batch),
+			WindowStart:   batch[0].EvaluatedAt,
+			WindowEnd:     batch[len(batch)-1].EvaluatedAt,
+			EmittedAt:     now,
 		}
 
 		data, err := json.Marshal(evalBatch)

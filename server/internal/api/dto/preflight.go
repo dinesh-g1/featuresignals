@@ -38,18 +38,18 @@ type RolloutPhaseItem struct {
 
 // GuardMetricItem defines a guardrail metric for a rollout phase.
 type GuardMetricItem struct {
-	Metric    string  `json:"metric"`    // error_rate, p99_latency, evaluation_volume
+	Metric    string  `json:"metric"` // error_rate, p99_latency, evaluation_volume
 	Threshold float64 `json:"threshold"`
-	Operator  string  `json:"operator"`  // gt, lt, gte, lte
+	Operator  string  `json:"operator"` // gt, lt, gte, lte
 }
 
 // ─── Approval Types ────────────────────────────────────────────────────────
 
 // CreateApprovalRequest is the request body for POST /v1/preflight/approval.
 type CreateApprovalRequest struct {
-	AssessmentID string `json:"assessment_id"`
+	AssessmentID  string `json:"assessment_id"`
 	Justification string `json:"justification,omitempty"`
-	ScheduledAt  string `json:"scheduled_at,omitempty"`
+	ScheduledAt   string `json:"scheduled_at,omitempty"`
 }
 
 // PreflightApprovalResponse is returned from preflight approval operations.

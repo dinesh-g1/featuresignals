@@ -1,62 +1,33 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { useConsoleStore } from "@/stores/console-store";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
 
 /**
- * useConsoleInsights — fetches Console insights for the LEARN Zone.
+ * useConsoleInsights — TanStack Query hook for the LEARN Zone insights.
  *
- * Fetches on mount, on retryTrigger change, and polls every 60 seconds
- * (insights change less frequently than flag state).
+ * Polls every 60 seconds (insights change less frequently than flag state).
+ * Components that previously read `insights`, `loading.insights`, and
+ * `errors.insights` from the Zustand store should use this instead.
  */
 export function useConsoleInsights() {
   const token = useAppStore((s) => s.token);
 
-  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
-  const setInsights = useConsoleStore((s) => s.setInsights);
-  const setZoneLoading = useConsoleStore((s) => s.setZoneLoading);
-  const setZoneError = useConsoleStore((s) => s.setZoneError);
-
-  const fetch = useCallback(async () => {
-    if (!token) return;
-    if (!api.console) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[useConsoleInsights] api.console is undefined");
-      }
-      return;
-    }
-    setZoneLoading("insights", true);
-    setZoneError("insights", null);
-    try {
-      const result = await api.console.getInsights(token);
-      setInsights(result);
-    } catch (err) {
-      setZoneError(
-        "insights",
-        err instanceof Error ? err.message : "Failed to load insights",
-      );
-    } finally {
-      setZoneLoading("insights", false);
-    }
-  }, [token, setInsights, setZoneLoading, setZoneError]);
-
-  // Fetch on mount
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  // Refetch on manual retry
-  useEffect(() => {
-    if (retryTrigger > 0) fetch();
-  }, [retryTrigger, fetch]);
-
-  // Poll every 60 seconds (insights change less frequently)
-  useEffect(() => {
-    const interval = setInterval(fetch, 60_000);
-    return () => clearInterval(interval);
-  }, [fetch]);
-
-  return { refetch: fetch };
+  return useQuery({
+    queryKey: queryKeys.console.insights({
+      report_limit: 5,
+      learning_limit: 3,
+      activity_limit: 10,
+    }),
+    queryFn: () =>
+      api.console.getInsights(token!, {
+        report_limit: 5,
+        learning_limit: 3,
+        activity_limit: 10,
+      }),
+    enabled: !!token,
+    refetchInterval: 60_000,
+  });
 }

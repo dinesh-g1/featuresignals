@@ -297,12 +297,12 @@ func (h *SegmentHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
 	matched, matchedRules := evaluateSegmentRules(seg, evalCtx)
 
 	type evaluateResponse struct {
-		SegmentKey  string   `json:"segment_key"`
-		SegmentName string   `json:"segment_name"`
-		Matched     bool     `json:"matched"`
-		MatchType   string   `json:"match_type"`
-		TotalRules  int      `json:"total_rules"`
-		RulesMatched int     `json:"rules_matched"`
+		SegmentKey   string `json:"segment_key"`
+		SegmentName  string `json:"segment_name"`
+		Matched      bool   `json:"matched"`
+		MatchType    string `json:"match_type"`
+		TotalRules   int    `json:"total_rules"`
+		RulesMatched int    `json:"rules_matched"`
 	}
 
 	ruleCount := len(seg.Rules)

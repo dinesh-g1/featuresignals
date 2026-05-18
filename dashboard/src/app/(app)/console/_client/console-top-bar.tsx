@@ -21,14 +21,16 @@ import { useRouter } from "next/navigation";
 import { useConsoleStore, consoleStore } from "@/stores/console-store";
 import { useAppStore } from "@/stores/app-store";
 import { useConsoleMaturity } from "@/hooks/use-console-maturity";
+import { useProjects, useEnvironments } from "@/hooks/use-console-data";
 import { api } from "@/lib/api";
 import { ENV_COLORS } from "@/lib/console-constants";
 import { cn } from "@/lib/utils";
 import { MaturityBadge } from "@/components/console/maturity-badge";
 import { UserMenu } from "@/components/user-menu";
 import { CreateProjectDialog } from "@/components/console/create-project-dialog";
+import { CreateEnvironmentDialog } from "@/components/create-environment-dialog";
 import type { MaturityLevel, EnvironmentType } from "@/lib/console-types";
-import type { Project } from "@/lib/types";
+import type { Project, Environment } from "@/lib/types";
 import {
   ChevronDownIcon,
   SearchIcon,
@@ -46,9 +48,28 @@ import {
   PlusIcon,
   PencilIcon,
   Trash2Icon,
+  LoaderIcon,
+  AlertTriangleIcon,
+  BotIcon,
 } from "lucide-react";
 
-const ENV_OPTIONS: EnvironmentType[] = ["production", "staging", "development"];
+// ─── Helpers ─────────────────────────────────────────────────────────
+
+/** Map an API Environment to an EnvironmentType for filtering. */
+function envToType(env: Environment): EnvironmentType {
+  const slug = env.slug.toLowerCase();
+  if (slug === "production" || slug === "prod") return "production";
+  if (slug === "staging" || slug === "stage") return "staging";
+  return "development";
+}
+
+function envLabel(env: Environment): string {
+  return env.name;
+}
+
+function envColor(env: Environment): string {
+  return env.color || "var(--signal-fg-secondary)";
+}
 
 export function ConsoleTopBar() {
   const router = useRouter();
@@ -63,19 +84,40 @@ export function ConsoleTopBar() {
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
   const { level, refetch } = useConsoleMaturity();
 
-  // Projects are fetched once by useConsoleData and stored in console store (H4 fix)
-  const projects = useConsoleStore((s) => s.projects);
-  const projectsLoading = useConsoleStore((s) => s.projectsLoading);
-  const projectsError = useConsoleStore((s) => s.projectsError);
+  // Projects via TanStack Query (shared cache with useConsoleData)
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    error: projectsQueryError,
+  } = useProjects();
+  const projectsError =
+    projectsQueryError instanceof Error ? projectsQueryError.message : null;
+
+  // Environments via TanStack Query (fetched when currentProjectId changes)
+  const {
+    data: environments = [],
+    isLoading: environmentsLoading,
+    error: envsQueryError,
+  } = useEnvironments();
+  const environmentsError =
+    envsQueryError instanceof Error ? envsQueryError.message : null;
 
   const [projectOpen, setProjectOpen] = useState(false);
   const [envOpen, setEnvOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
+
+  // Project create/edit/delete dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [dialogStartInDelete, setDialogStartInDelete] = useState(false);
+
+  // Environment create/edit dialog state
+  const [envDialogOpen, setEnvDialogOpen] = useState(false);
+  const [_editingEnv, setEditingEnv] = useState<Environment | null>(null);
+
+  // Refs for dropdown click-outside detection
   const projectRef = useRef<HTMLDivElement>(null);
   const envRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -94,13 +136,10 @@ export function ConsoleTopBar() {
     : projects;
 
   // Reset project search when dropdown closes
-  const handleProjectOpen = useCallback(
-    (open: boolean) => {
-      setProjectOpen(open);
-      if (!open) setProjectSearch("");
-    },
-    [],
-  );
+  const handleProjectOpen = useCallback((open: boolean) => {
+    setProjectOpen(open);
+    if (!open) setProjectSearch("");
+  }, []);
 
   // Click outside closes dropdowns
   useEffect(() => {
@@ -109,7 +148,10 @@ export function ConsoleTopBar() {
         handleProjectOpen(false);
       if (envRef.current && !envRef.current.contains(e.target as Node))
         setEnvOpen(false);
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node))
+      if (
+        settingsRef.current &&
+        !settingsRef.current.contains(e.target as Node)
+      )
         setSettingsOpen(false);
     };
     document.addEventListener("mousedown", h);
@@ -127,6 +169,19 @@ export function ConsoleTopBar() {
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [setCommandPaletteOpen]);
+
+  // Cross-zone event: open create project dialog from LifecycleEmpty
+  useEffect(() => {
+    function handleOpenCreateProject() {
+      setCreateDialogOpen(true);
+    }
+    window.addEventListener("fs:open-create-project", handleOpenCreateProject);
+    return () =>
+      window.removeEventListener(
+        "fs:open-create-project",
+        handleOpenCreateProject,
+      );
+  }, []);
 
   const handleMaturityChange = useCallback(
     async (nl: MaturityLevel) => {
@@ -280,11 +335,15 @@ export function ConsoleTopBar() {
               )}
 
               {/* Empty state */}
-              {!projectsLoading && !projectsError && filteredProjects.length === 0 && (
-                <p className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)]">
-                  {projectSearch.trim() ? "No projects match your search" : "No projects yet"}
-                </p>
-              )}
+              {!projectsLoading &&
+                !projectsError &&
+                filteredProjects.length === 0 && (
+                  <p className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)]">
+                    {projectSearch.trim()
+                      ? "No projects match your search"
+                      : "No projects yet"}
+                  </p>
+                )}
 
               {/* Project list */}
               {!projectsLoading &&
@@ -408,7 +467,9 @@ export function ConsoleTopBar() {
             className="h-2 w-2 rounded-full shrink-0"
             style={{ backgroundColor: envConfig.badge }}
           />
-          <span className="hidden sm:inline font-medium text-[var(--signal-fg-primary)]">{envConfig.label}</span>
+          <span className="hidden sm:inline font-medium text-[var(--signal-fg-primary)]">
+            {envConfig.label}
+          </span>
           <ChevronDownIcon
             className={cn(
               "h-3 w-3 text-[var(--signal-fg-tertiary)] transition-transform",
@@ -419,44 +480,154 @@ export function ConsoleTopBar() {
         {envOpen && (
           <div
             className={cn(
-              "absolute top-full left-0 mt-1 z-50 min-w-[160px]",
+              "absolute top-full left-0 mt-1 z-50 min-w-[200px]",
               "rounded-[var(--signal-radius-lg)] border border-[var(--signal-border-subtle)]",
               "bg-[var(--signal-bg-primary)] shadow-[var(--signal-shadow-lg)] animate-slide-up",
             )}
           >
+            {/* New environment action */}
+            <div className="px-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEnvOpen(false);
+                  setEditingEnv(null);
+                  setEnvDialogOpen(true);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs text-left",
+                  "text-[var(--signal-fg-accent)] font-medium",
+                  "hover:bg-[var(--signal-bg-accent-muted)] transition-colors",
+                )}
+              >
+                <PlusIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>New environment</span>
+              </button>
+            </div>
+
+            <div className="mx-2 h-px bg-[var(--signal-border-subtle)]" />
+
             <div className="py-1">
-              {ENV_OPTIONS.map((env) => {
-                const info = ENV_COLORS[env];
-                const sel = env === selectedEnvironment;
-                return (
-                  <button
-                    key={env}
-                    type="button"
-                    onClick={() => {
-                      setEnvironment(env);
-                      setEnvOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
-                      "hover:bg-[var(--signal-bg-secondary)] transition-colors",
-                      sel && "bg-[var(--signal-bg-secondary)] font-medium",
-                    )}
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full shrink-0"
-                      style={{ backgroundColor: info.badge }}
-                    />
-                    <span className="flex-1 text-[var(--signal-fg-primary)]">
-                      {info.label}
+              {/* Loading state */}
+              {environmentsLoading && (
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <LoaderIcon className="h-3 w-3 text-[var(--signal-fg-tertiary)] animate-spin" />
+                  <span className="text-[11px] text-[var(--signal-fg-tertiary)]">
+                    Loading environments…
+                  </span>
+                </div>
+              )}
+
+              {/* Error state */}
+              {!environmentsLoading && environmentsError && (
+                <div className="px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangleIcon className="h-3 w-3 text-[var(--signal-fg-danger)]" />
+                    <span className="text-[11px] text-[var(--signal-fg-danger)]">
+                      {environmentsError}
                     </span>
-                    {sel && (
-                      <span className="text-[10px] text-[var(--signal-fg-accent)] shrink-0">
-                        Active
-                      </span>
-                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => consoleStore.getState().triggerRetry()}
+                    className="mt-1 text-[10px] text-[var(--signal-fg-accent)] hover:underline"
+                  >
+                    Retry
                   </button>
-                );
-              })}
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!environmentsLoading &&
+                !environmentsError &&
+                environments.length === 0 && (
+                  <p className="px-3 py-2 text-[11px] text-[var(--signal-fg-tertiary)]">
+                    No environments yet
+                  </p>
+                )}
+
+              {/* Environment list from API */}
+              {!environmentsLoading &&
+                !environmentsError &&
+                environments.map((env) => {
+                  const mappedType = envToType(env);
+                  const sel = mappedType === selectedEnvironment;
+                  return (
+                    <div
+                      key={env.id}
+                      className={cn(
+                        "group flex items-center",
+                        sel && "bg-[var(--signal-bg-secondary)]",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEnvironment(mappedType);
+                          setEnvOpen(false);
+                        }}
+                        className={cn(
+                          "flex flex-1 items-center gap-2 px-3 py-1.5 text-xs text-left min-w-0",
+                          "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                          sel && "font-medium",
+                        )}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: envColor(env) }}
+                        />
+                        <span className="flex-1 text-[var(--signal-fg-primary)] truncate">
+                          {envLabel(env)}
+                        </span>
+                        {sel && (
+                          <span className="text-[10px] font-medium text-[var(--signal-fg-accent)] shrink-0">
+                            Active
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Edit / Delete actions — visible on hover */}
+                      <div className="flex items-center shrink-0 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingEnv(env);
+                            setEnvDialogOpen(true);
+                          }}
+                          className={cn(
+                            "p-1 rounded",
+                            "text-[var(--signal-fg-tertiary)]",
+                            "hover:bg-[var(--signal-bg-primary)] hover:text-[var(--signal-fg-primary)]",
+                            "transition-colors",
+                          )}
+                          aria-label={`Edit ${env.name}`}
+                          title="Edit environment"
+                        >
+                          <PencilIcon className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingEnv(env);
+                            setEnvDialogOpen(true);
+                          }}
+                          className={cn(
+                            "p-1 rounded",
+                            "text-[var(--signal-fg-tertiary)]",
+                            "hover:bg-[var(--signal-bg-danger-muted)] hover:text-[var(--signal-fg-danger)]",
+                            "transition-colors",
+                          )}
+                          aria-label={`Delete ${env.name}`}
+                          title="Delete environment"
+                        >
+                          <Trash2Icon className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
 
             {/* Footer: View all environments */}
@@ -533,7 +704,8 @@ export function ConsoleTopBar() {
             "text-[var(--signal-fg-tertiary)]",
             "hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)]",
             "transition-colors",
-            settingsOpen && "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]",
+            settingsOpen &&
+              "bg-[var(--signal-bg-secondary)] text-[var(--signal-fg-primary)]",
           )}
           aria-label="Settings menu"
           aria-expanded={settingsOpen}
@@ -555,11 +727,23 @@ export function ConsoleTopBar() {
               Organization
             </div>
             {[
-              { label: "General", href: "/settings/general", icon: SettingsIcon },
-              { label: "Billing", href: "/settings/billing", icon: CreditCardIcon },
+              {
+                label: "General",
+                href: "/settings/general",
+                icon: SettingsIcon,
+              },
+              {
+                label: "Billing",
+                href: "/settings/billing",
+                icon: CreditCardIcon,
+              },
               { label: "Team", href: "/settings/team", icon: UsersIcon },
               { label: "SSO", href: "/settings/sso", icon: ShieldIcon },
-              { label: "Notifications", href: "/settings/notifications", icon: BellIcon },
+              {
+                label: "Notifications",
+                href: "/settings/notifications",
+                icon: BellIcon,
+              },
             ].map((item) => (
               <button
                 key={item.href}
@@ -587,7 +771,11 @@ export function ConsoleTopBar() {
               Project
             </div>
             {[
-              { label: "Integrations", href: "/settings/integrations", icon: PlugIcon },
+              {
+                label: "Integrations",
+                href: "/settings/integrations",
+                icon: PlugIcon,
+              },
             ].map((item) => (
               <button
                 key={item.href}
@@ -616,7 +804,44 @@ export function ConsoleTopBar() {
             </div>
             {[
               { label: "API Keys", href: "/settings/api-keys", icon: KeyIcon },
-              { label: "Webhooks", href: "/settings/webhooks", icon: WebhookIcon },
+              {
+                label: "Webhooks",
+                href: "/settings/webhooks",
+                icon: WebhookIcon,
+              },
+            ].map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  router.push(item.href);
+                  setSettingsOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-xs text-left",
+                  "text-[var(--signal-fg-primary)]",
+                  "hover:bg-[var(--signal-bg-secondary)] transition-colors",
+                )}
+              >
+                <item.icon className="h-3.5 w-3.5 text-[var(--signal-fg-tertiary)]" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+
+            <div className="my-1 border-t border-[var(--signal-border-subtle)]" />
+
+            {/* Governance section */}
+            <div className="px-3 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--signal-fg-tertiary)]">
+              Governance
+            </div>
+            {[
+              {
+                label: "Policies",
+                href: "/console/policies",
+                icon: ShieldIcon,
+              },
+              { label: "Agents", href: "/console/agents", icon: BotIcon },
             ].map((item) => (
               <button
                 key={item.href}
@@ -699,6 +924,15 @@ export function ConsoleTopBar() {
           }
           setEditingProject(null);
           setDialogStartInDelete(false);
+        }}
+      />
+
+      {/* Create / Edit Environment Dialog */}
+      <CreateEnvironmentDialog
+        open={envDialogOpen}
+        onOpenChange={setEnvDialogOpen}
+        onCreated={(_env) => {
+          consoleStore.getState().triggerRetry();
         }}
       />
     </header>

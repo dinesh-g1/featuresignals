@@ -21,11 +21,11 @@ type ImpactReport struct {
 	OrgID           string          `json:"org_id"`
 	FlagKey         string          `json:"flag_key"`
 	FlagID          string          `json:"flag_id,omitempty"`
-	Report          json.RawMessage `json:"report"`                   // JSONB: full impact analysis
+	Report          json.RawMessage `json:"report"`                     // JSONB: full impact analysis
 	MetricsSnapshot json.RawMessage `json:"metrics_snapshot,omitempty"` // JSONB: raw metric data
-	BusinessImpact  string          `json:"business_impact,omitempty"` // positive, neutral, negative
-	CostAttribution float64         `json:"cost_attribution"`         // estimated cost
-	Recommendations json.RawMessage `json:"recommendations,omitempty"` // JSONB: actionable recommendations
+	BusinessImpact  string          `json:"business_impact,omitempty"`  // positive, neutral, negative
+	CostAttribution float64         `json:"cost_attribution"`           // estimated cost
+	Recommendations json.RawMessage `json:"recommendations,omitempty"`  // JSONB: actionable recommendations
 	GeneratedAt     time.Time       `json:"generated_at"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       time.Time       `json:"updated_at"`
@@ -49,18 +49,18 @@ type CostAttribution struct {
 // OrgLearning captures organizational insights aggregated across all flags
 // within an organization at a point in time.
 type OrgLearning struct {
-	ID                      string          `json:"id"`
-	OrgID                   string          `json:"org_id"`
-	TotalFlagsAnalyzed      int             `json:"total_flags_analyzed"`
-	CleanupCandidates       int             `json:"cleanup_candidates"`
-	FlagsWithoutOwners      int             `json:"flags_without_owners"`
-	StaleFlags              int             `json:"stale_flags"`
-	AvgRiskScore            float64         `json:"avg_risk_score"`
-	AvgTimeToFullRollout    float64         `json:"avg_time_to_full_rollout_hours"`
-	TopInsights             json.RawMessage `json:"top_insights"` // JSONB array
-	GeneratedAt             time.Time       `json:"generated_at"`
-	CreatedAt               time.Time       `json:"created_at"`
-	UpdatedAt               time.Time       `json:"updated_at"`
+	ID                   string          `json:"id"`
+	OrgID                string          `json:"org_id"`
+	TotalFlagsAnalyzed   int             `json:"total_flags_analyzed"`
+	CleanupCandidates    int             `json:"cleanup_candidates"`
+	FlagsWithoutOwners   int             `json:"flags_without_owners"`
+	StaleFlags           int             `json:"stale_flags"`
+	AvgRiskScore         float64         `json:"avg_risk_score"`
+	AvgTimeToFullRollout float64         `json:"avg_time_to_full_rollout_hours"`
+	TopInsights          json.RawMessage `json:"top_insights"` // JSONB array
+	GeneratedAt          time.Time       `json:"generated_at"`
+	CreatedAt            time.Time       `json:"created_at"`
+	UpdatedAt            time.Time       `json:"updated_at"`
 }
 
 // ─── Well-Known Constants ──────────────────────────────────────────────────

@@ -10,15 +10,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Copy,
-  Check,
-  X,
-  Terminal,
-  Package,
-  Play,
-
-} from "lucide-react";
+import { Copy, Check, X, Terminal, Package, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
@@ -261,8 +253,8 @@ export function SdkSnippetPanel({ language, onClose }: SdkSnippetPanelProps) {
         let projectId = currentProjectId;
         if (!projectId) {
           const projects = await api.listProjects(token);
-          if (projects.length > 0) {
-            projectId = projects[0].id;
+          if (projects.data.length > 0) {
+            projectId = projects.data[0].id;
           } else {
             if (!cancelled) {
               setSdkKey("fs_srv_YOUR_SDK_KEY");
@@ -273,13 +265,13 @@ export function SdkSnippetPanel({ language, onClose }: SdkSnippetPanelProps) {
         }
 
         // List environments for the project, then find SDK keys.
-        const envs = await api.listEnvironments(token, projectId);
+        const envsRes = await api.listEnvironments(token, projectId!);
         let foundKey = "";
 
-        for (const env of envs) {
+        for (const env of envsRes.data) {
           try {
             const keys = await api.listAPIKeys(token, env.id);
-            const sdkKeys = keys.filter(
+            const sdkKeys = keys.data.filter(
               (k: APIKey) => k.type === "sdk" && !k.revoked_at,
             );
             if (sdkKeys.length > 0) {

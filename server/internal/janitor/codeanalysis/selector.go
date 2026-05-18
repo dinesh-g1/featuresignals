@@ -26,7 +26,7 @@ type ProviderSelector struct {
 	registry      *ProviderRegistry
 	compliance    ComplianceReader
 	regexProvider CodeAnalysisProvider // Always available as fallback
-	cache         sync.Map       // ProviderConfig cache keyed by orgID
+	cache         sync.Map             // ProviderConfig cache keyed by orgID
 	cacheTTL      time.Duration
 	logger        *slog.Logger
 }

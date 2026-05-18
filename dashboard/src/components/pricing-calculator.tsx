@@ -172,7 +172,7 @@ function ComparisonBars({
   const fmt = (v: number) => fmtCurrency(v, currency);
 
   return (
-    <div className="mt-6 space-y-4" aria-label="Cost comparison bar chart">
+    <div className="mt-6 space-y-4" role="region" aria-label="Cost comparison bar chart">
       {/* Competitor bar */}
       <div>
         <div className="flex items-baseline justify-between text-sm">

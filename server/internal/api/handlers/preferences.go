@@ -95,4 +95,3 @@ func (h *PreferencesHandler) UpdateEmailPreferences(w http.ResponseWriter, r *ht
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
-

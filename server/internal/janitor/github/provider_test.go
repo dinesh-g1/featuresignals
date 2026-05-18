@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-github/v69/github"
 	"github.com/featuresignals/server/internal/janitor"
+	"github.com/google/go-github/v69/github"
 	"golang.org/x/oauth2"
 )
 

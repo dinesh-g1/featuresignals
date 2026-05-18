@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsoleStore } from "@/stores/console-store";
+import { useConsoleFeatures } from "@/hooks/use-console-data";
 import { STAGE_BY_ID, LIFECYCLE_STAGES } from "@/lib/console-constants";
 import type {
   ParsedIntent,
@@ -238,7 +239,8 @@ const SECTION_HEADERS: Record<string, string> = {
 
 export function CommandPalette() {
   // ── Store ──────────────────────────────────────────────────────────
-  const features = useConsoleStore((s) => s.features);
+  const { data: featuresData } = useConsoleFeatures();
+  const features = featuresData?.data ?? [];
   const selectStage = useConsoleStore((s) => s.selectStage);
   const selectFeature = useConsoleStore((s) => s.selectFeature);
   const setSearchQuery = useConsoleStore((s) => s.setSearchQuery);

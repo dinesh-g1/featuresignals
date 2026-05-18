@@ -473,5 +473,3 @@ func TestAgentRegistryHandler_NoAuth(t *testing.T) {
 		t.Fatalf("expected 404 without auth, got %d", w.Code)
 	}
 }
-
-

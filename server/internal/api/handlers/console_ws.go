@@ -114,7 +114,7 @@ var _ ConsoleWSBroadcaster = (*sse.WSHub)(nil)
 type NoopWSBroadcaster struct{}
 
 func (NoopWSBroadcaster) BroadcastEvent(string, string, interface{}) {}
-func (NoopWSBroadcaster) Broadcast(string, *sse.ConsoleEvent)       {}
+func (NoopWSBroadcaster) Broadcast(string, *sse.ConsoleEvent)        {}
 
 // Ensure NoopWSBroadcaster satisfies the interface.
 var _ ConsoleWSBroadcaster = NoopWSBroadcaster{}

@@ -16,7 +16,7 @@ type SalesInquiry struct {
 }
 
 const (
-	SalesStatusNew      = "new"
+	SalesStatusNew       = "new"
 	SalesStatusContacted = "contacted"
 	SalesStatusClosed    = "closed"
 )

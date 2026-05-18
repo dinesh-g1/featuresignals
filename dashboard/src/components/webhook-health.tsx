@@ -232,12 +232,13 @@ export function WebhookHealth() {
 
       // Fetch deliveries for each webhook in parallel
       const withHealth = await Promise.all(
-        webhookList.map(async (webhook: Webhook) => {
+        webhookList.data.map(async (webhook: Webhook) => {
           try {
-            const deliveries = await api.listWebhookDeliveries(
+            const deliveriesRes = await api.listWebhookDeliveries(
               token,
               webhook.id,
             );
+            const deliveries = deliveriesRes.data;
             const oneHourAgo = Date.now() - 3600000;
             const recentFailures = deliveries.filter(
               (d) =>

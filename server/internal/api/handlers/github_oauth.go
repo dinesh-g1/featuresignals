@@ -22,13 +22,13 @@ import (
 //     We exchange the code for an access token, store it encrypted, and
 //     redirect the user back to the Console.
 type GitHubOAuthHandler struct {
-	store       domain.GitHubOAuthStore
-	clientID    string
+	store        domain.GitHubOAuthStore
+	clientID     string
 	clientSecret string
-	redirectURI string
+	redirectURI  string
 	dashboardURL string
-	logger      *slog.Logger
-	httpClient  *http.Client
+	logger       *slog.Logger
+	httpClient   *http.Client
 }
 
 // NewGitHubOAuthHandler creates a GitHub OAuth handler.

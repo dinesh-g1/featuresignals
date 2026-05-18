@@ -301,11 +301,11 @@ func TestEvalEventPipeline_ConcurrentPublishes(t *testing.T) {
 				events := make([]domain.EvalEvent, eventsPerBatch)
 				for e := 0; e < eventsPerBatch; e++ {
 					events[e] = domain.EvalEvent{
-						ID:     "concurrent-g" + string(rune('0'+goroutineID)) + "-b" + string(rune('0'+b)) + "-e" + string(rune('0'+e)),
-						OrgID:  "org-concurrent",
+						ID:      "concurrent-g" + string(rune('0'+goroutineID)) + "-b" + string(rune('0'+b)) + "-e" + string(rune('0'+e)),
+						OrgID:   "org-concurrent",
 						FlagKey: "flag-concurrent",
-						Value:  "true",
-						Reason: domain.EvalReasonDefault,
+						Value:   "true",
+						Reason:  domain.EvalReasonDefault,
 					}
 				}
 				batch := domain.EvalEventBatch{

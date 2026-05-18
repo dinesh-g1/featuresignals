@@ -232,9 +232,9 @@ Is the cleaned version semantically equivalent? Respond ONLY with valid JSON:
 
 func (p *OpenAIProvider) callLLM(ctx context.Context, prompt string) (string, error) {
 	reqBody := chatRequest{
-		Model:       p.model,
-		Temperature: p.temperature,
-		MaxTokens:   p.maxTokens,
+		Model:          p.model,
+		Temperature:    p.temperature,
+		MaxTokens:      p.maxTokens,
 		ResponseFormat: &responseFormat{Type: "json_object"},
 		Messages: []chatMessage{
 			{Role: "system", Content: "You are a senior software engineer analyzing code to safely remove stale feature flags. Respond with valid JSON only."},
@@ -296,13 +296,13 @@ func (p *OpenAIProvider) callLLM(ctx context.Context, prompt string) (string, er
 
 type analysisResult struct {
 	References []struct {
-		Line           int     `json:"line"`
-		Column         int     `json:"column"`
-		ReferenceType  string  `json:"reference_type"`
-		SafeToRemove   bool    `json:"safe_to_remove"`
-		KeepBranch     string  `json:"keep_branch"`
-		Reason         string  `json:"reason"`
-		CleanedSnippet string  `json:"cleaned_snippet"`
+		Line           int    `json:"line"`
+		Column         int    `json:"column"`
+		ReferenceType  string `json:"reference_type"`
+		SafeToRemove   bool   `json:"safe_to_remove"`
+		KeepBranch     string `json:"keep_branch"`
+		Reason         string `json:"reason"`
+		CleanedSnippet string `json:"cleaned_snippet"`
 	} `json:"references"`
 	OverallSafe bool    `json:"overall_safe"`
 	Confidence  float64 `json:"confidence"`

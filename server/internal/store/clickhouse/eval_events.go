@@ -34,12 +34,12 @@ import (
 const meterName = "featuresignals/clickhouse"
 
 var (
-	chMeter                 = otel.Meter(meterName)
-	chInsertCount, _        = chMeter.Int64Counter("clickhouse.insert.count", ometric.WithDescription("Number of rows inserted into ClickHouse"))
-	chInsertDuration, _     = chMeter.Float64Histogram("clickhouse.insert.duration_ms", ometric.WithDescription("ClickHouse insert latency in milliseconds"), ometric.WithUnit("ms"))
-	chBatchSize, _          = chMeter.Int64Histogram("clickhouse.batch.size", ometric.WithDescription("Size of flushed ClickHouse insert batches"))
-	chInsertError, _        = chMeter.Int64Counter("clickhouse.insert.error", ometric.WithDescription("Number of ClickHouse insert errors"))
-	chQueryDuration, _      = chMeter.Float64Histogram("clickhouse.query.duration_ms", ometric.WithDescription("ClickHouse query latency in milliseconds"), ometric.WithUnit("ms"))
+	chMeter             = otel.Meter(meterName)
+	chInsertCount, _    = chMeter.Int64Counter("clickhouse.insert.count", ometric.WithDescription("Number of rows inserted into ClickHouse"))
+	chInsertDuration, _ = chMeter.Float64Histogram("clickhouse.insert.duration_ms", ometric.WithDescription("ClickHouse insert latency in milliseconds"), ometric.WithUnit("ms"))
+	chBatchSize, _      = chMeter.Int64Histogram("clickhouse.batch.size", ometric.WithDescription("Size of flushed ClickHouse insert batches"))
+	chInsertError, _    = chMeter.Int64Counter("clickhouse.insert.error", ometric.WithDescription("Number of ClickHouse insert errors"))
+	chQueryDuration, _  = chMeter.Float64Histogram("clickhouse.query.duration_ms", ometric.WithDescription("ClickHouse query latency in milliseconds"), ometric.WithUnit("ms"))
 )
 
 // ─── ClickHouseConfig ──────────────────────────────────────────────────────
@@ -675,17 +675,17 @@ func domainArrayToClickHouse(arr []string) []string {
 //	defer bw.Close(ctx)
 //	bw.Write(ctx, event)
 type BatchWriter struct {
-	store       *ClickHouseEvalEventStore
-	buffer      []domain.EvalEvent
-	mu          sync.Mutex
-	batchSize   int
-	flushEvery  time.Duration
-	maxRetries  int
+	store        *ClickHouseEvalEventStore
+	buffer       []domain.EvalEvent
+	mu           sync.Mutex
+	batchSize    int
+	flushEvery   time.Duration
+	maxRetries   int
 	retryBackoff time.Duration
-	logger      *slog.Logger
-	done        chan struct{}
-	closed      bool
-	wg          sync.WaitGroup
+	logger       *slog.Logger
+	done         chan struct{}
+	closed       bool
+	wg           sync.WaitGroup
 }
 
 // BatchWriterOption configures a BatchWriter at construction time.

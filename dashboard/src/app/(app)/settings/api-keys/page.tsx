@@ -119,7 +119,11 @@ export default function APIKeysPage() {
   }, [keys, limit, offset]);
 
   const [newKey, setNewKey] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", type: "server", expires_at: "" });
+  const [form, setForm] = useState({
+    name: "",
+    type: "server",
+    expires_at: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string>("");
@@ -133,7 +137,7 @@ export default function APIKeysPage() {
   useEffect(() => {
     if (!token || !projectId) return;
     api.listEnvironments(token, projectId).then((e) => {
-      const list = e ?? [];
+      const list = e.data;
       setEnvs(list);
       if (!selectedEnv && list.length > 0) setSelectedEnv(list[0].id);
     });
@@ -146,7 +150,7 @@ export default function APIKeysPage() {
     setError(null);
     api
       .listAPIKeys(token, selectedEnv)
-      .then((k) => setKeys(k ?? []))
+      .then((k) => setKeys(k.data))
       .catch((err) =>
         setError(
           err instanceof Error ? err.message : "Failed to load API keys",
@@ -390,8 +394,8 @@ export default function APIKeysPage() {
                 No API keys for this environment
               </h3>
               <p className="text-sm text-[var(--signal-fg-tertiary)] max-w-sm">
-                API keys authenticate your SDK against this environment. Create a
-                server key to start evaluating flags.
+                API keys authenticate your SDK against this environment. Create
+                a server key to start evaluating flags.
               </p>
             </div>
           ) : (

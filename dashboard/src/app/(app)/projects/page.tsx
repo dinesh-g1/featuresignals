@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/app-store";
-import { useConsoleStore } from "@/stores/console-store";
+import { useProjects } from "@/hooks/use-console-data";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,12 +64,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         Create your first project to start organizing feature flags,
         environments, and rollout configurations.
       </p>
-      <Button
-        variant="primary"
-        size="lg"
-        onClick={onCreate}
-        className="mt-6"
-      >
+      <Button variant="primary" size="lg" onClick={onCreate} className="mt-6">
         <PlusIcon className="h-4 w-4" />
         Create your first project
       </Button>
@@ -100,12 +97,7 @@ function ErrorState({
       <p className="mt-2 text-sm text-[var(--signal-fg-secondary)] max-w-sm">
         {message}
       </p>
-      <Button
-        variant="secondary"
-        size="lg"
-        onClick={onRetry}
-        className="mt-6"
-      >
+      <Button variant="secondary" size="lg" onClick={onRetry} className="mt-6">
         <RefreshCwIcon className="h-4 w-4" />
         Retry
       </Button>
@@ -227,10 +219,13 @@ export default function ProjectsPage() {
   const currentProjectId = useAppStore((s) => s.current_project_id);
   const setCurrentProject = useAppStore((s) => s.setCurrentProject);
 
-  const projects = useConsoleStore((s) => s.projects);
-  const setProjects = useConsoleStore((s) => s.setProjects);
-  const projectsLoading = useConsoleStore((s) => s.projectsLoading);
-  const projectsError = useConsoleStore((s) => s.projectsError);
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    error: projectsQueryError,
+  } = useProjects();
+  const projectsError =
+    projectsQueryError instanceof Error ? projectsQueryError.message : null;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -254,19 +249,17 @@ export default function ProjectsPage() {
       const arr: Project[] = Array.isArray(result)
         ? result
         : ((result as { data?: Project[] })?.data ?? []);
-      setProjects(arr);
+      queryClient.setQueryData(queryKeys.projects.list(), arr);
 
       if (!currentProjectId && arr.length > 0) {
         setCurrentProject(arr[0].id);
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load projects",
-      );
+      setError(err instanceof Error ? err.message : "Failed to load projects");
     } finally {
       setLoading(false);
     }
-  }, [token, setProjects, currentProjectId, setCurrentProject]);
+  }, [token, currentProjectId, setCurrentProject]);
 
   useEffect(() => {
     // Use cached projects from store if available; otherwise fetch
@@ -324,11 +317,7 @@ export default function ProjectsPage() {
         </div>
 
         {!isEmpty && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleCreate}
-          >
+          <Button variant="primary" size="sm" onClick={handleCreate}>
             <PlusIcon className="h-4 w-4" />
             New project
           </Button>
@@ -346,10 +335,7 @@ export default function ProjectsPage() {
 
       {/* ── Error State ────────────────────────────────────────── */}
       {displayError && !isLoading && (
-        <ErrorState
-          message={displayError}
-          onRetry={fetchProjects}
-        />
+        <ErrorState message={displayError} onRetry={fetchProjects} />
       )}
 
       {/* ── Empty State ────────────────────────────────────────── */}

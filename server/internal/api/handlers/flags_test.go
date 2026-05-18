@@ -86,8 +86,8 @@ func TestFlagHandler_Create_DefaultType(t *testing.T) {
 
 func TestFlagHandler_Create_TypeAwareDefaults(t *testing.T) {
 	tests := []struct {
-		flagType     string
-		wantDefault  string
+		flagType    string
+		wantDefault string
 	}{
 		{"boolean", "false"},
 		{"string", `""`},

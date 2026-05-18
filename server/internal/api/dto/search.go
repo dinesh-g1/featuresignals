@@ -12,7 +12,7 @@ type SearchHit struct {
 // SearchResponse is returned by GET /v1/search?q=term.
 // Results are grouped by category for the overlay UI.
 type SearchResponse struct {
-	Query   string              `json:"query"`
+	Query   string                 `json:"query"`
 	Results map[string][]SearchHit `json:"results"` // keyed by category
-	Total   int                 `json:"total"`
+	Total   int                    `json:"total"`
 }

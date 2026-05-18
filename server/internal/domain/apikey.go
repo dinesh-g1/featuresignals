@@ -16,14 +16,14 @@ const (
 // The raw key is only shown once (at creation); after that only the
 // KeyPrefix and salted KeyHash are stored.
 type APIKey struct {
-	ID         string     `json:"id" db:"id"`
-	EnvID      string     `json:"env_id" db:"env_id"`
-	OrgID      string     `json:"org_id" db:"org_id"`
-	KeyHash    string     `json:"-" db:"key_hash"`
-	KeyPrefix  string     `json:"key_prefix" db:"key_prefix"`
-	Name       string     `json:"name" db:"name"`
-	Type       APIKeyType `json:"type" db:"type"`
-	Scopes     []string   `json:"scopes,omitempty" db:"scopes"`
+	ID             string     `json:"id" db:"id"`
+	EnvID          string     `json:"env_id" db:"env_id"`
+	OrgID          string     `json:"org_id" db:"org_id"`
+	KeyHash        string     `json:"-" db:"key_hash"`
+	KeyPrefix      string     `json:"key_prefix" db:"key_prefix"`
+	Name           string     `json:"name" db:"name"`
+	Type           APIKeyType `json:"type" db:"type"`
+	Scopes         []string   `json:"scopes,omitempty" db:"scopes"`
 	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
 	LastUsedAt     *time.Time `json:"last_used_at,omitempty" db:"last_used_at"`
 	RevokedAt      *time.Time `json:"revoked_at,omitempty" db:"revoked_at"`

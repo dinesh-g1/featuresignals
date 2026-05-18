@@ -72,10 +72,10 @@ export default function NotificationsPage() {
     setLoading(true);
     setLoadError(null);
     api
-      .getDismissedHints(token)
-      .then(() => {
-        // Preferences are stored server-side; default local state is used
-        // until the server returns actual values
+      .getEmailPreferences(token)
+      .then((data) => {
+        setConsent(data.consent);
+        setPreference(data.preference);
       })
       .catch((err) => {
         setLoadError(

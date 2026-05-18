@@ -77,16 +77,16 @@ func (h *OpsAuthRevealHandler) Reveal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate password against stored hash
-		_, err := h.store.GetOpsUser(r.Context(), userID)
-		if err != nil {
-			if errors.Is(err, domain.ErrNotFound) {
-				httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
-				return
-			}
-			log.Error("failed to get ops user", "error", err, "user_id", userID)
-			httputil.Error(w, http.StatusInternalServerError, "internal error")
+	_, err := h.store.GetOpsUser(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			httputil.Error(w, http.StatusUnauthorized, "invalid credentials")
 			return
 		}
+		log.Error("failed to get ops user", "error", err, "user_id", userID)
+		httputil.Error(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 
 	// Issue short-lived JWT with secrets:read scope
 	now := time.Now().UTC()

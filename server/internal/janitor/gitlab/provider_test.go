@@ -263,9 +263,9 @@ func testHandler() http.Handler {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"id":       42,
-				"state":    "merged",
-				"title":    "Test MR",
+				"id":    42,
+				"state": "merged",
+				"title": "Test MR",
 			})
 			return
 		}
@@ -291,7 +291,7 @@ func testHandler() http.Handler {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"id": 99,
+				"id":  99,
 				"url": "https://example.com/hook",
 			})
 			return

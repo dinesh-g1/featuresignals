@@ -20,11 +20,11 @@ import (
 )
 
 type Store struct {
-	pool               *pgxpool.Pool
-	lockMu             sync.Mutex
-	lockConn           *pgxpool.Conn
-	auditIntegrityKey  string         // HMAC key for audit log tamper-evidence chain
-	invalidator        *PGInvalidator // optional; set via SetInvalidator for PG NOTIFY support
+	pool              *pgxpool.Pool
+	lockMu            sync.Mutex
+	lockConn          *pgxpool.Conn
+	auditIntegrityKey string         // HMAC key for audit log tamper-evidence chain
+	invalidator       *PGInvalidator // optional; set via SetInvalidator for PG NOTIFY support
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
@@ -377,6 +377,27 @@ func (s *Store) CountOrgMembers(ctx context.Context, orgID string) (int, error) 
 		err = s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM org_members WHERE org_id = $1`, orgID).Scan(&count)
 	}
 	return count, err
+}
+
+// GetOrgIDsForUser returns all organization IDs the user is a member of.
+// Used by signup flow to determine whether a returning user's orgs are
+// soft-deleted, hard-deleted, or still active.
+func (s *Store) GetOrgIDsForUser(ctx context.Context, userID string) ([]string, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT org_id FROM org_members WHERE user_id = $1 ORDER BY created_at`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var orgIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		orgIDs = append(orgIDs, id)
+	}
+	return orgIDs, nil
 }
 
 func (s *Store) GetOrgMemberByID(ctx context.Context, memberID string) (*domain.OrgMember, error) {
@@ -1919,9 +1940,254 @@ func (s *Store) ListSoftDeletedOrgs(ctx context.Context, deletedBefore time.Time
 }
 
 func (s *Store) HardDeleteOrganization(ctx context.Context, orgID string) error {
-	_, err := s.pool.Exec(ctx,
-		`DELETE FROM organizations WHERE id = $1`, orgID)
-	return err
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("hard delete org: begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Order matters due to FK constraints — children before parents.
+	// Each group is ordered so that dependent rows are removed before
+	// the rows they reference.
+
+	// ── Webhook deliveries (via webhook_id FK) ──────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM webhook_deliveries WHERE webhook_id IN (SELECT id FROM webhooks WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: webhook_deliveries: %w", err)
+	}
+
+	// ── Integration deliveries (via integration_id FK) ──────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM integration_deliveries WHERE integration_id IN (SELECT id FROM integrations WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: integration_deliveries: %w", err)
+	}
+
+	// ── Flag versions (via flag_id FK) ──────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM flag_versions WHERE flag_id IN (SELECT id FROM flags WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1))`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: flag_versions: %w", err)
+	}
+
+	// ── Eval events (via flag_id FK) ────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM eval_events WHERE flag_id IN (SELECT id FROM flags WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1))`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: eval_events: %w", err)
+	}
+
+	// ── Flag states (via flag_id + env_id FKs) ──────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM flag_states WHERE flag_id IN (SELECT id FROM flags WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1))`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: flag_states: %w", err)
+	}
+
+	// ── Env permissions (via env_id + member_id FKs) ────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM env_permissions WHERE env_id IN (SELECT id FROM environments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1))`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: env_permissions: %w", err)
+	}
+
+	// ── API keys (via env_id FK) ────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM api_keys WHERE env_id IN (SELECT id FROM environments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1))`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: api_keys: %w", err)
+	}
+
+	// ── Segments (via project_id FK) ────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM segments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: segments: %w", err)
+	}
+
+	// ── Flags (via project_id FK) ───────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM flags WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: flags: %w", err)
+	}
+
+	// ── Environments (via project_id FK) ────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM environments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: environments: %w", err)
+	}
+
+	// ── Projects ────────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM projects WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: projects: %w", err)
+	}
+
+	// ── Agent maturity + experiences (via agent_id FK) ──────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM agent_maturity WHERE agent_id IN (SELECT id FROM agents WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: agent_maturity: %w", err)
+	}
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM agent_experiences WHERE agent_id IN (SELECT id FROM agents WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: agent_experiences: %w", err)
+	}
+
+	// ── Workflow node states (via run_id FK) ────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM workflow_node_states WHERE run_id IN (SELECT id FROM workflow_runs WHERE org_id = $1)`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: workflow_node_states: %w", err)
+	}
+
+	// ── Workflow runs ───────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM workflow_runs WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: workflow_runs: %w", err)
+	}
+
+	// ── Workflow definitions ────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM workflow_definitions WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: workflow_definitions: %w", err)
+	}
+
+	// ── Agents ──────────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM agents WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: agents: %w", err)
+	}
+
+	// ── Policies ────────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM governance_policies WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: governance_policies: %w", err)
+	}
+
+	// ── Webhooks ────────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM webhooks WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: webhooks: %w", err)
+	}
+
+	// ── Integrations ────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM integrations WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: integrations: %w", err)
+	}
+
+	// ── Audit logs ──────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM audit_logs WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: audit_logs: %w", err)
+	}
+
+	// ── SSO configs ─────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM sso_configs WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: sso_configs: %w", err)
+	}
+
+	// ── Subscriptions ───────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM subscriptions WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: subscriptions: %w", err)
+	}
+
+	// ── Org members ─────────────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM org_members WHERE org_id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: org_members: %w", err)
+	}
+
+	// ── Organization (root) ─────────────────────────────────────
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM organizations WHERE id = $1`, orgID); err != nil {
+		return fmt.Errorf("hard delete org: organizations: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("hard delete org: commit: %w", err)
+	}
+	return nil
+}
+
+// GetOrganizationResourceCounts returns counts for every resource type owned
+// by an organization. Used for pre-deletion audit so users understand exactly
+// what will be permanently destroyed.
+func (s *Store) GetOrganizationResourceCounts(ctx context.Context, orgID string) (*domain.OrgResourceCounts, error) {
+	var counts domain.OrgResourceCounts
+
+	// Projects
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM projects WHERE org_id = $1`, orgID).Scan(&counts.Projects); err != nil {
+		return nil, fmt.Errorf("resource counts: projects: %w", err)
+	}
+
+	// Environments (via projects)
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM environments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1)`, orgID).Scan(&counts.Environments); err != nil {
+		return nil, fmt.Errorf("resource counts: environments: %w", err)
+	}
+
+	// Flags (via projects)
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM flags WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1)`, orgID).Scan(&counts.Flags); err != nil {
+		return nil, fmt.Errorf("resource counts: flags: %w", err)
+	}
+
+	// Segments (via projects)
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM segments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1)`, orgID).Scan(&counts.Segments); err != nil {
+		return nil, fmt.Errorf("resource counts: segments: %w", err)
+	}
+
+	// API keys (via environments → projects)
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM api_keys WHERE env_id IN (SELECT id FROM environments WHERE project_id IN (SELECT id FROM projects WHERE org_id = $1))`, orgID).Scan(&counts.APIKeys); err != nil {
+		return nil, fmt.Errorf("resource counts: api_keys: %w", err)
+	}
+
+	// Webhooks
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM webhooks WHERE org_id = $1`, orgID).Scan(&counts.Webhooks); err != nil {
+		return nil, fmt.Errorf("resource counts: webhooks: %w", err)
+	}
+
+	// Members
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM org_members WHERE org_id = $1`, orgID).Scan(&counts.Members); err != nil {
+		return nil, fmt.Errorf("resource counts: members: %w", err)
+	}
+
+	// Audit entries
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM audit_logs WHERE org_id = $1`, orgID).Scan(&counts.AuditEntries); err != nil {
+		return nil, fmt.Errorf("resource counts: audit_entries: %w", err)
+	}
+
+	// Integrations
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM integrations WHERE org_id = $1`, orgID).Scan(&counts.Integrations); err != nil {
+		return nil, fmt.Errorf("resource counts: integrations: %w", err)
+	}
+
+	// Agents
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM agents WHERE org_id = $1`, orgID).Scan(&counts.Agents); err != nil {
+		return nil, fmt.Errorf("resource counts: agents: %w", err)
+	}
+
+	// Policies
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM governance_policies WHERE org_id = $1`, orgID).Scan(&counts.Policies); err != nil {
+		return nil, fmt.Errorf("resource counts: policies: %w", err)
+	}
+
+	// SSO configs
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM sso_configs WHERE org_id = $1`, orgID).Scan(&counts.SSOConfigs); err != nil {
+		return nil, fmt.Errorf("resource counts: sso_configs: %w", err)
+	}
+
+	counts.TotalResources = counts.Projects + counts.Environments + counts.Flags +
+		counts.Segments + counts.APIKeys + counts.Webhooks + counts.Members +
+		counts.AuditEntries + counts.Integrations + counts.Agents +
+		counts.Policies + counts.SSOConfigs
+
+	return &counts, nil
 }
 
 func (s *Store) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error) {
@@ -2316,6 +2582,13 @@ func (s *Store) CountApprovalRequests(ctx context.Context, orgID string, status 
 
 func (s *Store) SoftDeleteUser(ctx context.Context, userID string) error {
 	_, err := s.pool.Exec(ctx, `UPDATE users SET email = CONCAT('deleted-', id, '@deleted.local'), name = 'Deleted User', password_hash = '', updated_at = NOW() WHERE id = $1`, userID)
+	return err
+}
+
+// DeleteUser permanently removes a user record from the database.
+// Only called when a user has no remaining organizations and is re-registering.
+func (s *Store) DeleteUser(ctx context.Context, userID string) error {
+	_, err := s.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
 	return err
 }
 

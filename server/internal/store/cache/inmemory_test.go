@@ -3,11 +3,11 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"sync"
-	"errors"
 	"testing"
 	"time"
 
@@ -63,8 +63,10 @@ func (m *mockStore) GetUserByEmail(_ context.Context, _ string) (*domain.User, e
 	return nil, nil
 }
 func (m *mockStore) GetUserByID(_ context.Context, _ string) (*domain.User, error) { return nil, nil }
-func (m *mockStore) GetUsersByIDs(_ context.Context, _ []string) ([]domain.User, error) { return nil, nil }
-func (m *mockStore) AddOrgMember(_ context.Context, _ *domain.OrgMember) error     { return nil }
+func (m *mockStore) GetUsersByIDs(_ context.Context, _ []string) ([]domain.User, error) {
+	return nil, nil
+}
+func (m *mockStore) AddOrgMember(_ context.Context, _ *domain.OrgMember) error { return nil }
 func (m *mockStore) GetOrgMember(_ context.Context, _, _ string) (*domain.OrgMember, error) {
 	return nil, nil
 }
@@ -89,16 +91,18 @@ func (m *mockStore) DeleteEnvironment(_ context.Context, _ string) error        
 func (m *mockStore) UpdateEnvironment(_ context.Context, _ *domain.Environment) error { return nil }
 func (m *mockStore) CreateFlag(_ context.Context, _ *domain.Flag) error               { return nil }
 func (m *mockStore) GetFlag(_ context.Context, _, _ string) (*domain.Flag, error)     { return nil, nil }
-func (m *mockStore) ListFlags(_ context.Context, _ string, _, _ int) ([]domain.Flag, error)     { return nil, nil }
+func (m *mockStore) ListFlags(_ context.Context, _ string, _, _ int) ([]domain.Flag, error) {
+	return nil, nil
+}
 func (m *mockStore) ListFlagsWithFilter(_ context.Context, _, _, _ string, _, _ int) ([]domain.Flag, error) {
 	return nil, nil
 }
 func (m *mockStore) ListFlagsSorted(_ context.Context, _, _, _ string, _, _ int) ([]domain.Flag, error) {
 	return nil, nil
 }
-func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error               { return nil }
-func (m *mockStore) DeleteFlag(_ context.Context, _ string) error                     { return nil }
-func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error     { return nil }
+func (m *mockStore) UpdateFlag(_ context.Context, _ *domain.Flag) error           { return nil }
+func (m *mockStore) DeleteFlag(_ context.Context, _ string) error                 { return nil }
+func (m *mockStore) UpsertFlagState(_ context.Context, _ *domain.FlagState) error { return nil }
 func (m *mockStore) GetFlagState(_ context.Context, _, _ string) (*domain.FlagState, error) {
 	return nil, nil
 }
@@ -151,31 +155,39 @@ func (m *mockStore) GetLastAuditHash(_ context.Context, _ string) (string, error
 func (m *mockStore) GetLimitsConfig(_ context.Context, _ string) (*domain.LimitsConfigRow, error) {
 	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
 }
-func (m *mockStore) CountFlags(_ context.Context, _ string) (int, error)       { return 0, nil }
-func (m *mockStore) CountSegments(_ context.Context, _ string) (int, error)    { return 0, nil }
-func (m *mockStore) CountEnvironments(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)     { return 0, nil }
-func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)     { return 0, nil }
-func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)    { return 0, nil }
-func (m *mockStore) CountFlagsByProject(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountFlagStatesByEnv(_ context.Context, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountFlags(_ context.Context, _ string) (int, error)             { return 0, nil }
+func (m *mockStore) CountSegments(_ context.Context, _ string) (int, error)          { return 0, nil }
+func (m *mockStore) CountEnvironments(_ context.Context, _ string) (int, error)      { return 0, nil }
+func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)           { return 0, nil }
+func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)           { return 0, nil }
+func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)          { return 0, nil }
+func (m *mockStore) CountFlagsByProject(_ context.Context, _ string) (int, error)    { return 0, nil }
+func (m *mockStore) CountFlagStatesByEnv(_ context.Context, _ string) (int, error)   { return 0, nil }
 func (m *mockStore) CountSegmentsByProject(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountSegmentsWithFilter(_ context.Context, _, _, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountFlagsWithFilter(_ context.Context, _, _, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountSegmentsWithFilter(_ context.Context, _, _, _ string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountFlagsWithFilter(_ context.Context, _, _, _ string) (int, error) {
+	return 0, nil
+}
 func (m *mockStore) CountAPIKeysByEnv(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountEnvironmentsByProject(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountOrgMembers(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountEnvironmentsByProject(_ context.Context, _ string) (int, error) {
+	return 0, nil
+}
+func (m *mockStore) CountOrgMembers(_ context.Context, _ string) (int, error)        { return 0, nil }
+func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error)          { return 0, nil }
 func (m *mockStore) CountWebhookDeliveries(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountCustomRoles(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountFlagVersions(_ context.Context, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountCustomRoles(_ context.Context, _ string) (int, error)       { return 0, nil }
+func (m *mockStore) CountFlagVersions(_ context.Context, _ string) (int, error)      { return 0, nil }
 func (m *mockStore) CountPinnedItems(_ context.Context, _, _, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountPolicies(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountAgents(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountAgentsByType(_ context.Context, _, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountMaturities(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountBehaviors(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountBehaviorsByAgentType(_ context.Context, _, _ string) (int, error) { return 0, nil }
+func (m *mockStore) CountPolicies(_ context.Context, _ string) (int, error)          { return 0, nil }
+func (m *mockStore) CountAgents(_ context.Context, _ string) (int, error)            { return 0, nil }
+func (m *mockStore) CountAgentsByType(_ context.Context, _, _ string) (int, error)   { return 0, nil }
+func (m *mockStore) CountMaturities(_ context.Context, _ string) (int, error)        { return 0, nil }
+func (m *mockStore) CountBehaviors(_ context.Context, _ string) (int, error)         { return 0, nil }
+func (m *mockStore) CountBehaviorsByAgentType(_ context.Context, _, _ string) (int, error) {
+	return 0, nil
+}
 func (m *mockStore) CountIntegrations(_ context.Context, _ string) (int, error) { return 0, nil }
 func (m *mockStore) ListPinnedItems(_ context.Context, _, _, _ string, _, _ int) ([]domain.PinnedItem, error) {
 	return nil, nil
@@ -189,7 +201,7 @@ func (m *mockStore) DeletePinnedItem(context.Context, string, string, string) er
 func (m *mockStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
 	return nil, nil
 }
-func (m *mockStore) CountAuditEntries(_ context.Context, _ string) (int, error)   { return 0, nil }
+func (m *mockStore) CountAuditEntries(_ context.Context, _ string) (int, error) { return 0, nil }
 func (m *mockStore) CountApprovalRequests(_ context.Context, _ string, _ string) (int, error) {
 	return 0, nil
 }
@@ -290,7 +302,10 @@ func (m *mockStore) HardDeleteOrganization(_ context.Context, _ string) error { 
 func (m *mockStore) ListInactiveOrgs(_ context.Context, _ string, _ time.Time) ([]domain.Organization, error) {
 	return nil, nil
 }
-func (m *mockStore) DowngradeOrgToFree(_ context.Context, _ string) error               { return nil }
+func (m *mockStore) DowngradeOrgToFree(_ context.Context, _ string) error { return nil }
+func (m *mockStore) GetOrganizationResourceCounts(_ context.Context, _ string) (*domain.OrgResourceCounts, error) {
+	return nil, nil
+}
 func (m *mockStore) CreateSalesInquiry(_ context.Context, _ *domain.SalesInquiry) error { return nil }
 func (m *mockStore) CreateOneTimeToken(_ context.Context, _, _ string, _ time.Duration) (string, error) {
 	return "test-token", nil
@@ -339,6 +354,10 @@ func (m *mockStore) ListCustomRoles(_ context.Context, _ string, _, _ int) ([]do
 func (m *mockStore) UpdateCustomRole(_ context.Context, _ *domain.CustomRole) error { return nil }
 func (m *mockStore) DeleteCustomRole(_ context.Context, _ string) error             { return nil }
 func (m *mockStore) SoftDeleteUser(_ context.Context, _ string) error               { return nil }
+func (m *mockStore) DeleteUser(_ context.Context, _ string) error                   { return nil }
+func (m *mockStore) GetOrgIDsForUser(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
 func (m *mockStore) SetPasswordResetToken(_ context.Context, _, _ string, _ time.Time, _, _ string) error {
 	return nil
 }
@@ -446,8 +465,7 @@ func TestLoadRuleset_CachesAndReturns(t *testing.T) {
 			{ID: "s1", FlagID: "f1", EnvID: "env-1", Enabled: true, Rules: []domain.TargetingRule{}, PercentageRollout: 10000},
 		},
 		segs: []domain.Segment{
-			{ID: "seg1", Key: "beta", Name: "Beta", MatchType: "all", Rules: []domain.Condition{},
-			},
+			{ID: "seg1", Key: "beta", Name: "Beta", MatchType: "all", Rules: []domain.Condition{}},
 		},
 	}
 	c := NewCache(store, testLogger(), nil)
@@ -500,8 +518,7 @@ func TestLoadRuleset_MapsStatesToFlagKeys(t *testing.T) {
 			{ID: "f2", Key: "bravo"},
 		},
 		states: []domain.FlagState{
-			{ID: "s2", FlagID: "f2", EnvID: "e1", Enabled: true, Rules: []domain.TargetingRule{},
-			},
+			{ID: "s2", FlagID: "f2", EnvID: "e1", Enabled: true, Rules: []domain.TargetingRule{}},
 		},
 		segs: []domain.Segment{},
 	}
@@ -828,17 +845,23 @@ func (s *mockStore) ListDeliveries(context.Context, string, int) ([]domain.Integ
 }
 
 func (s *mockStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
-func (s *mockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
-func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
-func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *mockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
+func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) {
+	return "", nil
+}
+func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
 func (s *mockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
-func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
+func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error     { return nil }
 
 func (s *mockStore) CreateSession(context.Context, *domain.PublicSession) error { return nil }
 func (s *mockStore) GetSession(context.Context, string) (*domain.PublicSession, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *mockStore) DeleteSession(context.Context, string) error          { return nil }
+func (s *mockStore) DeleteSession(context.Context, string) error       { return nil }
 func (s *mockStore) CleanExpiredSessions(context.Context) (int, error) { return 0, nil }
 
 // CreditStore stubs — satisfy domain.Store interface in tests.

@@ -83,11 +83,11 @@ func APIVersion(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Link", buildVersionLink(SupportedAPIVersions[0]))
 		httputil.JSON(w, http.StatusNotAcceptable, httputil.ErrorResponse{
-			Error:     "unsupported api version",
-			Message:   fmt.Sprintf("API version %q is not supported. Use %s.", requested, SupportedAPIVersions[0]),
+			Error:      "unsupported api version",
+			Message:    fmt.Sprintf("API version %q is not supported. Use %s.", requested, SupportedAPIVersions[0]),
 			Suggestion: fmt.Sprintf("Set Accept-Version: %s or remove the header to use the latest version.", SupportedAPIVersions[0]),
-			DocsURL:   "https://docs.featuresignals.com/api/versioning",
-			Links:     nil,
+			DocsURL:    "https://docs.featuresignals.com/api/versioning",
+			Links:      nil,
 		})
 	})
 }

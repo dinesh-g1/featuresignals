@@ -50,9 +50,9 @@ type CreateIntegrationRequest struct {
 
 // UpdateIntegrationRequest contains the fields needed to update an integration.
 type UpdateIntegrationRequest struct {
-	Config        *[]byte  `json:"config,omitempty"`
+	Config        *[]byte   `json:"config,omitempty"`
 	EnabledEvents *[]string `json:"enabled_events,omitempty"`
-	Enabled       *bool    `json:"enabled,omitempty"`
+	Enabled       *bool     `json:"enabled,omitempty"`
 }
 
 // IntegrationStore defines the persistence interface for integrations.

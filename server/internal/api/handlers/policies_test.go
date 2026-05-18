@@ -374,4 +374,3 @@ func TestPolicyHandler_Toggle(t *testing.T) {
 		}
 	})
 }
-

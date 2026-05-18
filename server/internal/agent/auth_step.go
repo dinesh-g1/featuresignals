@@ -40,10 +40,10 @@ func (s *AuthGovernanceStep) Execute(ctx context.Context, action domain.AgentAct
 	if action.AgentID == "" {
 		s.logger.Warn("action rejected: missing agent_id")
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepAuth,
-			Reason:         "unauthenticated",
-			Message:        "Agent action has no AgentID. The agent must be registered and authenticated.",
-			RequiresHuman:  true,
+			Step:                 domain.GovStepAuth,
+			Reason:               "unauthenticated",
+			Message:              "Agent action has no AgentID. The agent must be registered and authenticated.",
+			RequiresHuman:        true,
 			OverrideInstructions: "Register the agent via the Agent Registry before submitting actions.",
 		}
 	}
@@ -53,10 +53,10 @@ func (s *AuthGovernanceStep) Execute(ctx context.Context, action domain.AgentAct
 			"agent_id", action.AgentID,
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepAuth,
-			Reason:         "missing_org",
-			Message:        "Agent action has no OrgID. All actions must be scoped to an organization.",
-			RequiresHuman:  true,
+			Step:                 domain.GovStepAuth,
+			Reason:               "missing_org",
+			Message:              "Agent action has no OrgID. All actions must be scoped to an organization.",
+			RequiresHuman:        true,
 			OverrideInstructions: "Ensure the agent is registered within an organization.",
 		}
 	}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
+import { makePaginatedResponse } from "@/__tests__/helpers/fixtures";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -93,7 +94,9 @@ describe("SegmentsPage", () => {
     store.setCurrentProject("proj-1");
     store.setCurrentEnv("env-1");
 
-    vi.mocked(api.listSegments).mockResolvedValue(mockSegments);
+    vi.mocked(api.listSegments).mockResolvedValue(
+      makePaginatedResponse(mockSegments),
+    );
     vi.mocked(api.createSegment).mockResolvedValue({
       id: "s2",
       key: "new-segment",
@@ -181,7 +184,7 @@ describe("SegmentsPage", () => {
   });
 
   it("shows empty state when no segments", async () => {
-    vi.mocked(api.listSegments).mockResolvedValue([]);
+    vi.mocked(api.listSegments).mockResolvedValue(makePaginatedResponse([]));
 
     render(<SegmentsPage />);
 

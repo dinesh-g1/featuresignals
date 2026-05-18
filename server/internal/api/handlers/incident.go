@@ -402,7 +402,7 @@ func (h *IncidentHandler) Remediate(w http.ResponseWriter, r *http.Request) {
 		Action:        req.Action,
 		Status:        status,
 		PreviousState: json.RawMessage(prevJSON),
-		AppliedAt:     func() string {
+		AppliedAt: func() string {
 			if appliedAt != nil {
 				return appliedAt.Format(time.RFC3339)
 			}

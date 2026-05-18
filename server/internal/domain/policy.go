@@ -315,8 +315,8 @@ const (
 	PolicyMaintenanceWindowOnly  = "maintenance-window-only"
 
 	// Agent maturity policies
-	PolicyMinimumMaturityForProd    = "minimum-maturity-for-production"
-	PolicyMinimumConfidenceThreshold = "minimum-confidence-threshold"
+	PolicyMinimumMaturityForProd       = "minimum-maturity-for-production"
+	PolicyMinimumConfidenceThreshold   = "minimum-confidence-threshold"
 	PolicyRequireHumanForLowConfidence = "require-human-for-low-confidence"
 
 	// Rate limiting policies

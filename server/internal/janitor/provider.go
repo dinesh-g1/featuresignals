@@ -19,7 +19,7 @@ import (
 // PR creation, webhook management, and OAuth authentication.
 type GitProvider interface {
 	// Provider metadata
-	Name() string   // "github", "gitlab", "bitbucket", "azure-devops"
+	Name() string     // "github", "gitlab", "bitbucket", "azure-devops"
 	Scopes() []string // Required OAuth scopes for this provider
 
 	// Repository operations
@@ -59,14 +59,14 @@ type GitProvider interface {
 
 // Repository represents a Git repository on a provider.
 type Repository struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	FullName      string    `json:"full_name"`
-	CloneURL      string    `json:"clone_url"`
-	HTMLURL       string    `json:"html_url"`
-	DefaultBranch string    `json:"default_branch"`
-	Private       bool      `json:"private"`
-	Language      string    `json:"language"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	FullName      string `json:"full_name"`
+	CloneURL      string `json:"clone_url"`
+	HTMLURL       string `json:"html_url"`
+	DefaultBranch string `json:"default_branch"`
+	Private       bool   `json:"private"`
+	Language      string `json:"language"`
 }
 
 // FileChange represents a file to create or modify in a PR.
@@ -115,13 +115,13 @@ type ProviderHealth struct {
 
 // ProviderStatus tracks whether a provider is actively maintained.
 type ProviderStatus struct {
-	Name          string  `json:"name"`
-	MarketShare   float64 `json:"market_share,omitempty"`
-	MaintainedBy  string  `json:"maintained_by"` // "core", "community", "deprecated"
-	DocsURL       string  `json:"docs_url,omitempty"`
-	AddedInVersion string `json:"added_in_version"`
-	DeprecatedIn  string  `json:"deprecated_in,omitempty"`
-	RemovalDate   string  `json:"removal_date,omitempty"`
+	Name           string  `json:"name"`
+	MarketShare    float64 `json:"market_share,omitempty"`
+	MaintainedBy   string  `json:"maintained_by"` // "core", "community", "deprecated"
+	DocsURL        string  `json:"docs_url,omitempty"`
+	AddedInVersion string  `json:"added_in_version"`
+	DeprecatedIn   string  `json:"deprecated_in,omitempty"`
+	RemovalDate    string  `json:"removal_date,omitempty"`
 }
 
 // ─── Registry Pattern ───────────────────────────────────────────────────────

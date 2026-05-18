@@ -263,4 +263,3 @@ func TestJWTAuth_RejectsRefreshToken(t *testing.T) {
 		t.Errorf("expected 401 when using refresh token as access token, got %d", w.Code)
 	}
 }
-

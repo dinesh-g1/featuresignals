@@ -573,7 +573,7 @@ func TestEnvVarStore_SecretDetection(t *testing.T) {
 		{"DATABASE_URL", false},
 		{"LOG_LEVEL", false},
 		{"FEATURE_FLAG_ENABLED", false},
-		{"secret", false}, // doesn't match pattern (no underscore prefix)
+		{"secret", false},       // doesn't match pattern (no underscore prefix)
 		{"my_secret_key", true}, // ends with _KEY, which is in the suffix list
 	}
 

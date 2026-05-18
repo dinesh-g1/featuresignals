@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { path } from "@/lib/paths";
 import { cn } from "@/lib/utils";
@@ -8,12 +8,21 @@ import { AuthGuard } from "@/components/auth-guard";
 import { toast, ToastContainer } from "@/components/toast";
 import { ActionFeedbackContainer } from "@/components/action-feedback";
 import { VerificationBanner } from "@/components/verification-banner";
+import { RecoveryBanner } from "@/components/recovery-banner";
 import { TrialBanner } from "@/components/trial-banner";
 import { UpgradeBanner } from "@/components/upgrade-banner";
 import { ProductTour } from "@/components/product-tour";
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog";
 import { useAppStore } from "@/stores/app-store";
 import { useAxe } from "@/lib/axe";
+import {
+  ConnectIconStrip,
+  type ConnectSection,
+} from "@/components/console/connect-icon-strip";
+import {
+  LearnIconStrip,
+  type LearnSection,
+} from "@/components/console/learn-icon-strip";
 
 // ── Console-specific imports ────────────────────────────────────────
 import { ConsoleTopBar } from "@/app/(app)/console/_client/console-top-bar";
@@ -44,8 +53,6 @@ function UpgradeRequiredListener() {
   return null;
 }
 
-
-
 // ─── Tour Gate ─────────────────────────────────────────────────────
 
 function TourGate() {
@@ -71,13 +78,34 @@ function TourGate() {
   return <ProductTour onComplete={() => setShow(false)} />;
 }
 
+// ─── Width Types ────────────────────────────────────────────────────
+
+type ZoneWidth = "collapsed" | "normal" | "wide";
+
+// ─── Zone Width Constants ───────────────────────────────────────────
+
+const CONNECT_WIDTHS: Record<ZoneWidth, number> = {
+  collapsed: 48,
+  normal: 320,
+  wide: 420,
+};
+
+const LEARN_WIDTHS: Record<ZoneWidth, number> = {
+  collapsed: 48,
+  normal: 380,
+  wide: 480,
+};
+
+const _HOVER_EXPAND_DELAY = 0; // immediate expand on hover
+const HOVER_COLLAPSE_DELAY = 300; // ms before collapsing after mouse leave
+
 // ─── Console Connect Toggle Button ─────────────────────────────────
 
 function ConnectToggle({
-  expanded,
+  isCollapsed,
   onToggle,
 }: {
-  expanded: boolean;
+  isCollapsed: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -89,9 +117,11 @@ function ConnectToggle({
         "border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]",
         "text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-primary)]",
         "shadow-sm transition-all duration-[var(--signal-duration-fast)]",
-        expanded ? "-right-3" : "-right-3",
+        "-right-3",
       )}
-      aria-label={expanded ? "Collapse Connect panel" : "Expand Connect panel"}
+      aria-label={
+        isCollapsed ? "Expand Connect panel" : "Collapse Connect panel"
+      }
     >
       <svg
         width="12"
@@ -101,7 +131,7 @@ function ConnectToggle({
         aria-hidden="true"
         className={cn(
           "transition-transform duration-[var(--signal-duration-fast)]",
-          expanded ? "rotate-0" : "rotate-180",
+          isCollapsed ? "rotate-180" : "rotate-0",
         )}
       >
         <path d="M10.78 3.97a.75.75 0 0 1 0 1.06L7.06 8.75l3.72 3.72a.75.75 0 1 1-1.06 1.06L5.47 9.28a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" />
@@ -113,10 +143,10 @@ function ConnectToggle({
 // ─── Console Learn Toggle Button ───────────────────────────────────
 
 function LearnToggle({
-  expanded,
+  isCollapsed,
   onToggle,
 }: {
-  expanded: boolean;
+  isCollapsed: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -128,9 +158,9 @@ function LearnToggle({
         "border border-[var(--signal-border-subtle)] bg-[var(--signal-bg-primary)]",
         "text-[var(--signal-fg-tertiary)] hover:text-[var(--signal-fg-primary)]",
         "shadow-sm transition-all duration-[var(--signal-duration-fast)]",
-        expanded ? "-left-3" : "-left-3",
+        "-left-3",
       )}
-      aria-label={expanded ? "Collapse Learn panel" : "Expand Learn panel"}
+      aria-label={isCollapsed ? "Expand Learn panel" : "Collapse Learn panel"}
     >
       <svg
         width="12"
@@ -140,7 +170,7 @@ function LearnToggle({
         aria-hidden="true"
         className={cn(
           "transition-transform duration-[var(--signal-duration-fast)]",
-          expanded ? "rotate-0" : "rotate-180",
+          isCollapsed ? "rotate-180" : "rotate-0",
         )}
       >
         <path d="M5.22 3.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L8.94 8.75 5.22 5.03a.75.75 0 0 1 0-1.06Z" />
@@ -157,9 +187,161 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const currentProjectId = useAppStore((s) => s.current_project_id);
 
-  // Console panel collapse state
-  const [connectExpanded, setConnectExpanded] = useState(false);
-  const [learnExpanded, setLearnExpanded] = useState(false);
+  // ── Console panel three-width state ─────────────────────────────
+  const [connectWidth, setConnectWidth] = useState<ZoneWidth>("collapsed");
+  const [connectLocked, setConnectLocked] = useState(false);
+  const [connectHovered, setConnectHovered] = useState(false);
+
+  const [learnWidth, setLearnWidth] = useState<ZoneWidth>("collapsed");
+  const [learnLocked, setLearnLocked] = useState(false);
+  const [learnHovered, setLearnHovered] = useState(false);
+
+  // Refs for hover collapse delay timers
+  const connectHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const learnHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Effective widths ────────────────────────────────────────────
+  const effectiveConnectWidth: ZoneWidth = connectLocked
+    ? connectWidth === "wide"
+      ? "wide"
+      : "normal"
+    : connectHovered
+      ? "normal"
+      : "collapsed";
+
+  const effectiveLearnWidth: ZoneWidth = learnLocked
+    ? learnWidth === "wide"
+      ? "wide"
+      : "normal"
+    : learnHovered
+      ? "normal"
+      : "collapsed";
+
+  const isConnectCollapsed = effectiveConnectWidth === "collapsed";
+  const isLearnCollapsed = effectiveLearnWidth === "collapsed";
+
+  // ── Hover handlers ──────────────────────────────────────────────
+  const handleConnectMouseEnter = useCallback(() => {
+    if (connectHoverTimer.current) {
+      clearTimeout(connectHoverTimer.current);
+      connectHoverTimer.current = null;
+    }
+    setConnectHovered(true);
+  }, []);
+
+  const handleConnectMouseLeave = useCallback(() => {
+    connectHoverTimer.current = setTimeout(() => {
+      setConnectHovered(false);
+    }, HOVER_COLLAPSE_DELAY);
+  }, []);
+
+  const handleLearnMouseEnter = useCallback(() => {
+    if (learnHoverTimer.current) {
+      clearTimeout(learnHoverTimer.current);
+      learnHoverTimer.current = null;
+    }
+    setLearnHovered(true);
+  }, []);
+
+  const handleLearnMouseLeave = useCallback(() => {
+    learnHoverTimer.current = setTimeout(() => {
+      setLearnHovered(false);
+    }, HOVER_COLLAPSE_DELAY);
+  }, []);
+
+  // ── Toggle handlers ─────────────────────────────────────────────
+  const handleConnectToggle = useCallback(() => {
+    if (connectLocked) {
+      // Unlock and collapse
+      setConnectLocked(false);
+      setConnectWidth("collapsed");
+      setConnectHovered(false);
+    } else {
+      // Lock in normal state
+      setConnectLocked(true);
+      setConnectWidth("normal");
+    }
+  }, [connectLocked]);
+
+  const handleLearnToggle = useCallback(() => {
+    if (learnLocked) {
+      setLearnLocked(false);
+      setLearnWidth("collapsed");
+      setLearnHovered(false);
+    } else {
+      setLearnLocked(true);
+      setLearnWidth("normal");
+    }
+  }, [learnLocked]);
+
+  // ── Icon strip click: expand and scroll to section ──────────────
+  const handleConnectIconClick = useCallback((section?: ConnectSection) => {
+    setConnectLocked(true);
+    setConnectWidth("normal");
+    setConnectHovered(false);
+    // Dispatch scroll event for ConnectZone to handle
+    if (section) {
+      window.dispatchEvent(
+        new CustomEvent("fs:connect-scroll-to", { detail: { section } }),
+      );
+    }
+  }, []);
+
+  const handleLearnIconClick = useCallback((section?: LearnSection) => {
+    setLearnLocked(true);
+    setLearnWidth("normal");
+    setLearnHovered(false);
+    if (section) {
+      window.dispatchEvent(
+        new CustomEvent("fs:learn-scroll-to", { detail: { section } }),
+      );
+    }
+  }, []);
+
+  // ── Cross-zone event listeners ──────────────────────────────────
+  useEffect(() => {
+    function handleExpandConnect() {
+      setConnectLocked(true);
+      setConnectWidth("normal");
+    }
+    function handleConnectWide() {
+      setConnectWidth("wide");
+    }
+    function handleConnectNormal() {
+      setConnectWidth("normal");
+    }
+    window.addEventListener("fs:expand-connect", handleExpandConnect);
+    window.addEventListener("fs:connect-wide", handleConnectWide);
+    window.addEventListener("fs:connect-normal", handleConnectNormal);
+    return () => {
+      window.removeEventListener("fs:expand-connect", handleExpandConnect);
+      window.removeEventListener("fs:connect-wide", handleConnectWide);
+      window.removeEventListener("fs:connect-normal", handleConnectNormal);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleLearnWide() {
+      setLearnWidth("wide");
+    }
+    function handleLearnNormal() {
+      setLearnWidth("normal");
+    }
+    window.addEventListener("fs:learn-wide", handleLearnWide);
+    window.addEventListener("fs:learn-normal", handleLearnNormal);
+    return () => {
+      window.removeEventListener("fs:learn-wide", handleLearnWide);
+      window.removeEventListener("fs:learn-normal", handleLearnNormal);
+    };
+  }, []);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (connectHoverTimer.current) clearTimeout(connectHoverTimer.current);
+      if (learnHoverTimer.current) clearTimeout(learnHoverTimer.current);
+    };
+  }, []);
 
   // Routes excluded from the Console Shell (use minimal layout)
   const isExcluded =
@@ -167,7 +349,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/pricing") ||
     pathname?.startsWith("/support");
 
-  const isConsoleRoute = pathname?.startsWith("/console");
+  const _isConsoleRoute = pathname?.startsWith("/console");
+  const isConsoleRoot = pathname === "/console";
 
   // Redirect project-scoped pages when no project is selected
   useEffect(() => {
@@ -180,6 +363,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // ── Shared banners (all layouts) ─────────────────────────────────
   const sharedBanners = (
     <>
+      <RecoveryBanner />
       <TrialBanner />
       <UpgradeBanner />
       <VerificationBanner />
@@ -208,9 +392,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             tabIndex={-1}
             className="min-h-screen bg-[var(--signal-bg-secondary)]"
           >
-            <Suspense fallback={<div className="p-6" />}>
-              {children}
-            </Suspense>
+            <Suspense fallback={<div className="p-6" />}>{children}</Suspense>
           </main>
 
           {/* Console overlays still available for support/help access */}
@@ -232,25 +414,46 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Main Area */}
             <div className="flex flex-1 overflow-hidden relative">
-              {/* CONNECT Zone — collapsible left panel */}
-              <div className="relative shrink-0">
+              {/* CONNECT Zone — collapsible left panel with hover-to-expand */}
+              <div
+                className="relative shrink-0"
+                onMouseEnter={handleConnectMouseEnter}
+                onMouseLeave={handleConnectMouseLeave}
+              >
                 <div
                   className={cn(
-                    "h-full overflow-hidden transition-all duration-[var(--signal-duration-normal)] ease-[cubic-bezier(0.16,1,0.3,1)]",
-                    connectExpanded ? "w-[320px]" : "w-[56px]",
+                    "h-full overflow-hidden transition-[width] duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                   )}
+                  style={{ width: CONNECT_WIDTHS[effectiveConnectWidth] }}
                 >
-                  <ConnectZone />
+                  {/* Collapsed: icon strip */}
+                  <div
+                    className={cn(
+                      "h-full",
+                      isConnectCollapsed ? "block" : "hidden",
+                    )}
+                  >
+                    <ConnectIconStrip onExpand={handleConnectIconClick} />
+                  </div>
+                  {/* Expanded: full ConnectZone */}
+                  <div
+                    className={cn(
+                      "h-full",
+                      isConnectCollapsed ? "hidden" : "block",
+                    )}
+                  >
+                    <ConnectZone />
+                  </div>
                 </div>
                 <ConnectToggle
-                  expanded={connectExpanded}
-                  onToggle={() => setConnectExpanded((p) => !p)}
+                  isCollapsed={isConnectCollapsed}
+                  onToggle={handleConnectToggle}
                 />
               </div>
 
-              {/* CENTER Zone — shows LifecycleZone for /console, {children} for other routes */}
+              {/* CENTER Zone — shows LifecycleZone for /console root, {children} for sub-routes like /console/agents, /console/policies */}
               <div className="flex-1 min-w-0 overflow-hidden">
-                {isConsoleRoute ? (
+                {isConsoleRoot ? (
                   <LifecycleZone />
                 ) : (
                   <div
@@ -272,19 +475,40 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <ContextPanel />
               </div>
 
-              {/* LEARN Zone — collapsible right panel */}
-              <div className="relative shrink-0">
+              {/* LEARN Zone — collapsible right panel with hover-to-expand */}
+              <div
+                className="relative shrink-0"
+                onMouseEnter={handleLearnMouseEnter}
+                onMouseLeave={handleLearnMouseLeave}
+              >
                 <LearnToggle
-                  expanded={learnExpanded}
-                  onToggle={() => setLearnExpanded((p) => !p)}
+                  isCollapsed={isLearnCollapsed}
+                  onToggle={handleLearnToggle}
                 />
                 <div
                   className={cn(
-                    "h-full overflow-hidden transition-all duration-[var(--signal-duration-normal)] ease-[cubic-bezier(0.16,1,0.3,1)]",
-                    learnExpanded ? "w-[380px]" : "w-[36px]",
+                    "h-full overflow-hidden transition-[width] duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                   )}
+                  style={{ width: LEARN_WIDTHS[effectiveLearnWidth] }}
                 >
-                  <LearnZone />
+                  {/* Collapsed: icon strip */}
+                  <div
+                    className={cn(
+                      "h-full",
+                      isLearnCollapsed ? "block" : "hidden",
+                    )}
+                  >
+                    <LearnIconStrip onExpand={handleLearnIconClick} />
+                  </div>
+                  {/* Expanded: full LearnZone */}
+                  <div
+                    className={cn(
+                      "h-full",
+                      isLearnCollapsed ? "hidden" : "block",
+                    )}
+                  >
+                    <LearnZone />
+                  </div>
                 </div>
               </div>
             </div>
@@ -300,7 +524,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Console overlays */}
           <ConsoleCommandPalette />
-          <HelpWidget learnPanelExpanded={learnExpanded} />
+          <HelpWidget learnPanelExpanded={!isLearnCollapsed} />
           <UndoToastContainer />
         </>
       )}

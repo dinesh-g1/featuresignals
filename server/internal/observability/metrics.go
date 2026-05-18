@@ -33,9 +33,9 @@ type Instruments struct {
 	PolicyEvalDuration ometric.Float64Histogram
 
 	// ── ABM (Agent Behavior Mesh) ─────────────────────────
-	ABMResolve              ometric.Int64Counter
-	ABMResolveDuration      ometric.Float64Histogram
-	ABMTrack                ometric.Int64Counter
+	ABMResolve               ometric.Int64Counter
+	ABMResolveDuration       ometric.Float64Histogram
+	ABMTrack                 ometric.Int64Counter
 	ABMTrackAsyncWriteFailed ometric.Int64Counter
 
 	// ── Eval Events ───────────────────────────────────────
@@ -43,8 +43,8 @@ type Instruments struct {
 	EvalEventsDropped ometric.Int64Counter
 
 	// ── EventBus ──────────────────────────────────────────
-	EventBusPublished        ometric.Int64Counter
-	EventBusPublishDuration  ometric.Float64Histogram
+	EventBusPublished       ometric.Int64Counter
+	EventBusPublishDuration ometric.Float64Histogram
 
 	// ── Governance Pipeline ───────────────────────────────
 	GovernanceStepExecuted ometric.Int64Counter
@@ -174,9 +174,9 @@ func NewInstruments() *Instruments {
 		PolicyEvaluated:    policyEvaluated,
 		PolicyEvalDuration: policyEvalDuration,
 
-		ABMResolve:              abmResolve,
-		ABMResolveDuration:      abmResolveDuration,
-		ABMTrack:                abmTrack,
+		ABMResolve:               abmResolve,
+		ABMResolveDuration:       abmResolveDuration,
+		ABMTrack:                 abmTrack,
 		ABMTrackAsyncWriteFailed: abmTrackAsyncWriteFailed,
 
 		EvalEventsEmitted: evalEventsEmitted,

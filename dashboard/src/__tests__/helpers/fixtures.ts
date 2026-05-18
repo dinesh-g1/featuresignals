@@ -9,6 +9,20 @@ import type {
   ApprovalRequest,
   APIKey,
 } from "@/lib/types";
+import type { PaginatedResponse } from "@/lib/api";
+
+export function makePaginatedResponse<T>(
+  data: T[],
+  overrides: Partial<Omit<PaginatedResponse<T>, "data">> = {},
+): PaginatedResponse<T> {
+  return {
+    data,
+    total: data.length,
+    limit: overrides.limit ?? 50,
+    offset: overrides.offset ?? 0,
+    has_more: overrides.has_more ?? false,
+  };
+}
 
 export function createMockProject(overrides: Partial<Project> = {}): Project {
   return {

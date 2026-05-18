@@ -332,10 +332,14 @@ export default function TeamPage() {
     loading,
     error,
     reload,
-  } = usePageData<OrgMember[]>(() => api.listMembers(token!), [token], {
-    enabled: !!token,
-    initialData: [],
-  });
+  } = usePageData<OrgMember[]>(
+    () => api.listMembers(token!).then((r) => r.data),
+    [token],
+    {
+      enabled: !!token,
+      initialData: [],
+    },
+  );
 
   // Environments for permissions (loaded separately since they depend on projectId)
   const [envs, setEnvs] = useState<Environment[]>([]);
@@ -386,7 +390,7 @@ export default function TeamPage() {
     if (!token || !projectId) return;
     api
       .listEnvironments(token, projectId)
-      .then((e) => setEnvs(e ?? []))
+      .then((e) => setEnvs(e.data))
       .catch(() => {});
   }, [token, projectId]);
 

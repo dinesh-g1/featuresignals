@@ -156,8 +156,8 @@ func TestProjectHandler_Get(t *testing.T) {
 	}
 
 	var body struct {
-		Project domain.Project   `json:"project"`
-		Links   []domain.Link    `json:"_links"`
+		Project domain.Project `json:"project"`
+		Links   []domain.Link  `json:"_links"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)

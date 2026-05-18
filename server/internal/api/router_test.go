@@ -100,15 +100,17 @@ func (noopStore) CreateFlag(context.Context, *domain.Flag) error { return errNoo
 func (noopStore) GetFlag(context.Context, string, string) (*domain.Flag, error) {
 	return nil, errNoop
 }
-func (noopStore) ListFlags(context.Context, string, int, int) ([]domain.Flag, error)           { return nil, errNoop }
+func (noopStore) ListFlags(context.Context, string, int, int) ([]domain.Flag, error) {
+	return nil, errNoop
+}
 func (noopStore) ListFlagsWithFilter(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, errNoop
 }
 func (noopStore) ListFlagsSorted(context.Context, string, string, string, int, int) ([]domain.Flag, error) {
 	return nil, errNoop
 }
-func (noopStore) UpdateFlag(context.Context, *domain.Flag) error           { return errNoop }
-func (noopStore) DeleteFlag(context.Context, string) error                 { return errNoop }
+func (noopStore) UpdateFlag(context.Context, *domain.Flag) error { return errNoop }
+func (noopStore) DeleteFlag(context.Context, string) error       { return errNoop }
 
 func (noopStore) UpsertFlagState(context.Context, *domain.FlagState) error { return errNoop }
 func (noopStore) GetFlagState(context.Context, string, string) (*domain.FlagState, error) {
@@ -198,14 +200,14 @@ func (noopStore) GetLastAuditHash(context.Context, string) (string, error) { ret
 func (noopStore) GetLimitsConfig(context.Context, string) (*domain.LimitsConfigRow, error) {
 	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
 }
-func (noopStore) CountFlags(context.Context, string) (int, error)       { return 0, errNoop }
-func (noopStore) CountSegments(context.Context, string) (int, error)    { return 0, errNoop }
+func (noopStore) CountFlags(context.Context, string) (int, error)        { return 0, errNoop }
+func (noopStore) CountSegments(context.Context, string) (int, error)     { return 0, errNoop }
 func (noopStore) CountEnvironments(context.Context, string) (int, error) { return 0, errNoop }
-func (noopStore) CountMembers(context.Context, string) (int, error)     { return 0, errNoop }
-func (noopStore) CountWebhooks(context.Context, string) (int, error)    { return 0, errNoop }
-func (noopStore) CountAPIKeys(context.Context, string) (int, error)     { return 0, errNoop }
+func (noopStore) CountMembers(context.Context, string) (int, error)      { return 0, errNoop }
+func (noopStore) CountWebhooks(context.Context, string) (int, error)     { return 0, errNoop }
+func (noopStore) CountAPIKeys(context.Context, string) (int, error)      { return 0, errNoop }
 func (noopStore) CountAPIKeysByEnv(context.Context, string) (int, error) { return 0, errNoop }
-func (noopStore) CountProjects(context.Context, string) (int, error)    { return 0, errNoop }
+func (noopStore) CountProjects(context.Context, string) (int, error)     { return 0, errNoop }
 func (noopStore) ListPinnedItems(context.Context, string, string, string, int, int) ([]domain.PinnedItem, error) {
 	return nil, errNoop
 }
@@ -218,7 +220,7 @@ func (noopStore) DeletePinnedItem(context.Context, string, string, string) error
 func (noopStore) Search(context.Context, string, string, string) ([]domain.SearchHit, error) {
 	return nil, errNoop
 }
-func (noopStore) CountAuditEntries(context.Context, string) (int, error)   { return 0, errNoop }
+func (noopStore) CountAuditEntries(context.Context, string) (int, error) { return 0, errNoop }
 func (noopStore) CountApprovalRequests(context.Context, string, string) (int, error) {
 	return 0, errNoop
 }
@@ -284,6 +286,9 @@ func (noopStore) ListInactiveOrgs(context.Context, string, time.Time) ([]domain.
 	return nil, errNoop
 }
 func (noopStore) DowngradeOrgToFree(context.Context, string) error { return errNoop }
+func (noopStore) GetOrganizationResourceCounts(context.Context, string) (*domain.OrgResourceCounts, error) {
+	return nil, errNoop
+}
 func (noopStore) CreateSalesInquiry(context.Context, *domain.SalesInquiry) error {
 	return errNoop
 }
@@ -311,17 +316,27 @@ func (noopStore) IsTokenRevoked(context.Context, string) (bool, error)          
 func (noopStore) CleanExpiredRevocations(context.Context) error                        { return nil }
 func (noopStore) CreateAgent(_ context.Context, _ *domain.Agent) error                 { return errNoop }
 func (noopStore) GetAgent(_ context.Context, _, _ string) (*domain.Agent, error)       { return nil, errNoop }
-func (noopStore) ListAgents(_ context.Context, _ string, _, _ int) ([]domain.Agent, error)       { return nil, errNoop }
-func (noopStore) ListAgentsByType(_ context.Context, _, _ string, _, _ int) ([]domain.Agent, error) { return nil, errNoop }
-func (noopStore) CountAgents(_ context.Context, _ string) (int, error)                 { return 0, errNoop }
-func (noopStore) CountAgentsByType(_ context.Context, _, _ string) (int, error)        { return 0, errNoop }
-func (noopStore) UpdateAgent(_ context.Context, _ *domain.Agent) error                 { return errNoop }
-func (noopStore) UpdateAgentHeartbeat(_ context.Context, _ string) error               { return errNoop }
-func (noopStore) DeleteAgent(_ context.Context, _, _ string) error                     { return errNoop }
-func (noopStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error { return errNoop }
-func (noopStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) { return nil, errNoop }
-func (noopStore) ListMaturities(_ context.Context, _ string, _, _ int) ([]domain.AgentMaturity, error) { return nil, errNoop }
-func (noopStore) UpsertMFASecret(context.Context, string, string) error                { return nil }
+func (noopStore) ListAgents(_ context.Context, _ string, _, _ int) ([]domain.Agent, error) {
+	return nil, errNoop
+}
+func (noopStore) ListAgentsByType(_ context.Context, _, _ string, _, _ int) ([]domain.Agent, error) {
+	return nil, errNoop
+}
+func (noopStore) CountAgents(_ context.Context, _ string) (int, error)          { return 0, errNoop }
+func (noopStore) CountAgentsByType(_ context.Context, _, _ string) (int, error) { return 0, errNoop }
+func (noopStore) UpdateAgent(_ context.Context, _ *domain.Agent) error          { return errNoop }
+func (noopStore) UpdateAgentHeartbeat(_ context.Context, _ string) error        { return errNoop }
+func (noopStore) DeleteAgent(_ context.Context, _, _ string) error              { return errNoop }
+func (noopStore) UpsertMaturity(_ context.Context, _ string, _ *domain.AgentMaturity) error {
+	return errNoop
+}
+func (noopStore) GetMaturity(_ context.Context, _, _ string) (*domain.AgentMaturity, error) {
+	return nil, errNoop
+}
+func (noopStore) ListMaturities(_ context.Context, _ string, _, _ int) ([]domain.AgentMaturity, error) {
+	return nil, errNoop
+}
+func (noopStore) UpsertMFASecret(context.Context, string, string) error { return nil }
 func (noopStore) GetMFASecret(context.Context, string) (*domain.MFASecret, error) {
 	return nil, errNoop
 }
@@ -345,6 +360,8 @@ func (noopStore) ListCustomRoles(context.Context, string, int, int) ([]domain.Cu
 func (noopStore) UpdateCustomRole(context.Context, *domain.CustomRole) error { return errNoop }
 func (noopStore) DeleteCustomRole(context.Context, string) error             { return errNoop }
 func (noopStore) SoftDeleteUser(context.Context, string) error               { return errNoop }
+func (noopStore) DeleteUser(context.Context, string) error                   { return errNoop }
+func (noopStore) GetOrgIDsForUser(context.Context, string) ([]string, error) { return nil, errNoop }
 func (noopStore) SetPasswordResetToken(context.Context, string, string, time.Time, string, string) error {
 	return errNoop
 }
@@ -405,7 +422,7 @@ func (noopStore) CreateSession(context.Context, *domain.PublicSession) error { r
 func (noopStore) GetSession(context.Context, string) (*domain.PublicSession, error) {
 	return nil, errNoop
 }
-func (noopStore) DeleteSession(context.Context, string) error          { return errNoop }
+func (noopStore) DeleteSession(context.Context, string) error       { return errNoop }
 func (noopStore) CleanExpiredSessions(context.Context) (int, error) { return 0, errNoop }
 
 type noopOTPEmail struct{}
@@ -443,39 +460,39 @@ func newTestRouter(t *testing.T) http.Handler {
 	t.Cleanup(cancel)
 
 	return api.NewRouter(
-			ctx,
-			store,
-			jwtMgr,
-			evalCache,
-			engine,
-			sseServer,
-			logger,
-			metricsCollector,
-			otelInstruments,
-			nil, // governancePipeline (not needed for router tests)
-			api.BillingConfig{Registry: payment.NewRegistry()},
-			noopOTPEmail{},
-			"http://localhost:8080",
-			"http://localhost:3000",
-			statusH,
-			"cloud",
-			false,
-			true,
-			nil,
-			nil,
-			nil,
-			nil,
-			"",
-			nil,
-			nil,
-			nil,
-			nil, // incHandler
-			nil, // impHandler
-			nil, // ghWebhookHandler
-			nil, // consoleH
-			nil, // consoleWSH
-			nil, // maturityH
-		)
+		ctx,
+		store,
+		jwtMgr,
+		evalCache,
+		engine,
+		sseServer,
+		logger,
+		metricsCollector,
+		otelInstruments,
+		nil, // governancePipeline (not needed for router tests)
+		api.BillingConfig{Registry: payment.NewRegistry()},
+		noopOTPEmail{},
+		"http://localhost:8080",
+		"http://localhost:3000",
+		statusH,
+		"cloud",
+		false,
+		true,
+		nil,
+		nil,
+		nil,
+		nil,
+		"",
+		nil,
+		nil,
+		nil,
+		nil, // incHandler
+		nil, // impHandler
+		nil, // ghWebhookHandler
+		nil, // consoleH
+		nil, // consoleWSH
+		nil, // maturityH
+	)
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
@@ -751,87 +768,87 @@ var internalRoutes = map[string]bool{
 	"PATCH /api/v1/ops/users/{id}":                    true,
 	"GET /api/v1/ops/audit":                           true,
 
-		// Operations Portal — additional internal-only routes
-		"GET /api/v1/ops/auth/me":              true,
-		"POST /api/v1/ops/auth/forgot-password": true,
-		"GET /api/v1/ops/clusters":              true,
-		"GET /api/v1/ops/clusters/{name}/health": true,
-		"GET /ops":                               true,
+	// Operations Portal — additional internal-only routes
+	"GET /api/v1/ops/auth/me":                true,
+	"POST /api/v1/ops/auth/forgot-password":  true,
+	"GET /api/v1/ops/clusters":               true,
+	"GET /api/v1/ops/clusters/{name}/health": true,
+	"GET /ops":                               true,
 
-		// AI Janitor — internal code analysis tooling
-		"DELETE /v1/janitor/repositories/{id}":        true,
-		"GET /v1/janitor/config":                       true,
-		"GET /v1/janitor/flags":                         true,
-		"GET /v1/janitor/repositories":                  true,
-		"GET /v1/janitor/scans/{id}":                    true,
-		"GET /v1/janitor/scans/{scanId}/events":         true,
-		"GET /v1/janitor/stats":                         true,
-		"POST /v1/janitor/flags/{flagKey}/dismiss":      true,
-		"POST /v1/janitor/flags/{flagKey}/generate-pr":  true,
-		"POST /v1/janitor/repositories":                true,
-		"POST /v1/janitor/scan":                         true,
-		"POST /v1/janitor/scans/{id}/cancel":             true,
-		"PUT /v1/janitor/config":                        true,
+	// AI Janitor — internal code analysis tooling
+	"DELETE /v1/janitor/repositories/{id}":         true,
+	"GET /v1/janitor/config":                       true,
+	"GET /v1/janitor/flags":                        true,
+	"GET /v1/janitor/repositories":                 true,
+	"GET /v1/janitor/scans/{id}":                   true,
+	"GET /v1/janitor/scans/{scanId}/events":        true,
+	"GET /v1/janitor/stats":                        true,
+	"POST /v1/janitor/flags/{flagKey}/dismiss":     true,
+	"POST /v1/janitor/flags/{flagKey}/generate-pr": true,
+	"POST /v1/janitor/repositories":                true,
+	"POST /v1/janitor/scan":                        true,
+	"POST /v1/janitor/scans/{id}/cancel":           true,
+	"PUT /v1/janitor/config":                       true,
 
-		// Public evaluation endpoints — documented via SDK docs
-		"GET /v1/public/evaluate/{flagKey}":     true,
-		"POST /v1/public/calculator":             true,
-		"POST /v1/public/migration/preview":      true,
-		"POST /v1/public/migration/save":         true,
+	// Public evaluation endpoints — documented via SDK docs
+	"GET /v1/public/evaluate/{flagKey}": true,
+	"POST /v1/public/calculator":        true,
+	"POST /v1/public/migration/preview": true,
+	"POST /v1/public/migration/save":    true,
 
-				// Internal-only flat flag listing — dashboard uses /v1/projects/{projectID}/flags
-				"GET /v1/flags": true,
+	// Internal-only flat flag listing — dashboard uses /v1/projects/{projectID}/flags
+	"GET /v1/flags": true,
 
-			// Agent Registry (v2.0.0-alpha) — OpenAPI spec update pending
-			"POST /v1/agents":                    true,
-			"GET /v1/agents":                     true,
-			"GET /v1/agents/{agentID}":           true,
-			"PATCH /v1/agents/{agentID}":         true,
-			"DELETE /v1/agents/{agentID}":        true,
-			"POST /v1/agents/{agentID}/heartbeat": true,
-			"GET /v1/agents/{agentID}/maturity":   true,
-			"POST /v1/agents/{agentID}/evaluate-maturity": true,
+	// Agent Registry (v2.0.0-alpha) — OpenAPI spec update pending
+	"POST /v1/agents":                             true,
+	"GET /v1/agents":                              true,
+	"GET /v1/agents/{agentID}":                    true,
+	"PATCH /v1/agents/{agentID}":                  true,
+	"DELETE /v1/agents/{agentID}":                 true,
+	"POST /v1/agents/{agentID}/heartbeat":         true,
+	"GET /v1/agents/{agentID}/maturity":           true,
+	"POST /v1/agents/{agentID}/evaluate-maturity": true,
 
-			// Governance Policies (v2.0.0-alpha) — OpenAPI spec update pending
-			"POST /v1/policies":                  true,
-			"GET /v1/policies":                   true,
-			"GET /v1/policies/{policyID}":        true,
-			"PATCH /v1/policies/{policyID}":      true,
-			"DELETE /v1/policies/{policyID}":     true,
-			"POST /v1/policies/{policyID}/toggle": true,
+	// Governance Policies (v2.0.0-alpha) — OpenAPI spec update pending
+	"POST /v1/policies":                   true,
+	"GET /v1/policies":                    true,
+	"GET /v1/policies/{policyID}":         true,
+	"PATCH /v1/policies/{policyID}":       true,
+	"DELETE /v1/policies/{policyID}":      true,
+	"POST /v1/policies/{policyID}/toggle": true,
 
-			// Eval Events analytics (v2.0.0-alpha) — OpenAPI spec update pending
-			"GET /v1/eval-events":          true,
-			"GET /v1/eval-events/volume":    true,
+	// Eval Events analytics (v2.0.0-alpha) — OpenAPI spec update pending
+	"GET /v1/eval-events":        true,
+	"GET /v1/eval-events/volume": true,
 
-			// ABM (v2.0.0-alpha) — OpenAPI spec update pending
-			"POST /v1/abm/resolve":                   true,
-			"POST /v1/abm/track":                     true,
-			"POST /v1/abm/track/batch":               true,
-			"GET /v1/abm/behaviors":                  true,
-			"POST /v1/abm/behaviors":                 true,
-			"GET /v1/abm/behaviors/{key}":            true,
-			"PATCH /v1/abm/behaviors/{key}":          true,
-			"DELETE /v1/abm/behaviors/{key}":         true,
-			"GET /v1/abm/behaviors/{key}/analytics":  true,
+	// ABM (v2.0.0-alpha) — OpenAPI spec update pending
+	"POST /v1/abm/resolve":                  true,
+	"POST /v1/abm/track":                    true,
+	"POST /v1/abm/track/batch":              true,
+	"GET /v1/abm/behaviors":                 true,
+	"POST /v1/abm/behaviors":                true,
+	"GET /v1/abm/behaviors/{key}":           true,
+	"PATCH /v1/abm/behaviors/{key}":         true,
+	"DELETE /v1/abm/behaviors/{key}":        true,
+	"GET /v1/abm/behaviors/{key}/analytics": true,
 
-			// Stage 3 Products (v2.1.0) — spec complete in OpenAPI, handler implementations deferred to Phase 2
-			"GET /v1/code2flag/references":                true,
-			"POST /v1/code2flag/spec":                     true,
-			"POST /v1/code2flag/implement":                true,
-			"GET /v1/code2flag/cleanup":                   true,
-			"POST /v1/code2flag/cleanup":                  true,
-			"POST /v1/preflight/assess":                   true,
-			"GET /v1/preflight/assess/{assessmentID}":     true,
-			"POST /v1/preflight/approval":                 true,
-			"GET /v1/preflight/approval/{approvalID}":     true,
-			"GET /v1/incidentflag/monitor":                true,
-			"POST /v1/incidentflag/correlate":             true,
-			"POST /v1/incidentflag/remediate":             true,
-			"GET /v1/impact/report/{flagKey}":             true,
-			"GET /v1/impact/cost":                         true,
-			"GET /v1/impact/learning":                     true,
-			}
+	// Stage 3 Products (v2.1.0) — spec complete in OpenAPI, handler implementations deferred to Phase 2
+	"GET /v1/code2flag/references":            true,
+	"POST /v1/code2flag/spec":                 true,
+	"POST /v1/code2flag/implement":            true,
+	"GET /v1/code2flag/cleanup":               true,
+	"POST /v1/code2flag/cleanup":              true,
+	"POST /v1/preflight/assess":               true,
+	"GET /v1/preflight/assess/{assessmentID}": true,
+	"POST /v1/preflight/approval":             true,
+	"GET /v1/preflight/approval/{approvalID}": true,
+	"GET /v1/incidentflag/monitor":            true,
+	"POST /v1/incidentflag/correlate":         true,
+	"POST /v1/incidentflag/remediate":         true,
+	"GET /v1/impact/report/{flagKey}":         true,
+	"GET /v1/impact/cost":                     true,
+	"GET /v1/impact/learning":                 true,
+}
 
 // TestAllRoutesDocumented ensures every route registered in the chi router has
 // a corresponding entry in the OpenAPI spec, and vice versa. This prevents the
@@ -1089,23 +1106,34 @@ func (noopStore) GetVariantDistribution(_ context.Context, _, _ string, _ time.T
 	return nil, errNoop
 }
 func (noopStore) CountBehaviors(_ context.Context, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountBehaviorsByAgentType(_ context.Context, _, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountCustomRoles(_ context.Context, _ string) (int, error)      { return 0, errNoop }
-func (noopStore) CountEnvironmentsByProject(_ context.Context, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountFlagStatesByEnv(_ context.Context, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountFlagsByProject(_ context.Context, _ string) (int, error)   { return 0, errNoop }
+func (noopStore) CountBehaviorsByAgentType(_ context.Context, _, _ string) (int, error) {
+	return 0, errNoop
+}
+func (noopStore) CountCustomRoles(_ context.Context, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountEnvironmentsByProject(_ context.Context, _ string) (int, error) {
+	return 0, errNoop
+}
+func (noopStore) CountFlagStatesByEnv(_ context.Context, _ string) (int, error)   { return 0, errNoop }
+func (noopStore) CountFlagsByProject(_ context.Context, _ string) (int, error)    { return 0, errNoop }
 func (noopStore) CountSegmentsByProject(_ context.Context, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountOrgMembers(_ context.Context, _ string) (int, error)       { return 0, errNoop }
+func (noopStore) CountOrgMembers(_ context.Context, _ string) (int, error)        { return 0, errNoop }
 func (noopStore) CountWebhookDeliveries(_ context.Context, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountMaturities(_ context.Context, _ string) (int, error)       { return 0, errNoop }
-func (noopStore) CountFlagVersions(_ context.Context, _ string) (int, error)     { return 0, errNoop }
-func (noopStore) CountFlagsWithFilter(_ context.Context, _, _, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountSegmentsWithFilter(_ context.Context, _, _, _ string) (int, error) { return 0, errNoop }
+func (noopStore) CountMaturities(_ context.Context, _ string) (int, error)        { return 0, errNoop }
+func (noopStore) CountFlagVersions(_ context.Context, _ string) (int, error)      { return 0, errNoop }
+func (noopStore) CountFlagsWithFilter(_ context.Context, _, _, _ string) (int, error) {
+	return 0, errNoop
+}
+func (noopStore) CountSegmentsWithFilter(_ context.Context, _, _, _ string) (int, error) {
+	return 0, errNoop
+}
 func (noopStore) CountPinnedItems(_ context.Context, _, _, _ string) (int, error) { return 0, errNoop }
-func (noopStore) CountIntegrations(_ context.Context, _ string) (int, error) { return 0, errNoop }
-func (noopStore) GetUsersByIDs(_ context.Context, _ []string) ([]domain.User, error) { return nil, errNoop }
+func (noopStore) CountIntegrations(_ context.Context, _ string) (int, error)      { return 0, errNoop }
+func (noopStore) GetUsersByIDs(_ context.Context, _ []string) ([]domain.User, error) {
+	return nil, errNoop
+}
 
 func (noopStore) CountPolicies(_ context.Context, _ string) (int, error) { return 0, errNoop }
+
 // ─── PolicyStore ───────────────────────────────────────────────────────────
 
 func (noopStore) GetPolicy(_ context.Context, _, _ string) (*domain.Policy, error) {
@@ -1161,4 +1189,3 @@ func (noopStore) UpdateBehavior(_ context.Context, _ *domain.ABMBehavior) error 
 func (noopStore) DeleteBehavior(_ context.Context, _, _ string) error {
 	return errNoop
 }
-

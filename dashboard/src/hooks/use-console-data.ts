@@ -1,135 +1,102 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { useConsoleStore } from "@/stores/console-store";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useAppStore } from "@/stores/app-store";
+import { useConsoleStore } from "@/stores/console-store";
 import { api } from "@/lib/api";
-import type { Project } from "@/lib/types";
+import type { Project, Environment } from "@/lib/types";
 
 /**
- * useConsoleData — fetches Console flag data for the Lifecycle Zone
- * and the shared project list.
+ * useConsoleFeatures — TanStack Query hook for the Lifecycle Zone flag list.
  *
- * Reads filter state from `useConsoleStore` (stage, environment, project,
- * sort) and writes results back via `setFeatures`, `setZoneLoading`,
- * `setZoneError`, and `setLastUpdated`.
- *
- * Fetches on mount + filter changes, and polls every 30 seconds.
- * Projects are fetched once on mount (not polled).
+ * Reads filter state (stage, environment, project, sort) from the Console
+ * store. Polls every 30 seconds. Components that previously read
+ * `features`, `featuresTotal`, `featuresHasMore`, `loading.features`,
+ * and `errors.features` from the Zustand store should use this instead.
  */
-export function useConsoleData() {
+export function useConsoleFeatures() {
   const token = useAppStore((s) => s.token);
-  const expiresAt = useAppStore((s) => s.expires_at);
   const currentProjectId = useAppStore((s) => s.current_project_id);
-  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
-
   const selectedStage = useConsoleStore((s) => s.selectedStage);
   const selectedEnvironment = useConsoleStore((s) => s.selectedEnvironment);
   const sortBy = useConsoleStore((s) => s.sortBy);
   const projectFilter = useConsoleStore((s) => s.projectFilter);
-  const retryTrigger = useConsoleStore((s) => s.retryTrigger);
+  const featuresLimit = useConsoleStore((s) => s.featuresLimit);
 
-  const setFeatures = useConsoleStore((s) => s.setFeatures);
-  const setZoneLoading = useConsoleStore((s) => s.setZoneLoading);
-  const setZoneError = useConsoleStore((s) => s.setZoneError);
-  const setLastUpdated = useConsoleStore((s) => s.setLastUpdated);
-  const setProjects = useConsoleStore((s) => s.setProjects);
-  const setProjectsLoading = useConsoleStore((s) => s.setProjectsLoading);
-  const setProjectsError = useConsoleStore((s) => s.setProjectsError);
-
-  const fetch = useCallback(async () => {
-    if (!token) return;
-    if (!api.console) {
-      if (process.env.NODE_ENV === "development") {
-        console.error(
-          "[useConsoleData] api.console is undefined — cannot fetch features",
-        );
-      }
-      return;
-    }
-    setZoneLoading("features", true);
-    setZoneError("features", null);
-    try {
-      const result = await api.console.listFlags(token, {
-        limit: 100,
+  return useQuery({
+    queryKey: queryKeys.console.features({
+      projectId: currentProjectId || projectFilter || undefined,
+      stage: selectedStage ?? undefined,
+      environment: selectedEnvironment,
+      sort: sortBy,
+      limit: featuresLimit,
+    }),
+    queryFn: () =>
+      api.console.listFlags(token!, {
+        limit: featuresLimit,
         offset: 0,
+        projectId: currentProjectId || projectFilter || undefined,
         stage: selectedStage ?? undefined,
         environment: selectedEnvironment,
-        projectId: projectFilter || undefined,
         sort: sortBy,
-      });
-      setFeatures(result.data, result.total);
-      setLastUpdated(new Date().toISOString());
-    } catch (err) {
-      setZoneError(
-        "features",
-        err instanceof Error ? err.message : "Failed to load features",
-      );
-    } finally {
-      setZoneLoading("features", false);
-    }
-  }, [
-    token,
-    selectedStage,
-    selectedEnvironment,
-    sortBy,
-    projectFilter,
-    setFeatures,
-    setZoneLoading,
-    setZoneError,
-    setLastUpdated,
-  ]);
+      }),
+    enabled: !!token,
+    refetchInterval: 30_000,
+  });
+}
 
-  // Fetch on mount and when filters change
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+/**
+ * useProjects — TanStack Query hook for the organization's project list.
+ *
+ * Fetched once and cached for 5 minutes. Components that previously read
+ * `projects`, `projectsLoading`, and `projectsError` from the Zustand
+ * store should use this instead.
+ */
+export function useProjects() {
+  const token = useAppStore((s) => s.token);
 
-  // Refetch on manual retry
-  useEffect(() => {
-    if (retryTrigger > 0) fetch();
-  }, [retryTrigger, fetch]);
+  return useQuery({
+    queryKey: queryKeys.projects.list(),
+    queryFn: () => api.listProjects(token!, { limit: 50 }).then((r) => r.data),
+    enabled: !!token,
+    staleTime: 5 * 60_000,
+  });
+}
 
-  // Poll every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(fetch, 30_000);
-    return () => clearInterval(interval);
-  }, [fetch]);
+/**
+ * useEnvironments — TanStack Query hook for a project's environment list.
+ *
+ * Automatically fetches when `currentProjectId` changes. Cached for
+ * 5 minutes. Components that previously read `environments`,
+ * `environmentsLoading`, and `environmentsError` from the Zustand
+ * store should use this instead.
+ */
+export function useEnvironments() {
+  const token = useAppStore((s) => s.token);
+  const currentProjectId = useAppStore((s) => s.current_project_id);
 
-  // ── Fetch Projects (once on mount, not polled) ──────────────────
-  useEffect(() => {
-    if (!token) {
-      setProjectsLoading(false);
-      return;
-    }
+  return useQuery({
+    queryKey: queryKeys.environments.list(currentProjectId!),
+    queryFn: () =>
+      api
+        .listEnvironments(token!, currentProjectId!, { limit: 20 })
+        .then((r) => r.data),
+    enabled: !!token && !!currentProjectId,
+    staleTime: 5 * 60_000,
+    retry: false, // 404 won't change on retry; avoid wasteful re-fetches
+  });
+}
 
-    setProjectsLoading(true);
-    setProjectsError(null);
-
-    api
-      .listProjects(token)
-      .then((result) => {
-        const arr: Project[] = Array.isArray(result)
-          ? result
-          : ((result as { data?: Project[] })?.data ?? []);
-        setProjects(arr);
-
-        // Auto-select first project if none selected
-        if (!currentProjectId && arr.length > 0) {
-          setCurrentProject(arr[0].id);
-        }
-      })
-      .catch((err) => {
-        setProjectsError(
-          err instanceof Error ? err.message : "Failed to load projects",
-        );
-      })
-      .finally(() => {
-        setProjectsLoading(false);
-      });
-    // Intentionally exclude currentProjectId & setCurrentProject to avoid loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, expiresAt, retryTrigger]);
-
-  return { refetch: fetch };
+/**
+ * useConsoleData — triggers all console data queries for side-effect-only
+ * mounting (used by ConsoleDataLayer).
+ *
+ * Components that need specific data should use the individual hooks
+ * (useConsoleFeatures, useProjects, useEnvironments) instead.
+ */
+export function useConsoleData() {
+  useConsoleFeatures();
+  useProjects();
+  useEnvironments();
 }

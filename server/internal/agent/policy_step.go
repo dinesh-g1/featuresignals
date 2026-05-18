@@ -143,10 +143,10 @@ func (s *PolicyGovernanceStep) Execute(ctx context.Context, action domain.AgentA
 			"duration_ms", elapsed.Milliseconds(),
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepPolicy,
-			Reason:         "policy_violation",
-			Message:        formatFailures(result.Failures),
-			RequiresHuman:  true,
+			Step:                 domain.GovStepPolicy,
+			Reason:               "policy_violation",
+			Message:              formatFailures(result.Failures),
+			RequiresHuman:        true,
 			OverrideInstructions: "Review policy violations in the dashboard and override if authorized.",
 		}
 
@@ -158,10 +158,10 @@ func (s *PolicyGovernanceStep) Execute(ctx context.Context, action domain.AgentA
 			"duration_ms", elapsed.Milliseconds(),
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepPolicy,
-			Reason:         "policy_requires_human",
-			Message:        formatFailures(result.Failures),
-			RequiresHuman:  true,
+			Step:                 domain.GovStepPolicy,
+			Reason:               "policy_requires_human",
+			Message:              formatFailures(result.Failures),
+			RequiresHuman:        true,
 			OverrideInstructions: "A human must approve this action. Review the policy violations and approve or deny.",
 		}
 

@@ -85,7 +85,8 @@ export function SDKHealth() {
     setLoading(true);
     setError(null);
     try {
-      const envs = await api.listEnvironments(token, projectId);
+      const envsRes = await api.listEnvironments(token, projectId);
+      const envs = envsRes.data;
 
       // Get global eval metrics to determine SDK connectivity
       let metrics: { total_evaluations: number; window_start: string } | null =

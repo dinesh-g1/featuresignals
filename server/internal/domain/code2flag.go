@@ -44,8 +44,8 @@ type GeneratedFlag struct {
 	Key                string          `json:"key"`
 	Name               string          `json:"name"`
 	Description        string          `json:"description,omitempty"`
-	FlagType           string          `json:"flag_type"`                      // boolean, multi_variant, number, json
-	ProposedVariants   json.RawMessage `json:"proposed_variants,omitempty"`    // JSONB array of variant configs
+	FlagType           string          `json:"flag_type"`                       // boolean, multi_variant, number, json
+	ProposedVariants   json.RawMessage `json:"proposed_variants,omitempty"`     // JSONB array of variant configs
 	SourceScanResultID string          `json:"source_scan_result_id,omitempty"` // FK to scan_results
 	PRURL              string          `json:"pr_url,omitempty"`
 	Status             string          `json:"status"` // proposed, pr_created, flag_created, rejected
@@ -60,12 +60,12 @@ type GeneratedFlag struct {
 type CleanupEntry struct {
 	ID                  string    `json:"id"`
 	OrgID               string    `json:"org_id"`
-	FlagID              string    `json:"flag_id"`            // FK to flags table
+	FlagID              string    `json:"flag_id"` // FK to flags table
 	FlagKey             string    `json:"flag_key"`
-	Reason              string    `json:"reason"`             // stale, 100_percent_rolled_out, deprecated, manual
+	Reason              string    `json:"reason"` // stale, 100_percent_rolled_out, deprecated, manual
 	DaysSince100Percent int       `json:"days_since_100_percent"`
 	PRURL               string    `json:"pr_url,omitempty"`
-	Status              string    `json:"status"`             // pending, pr_created, pr_merged, flag_retired, dismissed
+	Status              string    `json:"status"` // pending, pr_created, pr_merged, flag_retired, dismissed
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }
@@ -96,11 +96,11 @@ const (
 	ScanResultStatusModified   = "modified"
 
 	// Cleanup entry statuses
-	CleanupStatusPending      = "pending"
-	CleanupStatusPRCreated    = "pr_created"
-	CleanupStatusPRMerged     = "pr_merged"
-	CleanupStatusFlagRetired  = "flag_retired"
-	CleanupStatusDismissed    = "dismissed"
+	CleanupStatusPending     = "pending"
+	CleanupStatusPRCreated   = "pr_created"
+	CleanupStatusPRMerged    = "pr_merged"
+	CleanupStatusFlagRetired = "flag_retired"
+	CleanupStatusDismissed   = "dismissed"
 
 	// Generated flag statuses
 	GeneratedFlagStatusProposed    = "proposed"
@@ -115,10 +115,10 @@ const (
 	ConditionalTypeConfigCheck = "config-check"
 
 	// Cleanup reasons
-	CleanupReasonStale              = "stale"
+	CleanupReasonStale               = "stale"
 	CleanupReason100PercentRolledOut = "100_percent_rolled_out"
-	CleanupReasonDeprecated         = "deprecated"
-	CleanupReasonManual             = "manual"
+	CleanupReasonDeprecated          = "deprecated"
+	CleanupReasonManual              = "manual"
 )
 
 // ─── Store Interfaces ──────────────────────────────────────────────────────

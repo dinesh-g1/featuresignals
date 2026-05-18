@@ -61,10 +61,10 @@ func (s *BlastRadiusGovernanceStep) Execute(ctx context.Context, action domain.A
 			"action_id", action.ID,
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepBlastRadius,
-			Reason:         "no_blast_radius_estimate",
-			Message:        "The agent did not provide a blast radius estimate for this action. For safety, human approval is required.",
-			RequiresHuman:  true,
+			Step:                 domain.GovStepBlastRadius,
+			Reason:               "no_blast_radius_estimate",
+			Message:              "The agent did not provide a blast radius estimate for this action. For safety, human approval is required.",
+			RequiresHuman:        true,
 			OverrideInstructions: "A human can review the action and override this requirement. Encourage the agent to provide blast radius estimates for future actions.",
 		}
 	}
@@ -77,10 +77,10 @@ func (s *BlastRadiusGovernanceStep) Execute(ctx context.Context, action domain.A
 			"max", s.MaxAffectedEntities,
 		)
 		return action, &domain.GovernanceError{
-			Step:    domain.GovStepBlastRadius,
-			Reason:  "blast_radius_exceeded",
-			Message: fmt.Sprintf("Action would affect %d entities (max: %d). Split this action into smaller batches or reduce scope.", br.AffectedEntities, s.MaxAffectedEntities),
-			RequiresHuman: true,
+			Step:                 domain.GovStepBlastRadius,
+			Reason:               "blast_radius_exceeded",
+			Message:              fmt.Sprintf("Action would affect %d entities (max: %d). Split this action into smaller batches or reduce scope.", br.AffectedEntities, s.MaxAffectedEntities),
+			RequiresHuman:        true,
 			OverrideInstructions: "A human with admin permissions can override this cap for exceptional circumstances.",
 		}
 	}
@@ -92,10 +92,10 @@ func (s *BlastRadiusGovernanceStep) Execute(ctx context.Context, action domain.A
 			"max_pct", s.MaxAffectedPercentage,
 		)
 		return action, &domain.GovernanceError{
-			Step:    domain.GovStepBlastRadius,
-			Reason:  "blast_radius_exceeded",
-			Message: fmt.Sprintf("Action would affect %.1f%% of traffic/users (max: %.1f%%). Reduce the rollout percentage or use phased deployment.", br.AffectedPercentage, s.MaxAffectedPercentage),
-			RequiresHuman: true,
+			Step:                 domain.GovStepBlastRadius,
+			Reason:               "blast_radius_exceeded",
+			Message:              fmt.Sprintf("Action would affect %.1f%% of traffic/users (max: %.1f%%). Reduce the rollout percentage or use phased deployment.", br.AffectedPercentage, s.MaxAffectedPercentage),
+			RequiresHuman:        true,
 			OverrideInstructions: "A human with admin permissions can override this cap for exceptional circumstances.",
 		}
 	}
@@ -108,10 +108,10 @@ func (s *BlastRadiusGovernanceStep) Execute(ctx context.Context, action domain.A
 			"threshold", s.RequireHumanAboveRisk,
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepBlastRadius,
-			Reason:         "blast_radius_requires_human",
-			Message:        fmt.Sprintf("Action risk level is %q (threshold: %q). Human approval is required for actions at this risk level.", br.RiskLevel, s.RequireHumanAboveRisk),
-			RequiresHuman:  true,
+			Step:                 domain.GovStepBlastRadius,
+			Reason:               "blast_radius_requires_human",
+			Message:              fmt.Sprintf("Action risk level is %q (threshold: %q). Human approval is required for actions at this risk level.", br.RiskLevel, s.RequireHumanAboveRisk),
+			RequiresHuman:        true,
 			OverrideInstructions: "A human can approve this action after reviewing the blast radius estimate and rationale.",
 		}
 	}

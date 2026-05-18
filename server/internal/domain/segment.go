@@ -8,15 +8,15 @@ import (
 // Segment groups users by shared attributes (e.g. "Beta Users", "Enterprise Plan").
 // Segments are reusable across flags via TargetingRule.SegmentKeys.
 type Segment struct {
-	ID          string      `json:"id" db:"id"`
-	ProjectID   string      `json:"project_id" db:"project_id"`
-	OrgID       string      `json:"org_id" db:"org_id"`
-	Key         string      `json:"key" db:"key"`
-	Name        string      `json:"name" db:"name"`
-	Description string      `json:"description" db:"description"`
-	MatchType   MatchType   `json:"match_type" db:"match_type"`
-	Rules       []Condition `json:"rules" db:"rules"`
+	ID          string          `json:"id" db:"id"`
+	ProjectID   string          `json:"project_id" db:"project_id"`
+	OrgID       string          `json:"org_id" db:"org_id"`
+	Key         string          `json:"key" db:"key"`
+	Name        string          `json:"name" db:"name"`
+	Description string          `json:"description" db:"description"`
+	MatchType   MatchType       `json:"match_type" db:"match_type"`
+	Rules       []Condition     `json:"rules" db:"rules"`
 	Labels      json.RawMessage `json:"labels" db:"labels"`
-	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at" db:"updated_at"`
+	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at" db:"updated_at"`
 }

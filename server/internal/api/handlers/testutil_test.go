@@ -489,13 +489,13 @@ func (m *mockStore) GetFlag(ctx context.Context, projectID, key string) (*domain
 func (m *mockStore) GetLimitsConfig(_ context.Context, _ string) (*domain.LimitsConfigRow, error) {
 	return &domain.LimitsConfigRow{Plan: "free", MaxFlags: 10, MaxSegments: 5, MaxEnvs: 3, MaxMembers: 3, MaxWebhooks: 2, MaxAPIKeys: 5, MaxProjects: 5}, nil
 }
-func (m *mockStore) CountFlags(_ context.Context, _ string) (int, error)     { return 0, nil }
-func (m *mockStore) CountSegments(_ context.Context, _ string) (int, error)  { return 0, nil }
+func (m *mockStore) CountFlags(_ context.Context, _ string) (int, error)        { return 0, nil }
+func (m *mockStore) CountSegments(_ context.Context, _ string) (int, error)     { return 0, nil }
 func (m *mockStore) CountEnvironments(_ context.Context, _ string) (int, error) { return 0, nil }
-func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)   { return 0, nil }
-func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error)  { return 0, nil }
-func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)   { return 0, nil }
-func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)  { return 0, nil }
+func (m *mockStore) CountMembers(_ context.Context, _ string) (int, error)      { return 0, nil }
+func (m *mockStore) CountWebhooks(_ context.Context, _ string) (int, error)     { return 0, nil }
+func (m *mockStore) CountAPIKeys(_ context.Context, _ string) (int, error)      { return 0, nil }
+func (m *mockStore) CountProjects(_ context.Context, _ string) (int, error)     { return 0, nil }
 func (m *mockStore) CountFlagsWithFilter(_ context.Context, _orgID, _projectID, _labelSelector string) (int, error) {
 	return 0, nil
 }
@@ -1341,6 +1341,70 @@ func (m *mockStore) HardDeleteOrganization(ctx context.Context, orgID string) er
 	return nil
 }
 
+func (m *mockStore) GetOrganizationResourceCounts(ctx context.Context, orgID string) (*domain.OrgResourceCounts, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	counts := &domain.OrgResourceCounts{}
+
+	// Count projects
+	for _, p := range m.projects {
+		if p.OrgID == orgID {
+			counts.Projects++
+		}
+	}
+	// Count environments (via projects)
+	for _, e := range m.envs {
+		if p, ok := m.projects[e.ProjectID]; ok && p.OrgID == orgID {
+			counts.Environments++
+		}
+	}
+	// Count flags (via projects)
+	for _, f := range m.flags {
+		if p, ok := m.projects[f.ProjectID]; ok && p.OrgID == orgID {
+			counts.Flags++
+		}
+	}
+	// Count segments (via projects)
+	for _, seg := range m.segments {
+		if p, ok := m.projects[seg.ProjectID]; ok && p.OrgID == orgID {
+			counts.Segments++
+		}
+	}
+	// Count API keys (via environments → projects)
+	for _, k := range m.apiKeys {
+		if e, ok := m.envs[k.EnvID]; ok {
+			if p, ok := m.projects[e.ProjectID]; ok && p.OrgID == orgID {
+				counts.APIKeys++
+			}
+		}
+	}
+	// Count webhooks
+	counts.Webhooks = len(m.webhooksByOrg[orgID])
+	// Count members
+	counts.Members = len(m.orgMembers[orgID])
+	// Count audit entries
+	for _, a := range m.auditEntries {
+		if a.OrgID == orgID {
+			counts.AuditEntries++
+		}
+	}
+	// Count integrations (lazy: return 0 for tests)
+	// Count agents (lazy: return 0 for tests)
+	// Count policies (lazy: return 0 for tests)
+	// Count SSO configs
+	if _, ok := m.ssoByOrgID[orgID]; ok {
+		counts.SSOConfigs = 1
+	}
+
+	counts.TotalResources = counts.Projects + counts.Environments + counts.Flags +
+		counts.Segments + counts.APIKeys + counts.Webhooks + counts.Members +
+		counts.AuditEntries + counts.Integrations + counts.Agents +
+		counts.Policies + counts.SSOConfigs
+
+	return counts, nil
+}
+
 func (m *mockStore) ListInactiveOrgs(ctx context.Context, plan string, inactiveSince time.Time) ([]domain.Organization, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -1632,6 +1696,32 @@ func (m *mockStore) SoftDeleteUser(_ context.Context, userID string) error {
 	return nil
 }
 
+func (m *mockStore) DeleteUser(_ context.Context, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.users[userID]; !ok {
+		return domain.ErrNotFound
+	}
+	delete(m.users, userID)
+	return nil
+}
+
+// GetOrgIDsForUser returns all org IDs associated with the user from
+// the mock org_members table.
+func (m *mockStore) GetOrgIDsForUser(_ context.Context, userID string) ([]string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var orgIDs []string
+	for _, members := range m.orgMembers {
+		for _, member := range members {
+			if member.UserID == userID {
+				orgIDs = append(orgIDs, member.OrgID)
+			}
+		}
+	}
+	return orgIDs, nil
+}
+
 func (m *mockStore) InsertProductEvent(_ context.Context, _ *domain.ProductEvent) error { return nil }
 func (m *mockStore) InsertProductEvents(_ context.Context, _ []domain.ProductEvent) error {
 	return nil
@@ -1774,17 +1864,23 @@ func (m *mockStore) RollbackFlagToVersion(_ context.Context, _ string, _ int, _,
 }
 
 func (s *mockStore) CreateOpsCredentials(context.Context, string, string, string) error { return nil }
-func (s *mockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
-func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) { return "", nil }
-func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) { return nil, nil }
+func (s *mockStore) GetOpsUserByEmail(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
+func (s *mockStore) CreateOpsSession(context.Context, string, string, time.Time) (string, error) {
+	return "", nil
+}
+func (s *mockStore) GetOpsSessionByRefreshToken(context.Context, string) (*domain.OpsUser, error) {
+	return nil, nil
+}
 func (s *mockStore) DeleteOpsSession(context.Context, string, string) error { return nil }
-func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error { return nil }
+func (s *mockStore) DeleteAllOpsSessions(context.Context, string) error     { return nil }
 
 func (s *mockStore) CreateSession(_ context.Context, _ *domain.PublicSession) error { return nil }
 func (s *mockStore) GetSession(_ context.Context, _ string) (*domain.PublicSession, error) {
 	return nil, fmt.Errorf("not found")
 }
-func (s *mockStore) DeleteSession(_ context.Context, _ string) error          { return nil }
+func (s *mockStore) DeleteSession(_ context.Context, _ string) error     { return nil }
 func (s *mockStore) CleanExpiredSessions(_ context.Context) (int, error) { return 0, nil }
 
 // CreditStore stubs — satisfy domain.Store interface in tests.
@@ -1859,7 +1955,6 @@ func (s *mockStore) ListMaturities(_ context.Context, _ string, _, _ int) ([]dom
 	return nil, errors.New("agent maturity store not implemented in tests")
 }
 
-
 // ─── EvalEventWriter ───────────────────────────────────────────────────────
 
 func (m *mockStore) InsertEvalEvent(ctx context.Context, event *domain.EvalEvent) error {
@@ -1887,7 +1982,6 @@ func (m *mockStore) GetEvaluationLatency(ctx context.Context, orgID, flagKey str
 func (m *mockStore) GetEvaluationVolume(ctx context.Context, orgID string, since time.Time, interval string) ([]domain.TimeSeriesPoint, error) {
 	return nil, nil
 }
-
 
 // ─── ABMEventStore ─────────────────────────────────────────────────────────
 

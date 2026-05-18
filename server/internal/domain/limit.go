@@ -17,15 +17,15 @@ type ResourceLimits struct {
 
 // LimitsConfigRow mirrors the limits_config table row.
 type LimitsConfigRow struct {
-	Plan          string    `db:"plan"`
-	MaxFlags      int       `db:"max_flags"`
-	MaxSegments   int       `db:"max_segments"`
-	MaxEnvs       int       `db:"max_environments"`
-	MaxMembers    int       `db:"max_members"`
-	MaxWebhooks   int       `db:"max_webhooks"`
-	MaxAPIKeys    int       `db:"max_api_keys"`
-	MaxProjects   int       `db:"max_projects"`
-	UpdatedAt     time.Time `db:"updated_at"`
+	Plan        string    `db:"plan"`
+	MaxFlags    int       `db:"max_flags"`
+	MaxSegments int       `db:"max_segments"`
+	MaxEnvs     int       `db:"max_environments"`
+	MaxMembers  int       `db:"max_members"`
+	MaxWebhooks int       `db:"max_webhooks"`
+	MaxAPIKeys  int       `db:"max_api_keys"`
+	MaxProjects int       `db:"max_projects"`
+	UpdatedAt   time.Time `db:"updated_at"`
 }
 
 // PinnedItem represents a user-pinned resource bookmark.

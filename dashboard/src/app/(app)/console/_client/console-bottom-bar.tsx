@@ -4,26 +4,32 @@
  * ConsoleBottomBar — 32px status bar at the bottom of the Console.
  *
  * Layout: flex, items-center, justify-between, text-xs, tertiary color.
- * - Left:   "Last updated: {relative time}" — uses timeAgo() from utils
+ * - Left:   Setup progress indicator (when not complete) or "Last updated: {relative time}"
  * - Center: "{featureCount} features flowing"
  * - Right:  Connection status dot + label (green "Live" / amber "Reconnecting...")
  *
- * Reads lastUpdated, wsConnected, and features.length from useConsoleStore.
+ * Reads lastUpdated, wsConnected, features.length, and setup progress.
  * Signal UI tokens only. No hardcoded colors.
  */
 
 import { useMemo, useCallback } from "react";
 import { useConsoleStore } from "@/stores/console-store";
+import { useConsoleSetupProgress } from "@/hooks/use-console-setup-progress";
+import { useConsoleFeatures } from "@/hooks/use-console-data";
 import { timeAgo, cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
 
 export function ConsoleBottomBar() {
-  const lastUpdated = useConsoleStore((s) => s.lastUpdated);
   const wsConnected = useConsoleStore((s) => s.wsConnected);
   const wsOffline = useConsoleStore((s) => s.wsOffline);
-  const featuresTotal = useConsoleStore((s) => s.featuresTotal);
   const triggerWsRetry = useConsoleStore((s) => s.triggerWsRetry);
   const triggerRetry = useConsoleStore((s) => s.triggerRetry);
+  const { data: featuresData, dataUpdatedAt } = useConsoleFeatures();
+  const featuresTotal = featuresData?.total ?? 0;
+  const lastUpdated = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toISOString()
+    : null;
+  const progress = useConsoleSetupProgress();
 
   const lastUpdatedLabel = useMemo(() => {
     if (!lastUpdated) return "just now";
@@ -44,6 +50,8 @@ export function ConsoleBottomBar() {
       ? "Offline"
       : "Connecting...";
 
+  const setupComplete = progress.phase === "complete";
+
   return (
     <footer
       className={cn(
@@ -54,15 +62,45 @@ export function ConsoleBottomBar() {
         "select-none",
       )}
     >
-      {/* ── Left: Last Updated ──────────────────────────────────────── */}
-      <span className="shrink-0">
-        Last updated:{" "}
-        <time
-          dateTime={lastUpdated ?? undefined}
-          className="text-[var(--signal-fg-secondary)]"
-        >
-          {lastUpdatedLabel}
-        </time>
+      {/* ── Left: Setup Progress or Last Updated ───────────────────── */}
+      <span className="shrink-0 inline-flex items-center gap-2">
+        {setupComplete ? (
+          <>
+            Last updated:{" "}
+            <time
+              dateTime={lastUpdated ?? undefined}
+              className="text-[var(--signal-fg-secondary)]"
+            >
+              {lastUpdatedLabel}
+            </time>
+          </>
+        ) : (
+          <>
+            <span className="text-[var(--signal-fg-tertiary)]">
+              Setup{" "}
+              <span className="font-medium text-[var(--signal-fg-secondary)] tabular-nums">
+                {progress.completedSteps}/{progress.totalSteps}
+              </span>
+            </span>
+            {/* Subtle progress bar */}
+            <span
+              className="inline-block h-1 rounded-full bg-[var(--signal-bg-secondary)] overflow-hidden"
+              style={{ width: 60 }}
+              role="progressbar"
+              aria-valuenow={progress.completedSteps}
+              aria-valuemin={0}
+              aria-valuemax={progress.totalSteps}
+              aria-label={`Setup progress: ${progress.completedSteps} of ${progress.totalSteps} steps complete`}
+            >
+              <span
+                className="block h-full rounded-full bg-[var(--signal-bg-accent-emphasis)] transition-all duration-[var(--signal-duration-normal)]"
+                style={{
+                  width: `${(progress.completedSteps / progress.totalSteps) * 100}%`,
+                }}
+              />
+            </span>
+          </>
+        )}
       </span>
 
       {/* ── Center: Feature Count ───────────────────────────────────── */}

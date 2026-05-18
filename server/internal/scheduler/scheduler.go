@@ -295,4 +295,3 @@ func (s *Scheduler) purgeOldAuditEntries(ctx context.Context) {
 func (s *Scheduler) RunOnce(ctx context.Context) {
 	s.tick(ctx)
 }
-

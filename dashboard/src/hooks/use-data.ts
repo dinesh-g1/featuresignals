@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
-import { useQuery, useMutation } from "./use-query";
+import { queryKeys } from "@/lib/query-keys";
 import type {
   Project,
   Environment,
@@ -21,39 +22,70 @@ import type {
   FeaturesResponse,
 } from "@/lib/types";
 
-function cacheKey(
-  ...parts: (string | number | null | undefined)[]
-): string | null {
-  if (parts.some((p) => p == null || p === "")) return null;
-  return parts.join(":");
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Wrap TanStack Query result to maintain backward-compatible return shape. */
+function wrapQuery<T>(result: {
+  data: T | undefined;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => void;
+}) {
+  return {
+    data: result.data,
+    loading: result.isLoading,
+    error: result.error?.message ?? null,
+    refetch: result.refetch,
+  };
 }
 
-// cacheKeyStr ensures a non-null cache key string for useMutation invalidateKeys.
-function cacheKeyStr(...parts: (string | number | null | undefined)[]): string {
-  return cacheKey(...parts) ?? "";
+/** Wrap TanStack Mutation result to maintain backward-compatible return shape.
+ *  `mutate` catches errors and returns `undefined` on failure (legacy behavior). */
+function wrapMutation<TArgs, TData>(result: {
+  mutateAsync: (args: TArgs) => Promise<TData>;
+  isPending: boolean;
+  error: Error | null;
+}) {
+  return {
+    mutate: async (args: TArgs): Promise<TData | undefined> => {
+      try {
+        return await result.mutateAsync(args);
+      } catch {
+        return undefined;
+      }
+    },
+    loading: result.isPending,
+    error: result.error?.message ?? null,
+  };
 }
 
 // ── Projects ────────────────────────────────────────────────────────────────
 
 export function useProjects() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("projects", token ? "list" : null);
-  return useQuery<Project[]>(key, () => api.listProjects(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: queryKeys.projects.list(),
+      queryFn: () => api.listProjects(token!).then((r) => r.data),
+      enabled: !!token,
+    }),
+  );
 }
 
 // ── Environments ────────────────────────────────────────────────────────────
 
 export function useEnvironments(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("environments", projectId);
-  return useQuery<Environment[]>(
-    key,
-    () => api.listEnvironments(token!, projectId!),
-    {
+  return wrapQuery(
+    useQuery({
+      queryKey: projectId
+        ? queryKeys.environments.list(projectId)
+        : ["environments", "disabled"],
+      queryFn: () =>
+        api.listEnvironments(token!, projectId!).then((r) => r.data),
       enabled: !!token && !!projectId,
-    },
+      retry: false, // 404 won't change on retry
+    }),
   );
 }
 
@@ -63,28 +95,41 @@ export function useEnvironmentsPaginated(
   offset: number,
 ) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("environments", projectId, "paginated", limit, offset);
-  return useQuery<{ data: Environment[]; total: number }>(
-    key,
-    async () => {
-      const result = await api.listEnvironmentsPaginated(
-        token!,
-        projectId!,
-        limit,
-        offset,
-      );
-      return { data: result.data, total: result.total };
-    },
-    { enabled: !!token && !!projectId },
+  return wrapQuery(
+    useQuery({
+      queryKey: projectId
+        ? queryKeys.environments.list(projectId, { limit, offset })
+        : ["environments", "disabled", "paginated"],
+      queryFn: async () => {
+        const result = await api.listEnvironmentsPaginated(
+          token!,
+          projectId!,
+          limit,
+          offset,
+        );
+        return { data: result.data, total: result.total };
+      },
+      enabled: !!token && !!projectId,
+      retry: false, // 404 won't change on retry
+    }),
   );
 }
 
 export function useCreateEnvironment(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: { name: string; slug?: string; color?: string }) =>
-      api.createEnvironment(token!, projectId!, data),
-    { invalidateKeys: [cacheKeyStr("environments", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: { name: string; slug?: string; color?: string }) =>
+        api.createEnvironment(token!, projectId!, data),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.environments.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
@@ -93,18 +138,37 @@ export function useUpdateEnvironment(
   envId: string | null,
 ) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: { name: string; slug?: string; color?: string }) =>
-      api.updateEnvironment(token!, projectId!, envId!, data),
-    { invalidateKeys: [cacheKeyStr("environments", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: { name: string; slug?: string; color?: string }) =>
+        api.updateEnvironment(token!, projectId!, envId!, data),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.environments.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
 export function useDeleteEnvironment(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (envId: string) => api.deleteEnvironment(token!, projectId!, envId),
-    { invalidateKeys: [cacheKeyStr("environments", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (envId: string) =>
+        api.deleteEnvironment(token!, projectId!, envId),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.environments.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
@@ -112,10 +176,15 @@ export function useDeleteEnvironment(projectId: string | null) {
 
 export function useFlags(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("flags", projectId);
-  return useQuery<Flag[]>(key, () => api.listFlags(token!, projectId!), {
-    enabled: !!token && !!projectId,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: projectId
+        ? queryKeys.flags.list(projectId)
+        : ["flags", "disabled"],
+      queryFn: () => api.listFlags(token!, projectId!).then((r) => r.data),
+      enabled: !!token && !!projectId,
+    }),
+  );
 }
 
 export function useFlagsPaginated(
@@ -124,37 +193,50 @@ export function useFlagsPaginated(
   offset: number,
 ) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("flags", projectId, "paginated", limit, offset);
-  return useQuery<{ data: Flag[]; total: number }>(
-    key,
-    async () => {
-      const result = await api.listFlagsPaginated(
-        token!,
-        projectId!,
-        limit,
-        offset,
-      );
-      return { data: result.data, total: result.total };
-    },
-    { enabled: !!token && !!projectId },
+  return wrapQuery(
+    useQuery({
+      queryKey: projectId
+        ? queryKeys.flags.list(projectId, { limit, offset })
+        : ["flags", "disabled", "paginated"],
+      queryFn: async () => {
+        const result = await api.listFlagsPaginated(
+          token!,
+          projectId!,
+          limit,
+          offset,
+        );
+        return { data: result.data, total: result.total };
+      },
+      enabled: !!token && !!projectId,
+    }),
   );
 }
 
 export function useFlag(projectId: string | null, flagKey: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("flag", projectId, flagKey);
-  return useQuery<Flag>(key, () => api.getFlag(token!, projectId!, flagKey!), {
-    enabled: !!token && !!projectId && !!flagKey,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey:
+        projectId && flagKey
+          ? queryKeys.flags.detail(projectId, flagKey)
+          : ["flag", "disabled"],
+      queryFn: () => api.getFlag(token!, projectId!, flagKey!),
+      enabled: !!token && !!projectId && !!flagKey,
+    }),
+  );
 }
 
 export function useFlagStates(projectId: string | null, envId: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("flag-states", projectId, envId);
-  return useQuery<FlagState[]>(
-    key,
-    () => api.listFlagStatesByEnv(token!, projectId!, envId!),
-    { enabled: !!token && !!projectId && !!envId },
+  return wrapQuery(
+    useQuery({
+      queryKey:
+        projectId && envId
+          ? queryKeys.flagStates.byEnvironment(projectId, envId)
+          : ["flagStates", "disabled"],
+      queryFn: () => api.listFlagStatesByEnv(token!, projectId!, envId!),
+      enabled: !!token && !!projectId && !!envId,
+    }),
   );
 }
 
@@ -164,27 +246,51 @@ export function useFlagState(
   envId: string | null,
 ) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("flag-state", projectId, flagKey, envId);
-  return useQuery<FlagState>(
-    key,
-    () => api.getFlagState(token!, projectId!, flagKey!, envId!),
-    { enabled: !!token && !!projectId && !!flagKey && !!envId },
+  return wrapQuery(
+    useQuery({
+      queryKey:
+        projectId && flagKey && envId
+          ? queryKeys.flagStates.detail(projectId, flagKey, envId)
+          : ["flagState", "disabled"],
+      queryFn: () => api.getFlagState(token!, projectId!, flagKey!, envId!),
+      enabled: !!token && !!projectId && !!flagKey && !!envId,
+    }),
   );
 }
 
 export function useCreateFlag(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: Partial<Flag>) => api.createFlag(token!, projectId!, data),
-    { invalidateKeys: [cacheKeyStr("flags", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: Partial<Flag>) =>
+        api.createFlag(token!, projectId!, data),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.flags.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
 export function useDeleteFlag(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (flagKey: string) => api.deleteFlag(token!, projectId!, flagKey),
-    { invalidateKeys: [cacheKeyStr("flags", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (flagKey: string) =>
+        api.deleteFlag(token!, projectId!, flagKey),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.flags.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
@@ -193,9 +299,19 @@ export function useUpdateFlag(
   flagKey: string | null,
 ) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: Partial<Flag>) => api.updateFlag(token!, projectId!, flagKey!, data),
-    { invalidateKeys: [cacheKeyStr("flags", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: Partial<Flag>) =>
+        api.updateFlag(token!, projectId!, flagKey!, data),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.flags.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
@@ -205,15 +321,22 @@ export function useUpdateFlagState(
   envId: string | null,
 ) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: Partial<FlagState>) =>
-      api.updateFlagState(token!, projectId!, flagKey!, envId!, data),
-    {
-      invalidateKeys: [
-        cacheKeyStr("flag-state", projectId, flagKey, envId),
-        cacheKeyStr("flag-states", projectId, envId),
-      ],
-    },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: Partial<FlagState>) =>
+        api.updateFlagState(token!, projectId!, flagKey!, envId!, data),
+      onSuccess: () => {
+        if (projectId && flagKey && envId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.flagStates.detail(projectId, flagKey, envId),
+          });
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.flagStates.byEnvironment(projectId, envId),
+          });
+        }
+      },
+    }),
   );
 }
 
@@ -239,10 +362,15 @@ export function useFlagStateMap(
 
 export function useSegments(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("segments", projectId);
-  return useQuery<Segment[]>(key, () => api.listSegments(token!, projectId!), {
-    enabled: !!token && !!projectId,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: projectId
+        ? queryKeys.segments.list(projectId)
+        : ["segments", "disabled"],
+      queryFn: () => api.listSegments(token!, projectId!).then((r) => r.data),
+      enabled: !!token && !!projectId,
+    }),
+  );
 }
 
 export function useSegmentsPaginated(
@@ -251,35 +379,58 @@ export function useSegmentsPaginated(
   offset: number,
 ) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("segments", projectId, "paginated", limit, offset);
-  return useQuery<{ data: Segment[]; total: number }>(
-    key,
-    async () => {
-      const result = await api.listSegmentsPaginated(
-        token!,
-        projectId!,
-        limit,
-        offset,
-      );
-      return { data: result.data, total: result.total };
-    },
-    { enabled: !!token && !!projectId },
+  return wrapQuery(
+    useQuery({
+      queryKey: projectId
+        ? queryKeys.segments.list(projectId, { limit, offset })
+        : ["segments", "disabled", "paginated"],
+      queryFn: async () => {
+        const result = await api.listSegmentsPaginated(
+          token!,
+          projectId!,
+          limit,
+          offset,
+        );
+        return { data: result.data, total: result.total };
+      },
+      enabled: !!token && !!projectId,
+    }),
   );
 }
 
 export function useCreateSegment(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: Partial<Segment>) => api.createSegment(token!, projectId!, data),
-    { invalidateKeys: [cacheKeyStr("segments", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: Partial<Segment>) =>
+        api.createSegment(token!, projectId!, data),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.segments.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
 export function useDeleteSegment(projectId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (segKey: string) => api.deleteSegment(token!, projectId!, segKey),
-    { invalidateKeys: [cacheKeyStr("segments", projectId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (segKey: string) =>
+        api.deleteSegment(token!, projectId!, segKey),
+      onSuccess: () => {
+        if (projectId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.segments.all(projectId),
+          });
+        }
+      },
+    }),
   );
 }
 
@@ -287,33 +438,59 @@ export function useDeleteSegment(projectId: string | null) {
 
 export function useMembers() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("members", token ? "list" : null);
-  return useQuery<OrgMember[]>(key, () => api.listMembers(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: queryKeys.members.list,
+      queryFn: () => api.listMembers(token!).then((r) => r.data),
+      enabled: !!token,
+    }),
+  );
 }
 
 export function useInviteMember() {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: { email: string; role: string }) => api.inviteMember(token!, data),
-    { invalidateKeys: [cacheKeyStr("members", "list")] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: { email: string; role: string }) =>
+        api.inviteMember(token!, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.members.all,
+        });
+      },
+    }),
   );
 }
 
 export function useRemoveMember() {
   const token = useAppStore((s) => s.token);
-  return useMutation((memberId: string) => api.removeMember(token!, memberId), {
-    invalidateKeys: [cacheKeyStr("members", "list")],
-  });
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (memberId: string) => api.removeMember(token!, memberId),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.members.all,
+        });
+      },
+    }),
+  );
 }
 
 export function useUpdateMemberRole() {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    ({ memberId, role }: { memberId: string; role: string }) =>
-      api.updateMemberRole(token!, memberId, role),
-    { invalidateKeys: [cacheKeyStr("members", "list")] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: ({ memberId, role }: { memberId: string; role: string }) =>
+        api.updateMemberRole(token!, memberId, role),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.members.all,
+        });
+      },
+    }),
   );
 }
 
@@ -321,15 +498,23 @@ export function useUpdateMemberRole() {
 
 export function useAudit(limit = 50, offset = 0, projectId?: string | null) {
   const token = useAppStore((s) => s.token);
-  // Use "org" sentinel for org-wide queries so cacheKey doesn't return null
-  const cacheId = projectId || "org";
-  const key = cacheKey("audit", `${limit}`, `${offset}`, cacheId);
-  return useQuery<AuditEntry[]>(
-    key,
-    () => api.listAudit(token!, limit, offset, projectId || undefined),
-    {
+  return wrapQuery(
+    useQuery({
+      queryKey: queryKeys.audit.list({
+        limit,
+        offset,
+        projectId: projectId || undefined,
+      }),
+      queryFn: () =>
+        api
+          .listAudit(token!, {
+            limit,
+            offset,
+            projectId: projectId || undefined,
+          })
+          .then((r) => r.data),
       enabled: !!token,
-    },
+    }),
   );
 }
 
@@ -337,13 +522,15 @@ export function useAudit(limit = 50, offset = 0, projectId?: string | null) {
 
 export function useApprovals(status?: string) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("approvals", status ?? "all");
-  return useQuery<ApprovalRequest[]>(
-    key,
-    () => api.listApprovals(token!, status),
-    {
+  return wrapQuery(
+    useQuery({
+      queryKey: queryKeys.approvals.list(status ? { status } : undefined),
+      queryFn: () =>
+        api
+          .listApprovals(token!, status ? { status } : undefined)
+          .then((r) => r.data),
       enabled: !!token,
-    },
+    }),
   );
 }
 
@@ -351,35 +538,68 @@ export function useApprovals(status?: string) {
 
 export function useWebhooks() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("webhooks", token ? "list" : null);
-  return useQuery<Webhook[]>(key, () => api.listWebhooks(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: queryKeys.webhooks.list,
+      queryFn: () => api.listWebhooks(token!).then((r) => r.data),
+      enabled: !!token,
+    }),
+  );
 }
 
 export function useCreateWebhook() {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: { name: string; url: string; secret?: string; events: string[] }) =>
-      api.createWebhook(token!, data),
-    { invalidateKeys: [cacheKeyStr("webhooks", "list")] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: {
+        name: string;
+        url: string;
+        secret?: string;
+        events: string[];
+      }) => api.createWebhook(token!, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.webhooks.all,
+        });
+      },
+    }),
   );
 }
 
 export function useUpdateWebhook() {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    ({ webhookId, data }: { webhookId: string; data: Partial<Webhook> }) =>
-      api.updateWebhook(token!, webhookId, data),
-    { invalidateKeys: [cacheKeyStr("webhooks", "list")] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: ({
+        webhookId,
+        data,
+      }: {
+        webhookId: string;
+        data: Partial<Webhook>;
+      }) => api.updateWebhook(token!, webhookId, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.webhooks.all,
+        });
+      },
+    }),
   );
 }
 
 export function useDeleteWebhook() {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (webhookId: string) => api.deleteWebhook(token!, webhookId),
-    { invalidateKeys: [cacheKeyStr("webhooks", "list")] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (webhookId: string) => api.deleteWebhook(token!, webhookId),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.webhooks.all,
+        });
+      },
+    }),
   );
 }
 
@@ -387,62 +607,94 @@ export function useDeleteWebhook() {
 
 export function useAPIKeys(envId: string | null) {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("api-keys", envId);
-  return useQuery<APIKey[]>(key, () => api.listAPIKeys(token!, envId!), {
-    enabled: !!token && !!envId,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: envId ? queryKeys.apiKeys.list(envId) : ["apiKeys", "disabled"],
+      queryFn: () => api.listAPIKeys(token!, envId!).then((r) => r.data),
+      enabled: !!token && !!envId,
+    }),
+  );
 }
 
 export function useCreateAPIKey(envId: string | null) {
   const token = useAppStore((s) => s.token);
-  return useMutation(
-    (data: { name: string; type: string; expires_at?: string }) =>
-      api.createAPIKey(token!, envId!, data),
-    { invalidateKeys: [cacheKeyStr("api-keys", envId)] },
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (data: { name: string; type: string; expires_at?: string }) =>
+        api.createAPIKey(token!, envId!, data),
+      onSuccess: () => {
+        if (envId) {
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.apiKeys.list(envId),
+          });
+        }
+      },
+    }),
   );
 }
 
 export function useRevokeAPIKey() {
   const token = useAppStore((s) => s.token);
-  return useMutation((keyId: string) => api.revokeAPIKey(token!, keyId), {
-    invalidateKeys: [cacheKeyStr("api-keys", null)],
-  });
+  const queryClient = useQueryClient();
+  return wrapMutation(
+    useMutation({
+      mutationFn: (keyId: string) => api.revokeAPIKey(token!, keyId),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.apiKeys.all,
+        });
+      },
+    }),
+  );
 }
 
 // ── Billing & Usage ─────────────────────────────────────────────────────────
 
 export function useBilling() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("billing", token ? "get" : null);
-  return useQuery<BillingInfo>(key, () => api.getSubscription(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: ["billing"] as const,
+      queryFn: () => api.getSubscription(token!),
+      enabled: !!token,
+    }),
+  );
 }
 
 export function useUsage() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("usage", token ? "get" : null);
-  return useQuery<UsageInfo>(key, () => api.getUsage(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: ["usage"] as const,
+      queryFn: () => api.getUsage(token!),
+      enabled: !!token,
+    }),
+  );
 }
 
 // ── Onboarding ──────────────────────────────────────────────────────────────
 
 export function useOnboarding() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("onboarding", token ? "get" : null);
-  return useQuery<OnboardingState>(key, () => api.getOnboarding(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: ["onboarding"] as const,
+      queryFn: () => api.getOnboarding(token!),
+      enabled: !!token,
+    }),
+  );
 }
 
 // ── Features ────────────────────────────────────────────────────────────────
 
 export function useFeatures() {
   const token = useAppStore((s) => s.token);
-  const key = cacheKey("features", token ? "get" : null);
-  return useQuery<FeaturesResponse>(key, () => api.getFeatures(token!), {
-    enabled: !!token,
-  });
+  return wrapQuery(
+    useQuery({
+      queryKey: ["features"] as const,
+      queryFn: () => api.getFeatures(token!),
+      enabled: !!token,
+    }),
+  );
 }

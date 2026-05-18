@@ -43,8 +43,8 @@ type mockCacheHealth struct {
 	rulesetCount int
 }
 
-func (m *mockCacheHealth) IsListening() bool  { return m.listening }
-func (m *mockCacheHealth) RulesetCount() int  { return m.rulesetCount }
+func (m *mockCacheHealth) IsListening() bool { return m.listening }
+func (m *mockCacheHealth) RulesetCount() int { return m.rulesetCount }
 
 type mockSSEHealth struct {
 	totalClients int

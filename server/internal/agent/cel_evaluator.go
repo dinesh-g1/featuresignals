@@ -92,12 +92,12 @@ func (e *CELEvaluator) Evaluate(ctx context.Context, action domain.AgentAction, 
 
 		if len(failures) > 0 {
 			return &domain.PolicyEvalResult{
-				PolicyID:      policy.ID,
-				PolicyName:    policy.Name,
-				Passed:        false,
-				Failures:      failures,
-				Effect:        policy.Effect,
-				EvaluatedAt:   time.Now().UTC(),
+				PolicyID:       policy.ID,
+				PolicyName:     policy.Name,
+				Passed:         false,
+				Failures:       failures,
+				Effect:         policy.Effect,
+				EvaluatedAt:    time.Now().UTC(),
 				EvalDurationMs: elapsed.Milliseconds(),
 			}, nil
 		}
@@ -105,8 +105,8 @@ func (e *CELEvaluator) Evaluate(ctx context.Context, action domain.AgentAction, 
 
 	// All policies passed
 	return &domain.PolicyEvalResult{
-		Passed:        true,
-		EvaluatedAt:   time.Now().UTC(),
+		Passed:      true,
+		EvaluatedAt: time.Now().UTC(),
 	}, nil
 }
 
@@ -123,7 +123,7 @@ func (e *CELEvaluator) EvaluateExpression(ctx context.Context, expression string
 	}, 1)
 
 	go func() {
-			ok, _, err := e.evaluateCEL(expression, ctxMap)
+		ok, _, err := e.evaluateCEL(expression, ctxMap)
 		resultCh <- struct {
 			ok  bool
 			err error
@@ -173,9 +173,9 @@ func buildEvalContext(action domain.AgentAction) map[string]interface{} {
 
 	// action.decision
 	decisionMap := map[string]interface{}{
-		"action":          action.ToolName,
-		"confidence":      float64(0), // placeholder
-		"requires_human":  false,
+		"action":         action.ToolName,
+		"confidence":     float64(0), // placeholder
+		"requires_human": false,
 	}
 	actionMap["decision"] = decisionMap
 

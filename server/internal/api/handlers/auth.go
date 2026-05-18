@@ -268,9 +268,44 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	member, err := h.store.GetOrgMember(r.Context(), "", user.ID)
 	if err != nil {
-		log.Warn("login failed: no org membership", "user_id", user.ID)
-		httputil.Error(w, http.StatusUnauthorized, "Authentication failed — the provided credentials are incorrect. Verify your email and password and try again.")
-		return
+		// User has no org membership — all their orgs may have been hard-deleted.
+		// Auto-create a new organization so the user isn't locked out.
+		log.Warn("login: no org membership, auto-creating org", "user_id", user.ID)
+		baseSlug := slugify(user.Name)
+		newOrg := &domain.Organization{
+			Name: user.Name + "'s Organization",
+			Slug: baseSlug,
+			Plan: domain.PlanFree,
+		}
+		if createErr := h.store.CreateOrganization(r.Context(), newOrg); createErr != nil {
+			if errors.Is(createErr, domain.ErrConflict) {
+				newOrg.Slug = fmt.Sprintf("%s-%s", baseSlug, shortID())
+				if retryErr := h.store.CreateOrganization(r.Context(), newOrg); retryErr != nil {
+					log.Error("failed to auto-create org for user", "error", retryErr, "user_id", user.ID)
+					httputil.Error(w, http.StatusInternalServerError, "Account setup failed — an unexpected error occurred. Try again or contact support.")
+					return
+				}
+			} else {
+				log.Error("failed to auto-create org for user", "error", createErr, "user_id", user.ID)
+				httputil.Error(w, http.StatusInternalServerError, "Account setup failed — an unexpected error occurred. Try again or contact support.")
+				return
+			}
+		}
+
+		// Add the user as owner of the new org.
+		newMember := &domain.OrgMember{
+			OrgID:  newOrg.ID,
+			UserID: user.ID,
+			Role:   domain.RoleOwner,
+		}
+		if addErr := h.store.AddOrgMember(r.Context(), newMember); addErr != nil {
+			log.Error("failed to add owner to auto-created org", "error", addErr, "org_id", newOrg.ID, "user_id", user.ID)
+			httputil.Error(w, http.StatusInternalServerError, "Account setup failed — an unexpected error occurred. Try again or contact support.")
+			return
+		}
+
+		member = newMember
+		log.Info("auto-created org for user with no membership", "user_id", user.ID, "org_id", newOrg.ID)
 	}
 	orgID := member.OrgID
 	role := string(member.Role)

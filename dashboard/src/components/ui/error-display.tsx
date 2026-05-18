@@ -58,7 +58,7 @@ export function ErrorDisplay({
         )}
         {showHomeLink && (
           <Button variant="secondary" size="md" asChild>
-            <Link href="/dashboard">Go to Dashboard</Link>
+            <Link href="/console">Go to Console</Link>
           </Button>
         )}
       </div>

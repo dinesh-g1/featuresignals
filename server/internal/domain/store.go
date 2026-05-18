@@ -120,6 +120,7 @@ type UserWriter interface {
 	SetEmailVerified(ctx context.Context, userID string) error
 	UpdateLastLoginAt(ctx context.Context, userID string) error
 	SoftDeleteUser(ctx context.Context, userID string) error
+	DeleteUser(ctx context.Context, userID string) error
 	SetPasswordResetToken(ctx context.Context, userID, tokenHash string, expires time.Time, ip, ua string) error
 	ConsumePasswordResetToken(ctx context.Context, otp string) (userID string, err error)
 	UpdatePassword(ctx context.Context, userID, newPasswordHash string) error
@@ -132,6 +133,7 @@ type OrgMemberStore interface {
 	GetOrgMemberByID(ctx context.Context, memberID string) (*OrgMember, error)
 	ListOrgMembers(ctx context.Context, orgID string, limit, offset int) ([]OrgMember, error)
 	CountOrgMembers(ctx context.Context, orgID string) (int, error)
+	GetOrgIDsForUser(ctx context.Context, userID string) ([]string, error)
 	UpdateOrgMemberRole(ctx context.Context, memberID string, role Role) error
 	RemoveOrgMember(ctx context.Context, memberID string) error
 }
@@ -317,7 +319,6 @@ type StatusRecorder interface {
 	GetComponentHistory(ctx context.Context, days int) ([]DailyComponentStatus, error)
 }
 
-
 // SearchHit is a cross-resource search result used by SearchStore.
 type SearchHit struct {
 	ID          string `json:"id"`
@@ -371,6 +372,12 @@ type AgentMaturityStore interface {
 	GetMaturity(ctx context.Context, agentID, contextKey string) (*AgentMaturity, error)
 	ListMaturities(ctx context.Context, agentID string, limit, offset int) ([]AgentMaturity, error)
 	CountMaturities(ctx context.Context, agentID string) (int, error)
+}
+
+// OrgResourceReader returns resource counts for an organization.
+// Used for pre-deletion audit so users know exactly what will be destroyed.
+type OrgResourceReader interface {
+	GetOrganizationResourceCounts(ctx context.Context, orgID string) (*OrgResourceCounts, error)
 }
 
 type Store interface {
@@ -427,4 +434,5 @@ type Store interface {
 	ABMEventStore
 	EvalEventReader
 	EvalEventWriter
+	OrgResourceReader
 }

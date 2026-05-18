@@ -126,7 +126,7 @@ func (s *noopSubscription) Close() error { return nil }
 // flag cache invalidation. It wraps a RedisClient and provides typed publish
 // methods.
 type RedisPublisher struct {
-	client RedisClient
+	client  RedisClient
 	channel string
 	logger  *slog.Logger
 }

@@ -85,6 +85,7 @@ export function GracePeriodBadge({
         config.bgClass,
         className,
       )}
+      role="status"
       title={config.tooltip}
       aria-label={config.tooltip}
     >

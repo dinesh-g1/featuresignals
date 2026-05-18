@@ -183,7 +183,9 @@ function Combobox({
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="shrink-0 text-[var(--signal-fg-tertiary)]">{icon}</span>
+        <span className="shrink-0 text-[var(--signal-fg-tertiary)]">
+          {icon}
+        </span>
         {selectedItem ? (
           <span className="flex items-center gap-1.5 truncate">
             <span className="truncate text-[var(--signal-fg-primary)]">
@@ -201,7 +203,9 @@ function Combobox({
             )}
           </span>
         ) : (
-          <span className="text-[var(--signal-fg-tertiary)]">{placeholder}</span>
+          <span className="text-[var(--signal-fg-tertiary)]">
+            {placeholder}
+          </span>
         )}
         <ChevronDownIcon
           className={cn(
@@ -378,9 +382,7 @@ export function ContextSelector() {
     api
       .listProjects(token)
       .then((list) => {
-        const sorted = (list ?? []).sort((a, b) =>
-          a.name.localeCompare(b.name),
-        );
+        const sorted = list.data.sort((a, b) => a.name.localeCompare(b.name));
         setProjects(sorted);
         if (sorted.length > 0 && !projectId) {
           setCurrentProject(sorted[0].id);
@@ -395,9 +397,7 @@ export function ContextSelector() {
     api
       .listEnvironments(token, projectId)
       .then((list) => {
-        const sorted = (list ?? []).sort((a, b) =>
-          a.name.localeCompare(b.name),
-        );
+        const sorted = list.data.sort((a, b) => a.name.localeCompare(b.name));
         setEnvs(sorted);
         if (sorted.length > 0 && !currentEnvId) {
           setCurrentEnv(sorted[0].id);

@@ -26,11 +26,11 @@ import (
 // ImpactHandler manages impact reports, cost attributions, and organizational
 // learnings. It depends on the narrowest interfaces (ISP).
 type ImpactHandler struct {
-	reader       domain.ImpactReader
-	writer       domain.ImpactWriter
-	flagReader   domain.FlagReader
+	reader          domain.ImpactReader
+	writer          domain.ImpactWriter
+	flagReader      domain.FlagReader
 	code2flagReader domain.Code2FlagReader
-	logger       *slog.Logger
+	logger          *slog.Logger
 }
 
 // NewImpactHandler creates an ImpactHandler with the required dependencies.
@@ -145,7 +145,7 @@ func (h *ImpactHandler) GetImpactReport(w http.ResponseWriter, r *http.Request) 
 		Report:          json.RawMessage(reportJSON),
 		BusinessImpact:  "neutral",
 		CostAttribution: basicReport.CostAttribution,
-		Recommendations:  emptyRecs,
+		Recommendations: emptyRecs,
 		GeneratedAt:     now.Format(time.RFC3339),
 		CostBreakdown:   costBreakdown,
 	})
@@ -170,14 +170,14 @@ func (h *ImpactHandler) GetOrgLearnings(w http.ResponseWriter, r *http.Request) 
 
 	if learning != nil {
 		httputil.JSON(w, http.StatusOK, dto.OrgLearningsResponse{
-			TotalFlagsAnalyzed:       learning.TotalFlagsAnalyzed,
-			CleanupCandidates:        learning.CleanupCandidates,
-			FlagsWithoutOwners:       learning.FlagsWithoutOwners,
-			StaleFlags:               learning.StaleFlags,
-			AvgRiskScore:             learning.AvgRiskScore,
+			TotalFlagsAnalyzed:        learning.TotalFlagsAnalyzed,
+			CleanupCandidates:         learning.CleanupCandidates,
+			FlagsWithoutOwners:        learning.FlagsWithoutOwners,
+			StaleFlags:                learning.StaleFlags,
+			AvgRiskScore:              learning.AvgRiskScore,
 			AvgTimeToFullRolloutHours: learning.AvgTimeToFullRollout,
-			TopInsights:              learning.TopInsights,
-			GeneratedAt:              learning.GeneratedAt.Format(time.RFC3339),
+			TopInsights:               learning.TopInsights,
+			GeneratedAt:               learning.GeneratedAt.Format(time.RFC3339),
 		})
 		return
 	}
@@ -247,15 +247,15 @@ func (h *ImpactHandler) generateBasicLearning(orgID string) *dto.OrgLearningsRes
 	totalFlags, err := h.flagReader.CountFlagsWithFilter(ctx, orgID, "", "")
 	if err != nil || totalFlags == 0 {
 		return &dto.OrgLearningsResponse{
-			TotalFlagsAnalyzed:       0,
-			TopInsights:              json.RawMessage(`[]`),
-			GeneratedAt:              time.Now().UTC().Format(time.RFC3339),
+			TotalFlagsAnalyzed: 0,
+			TopInsights:        json.RawMessage(`[]`),
+			GeneratedAt:        time.Now().UTC().Format(time.RFC3339),
 		}
 	}
 
 	return &dto.OrgLearningsResponse{
-		TotalFlagsAnalyzed:       totalFlags,
-		AvgRiskScore:             0.0,
+		TotalFlagsAnalyzed:        totalFlags,
+		AvgRiskScore:              0.0,
 		AvgTimeToFullRolloutHours: 0.0,
 		TopInsights:               json.RawMessage(`[]`),
 		GeneratedAt:               time.Now().UTC().Format(time.RFC3339),
@@ -281,5 +281,3 @@ func (h *ImpactHandler) fetchCostBreakdown(ctx context.Context, orgID, flagKey s
 	}
 	return items
 }
-
-

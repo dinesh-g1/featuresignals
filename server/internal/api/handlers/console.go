@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -119,7 +121,7 @@ func (h *ConsoleHandler) GetFlag(w http.ResponseWriter, r *http.Request) {
 func (h *ConsoleHandler) GetInsights(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
-	insights, err := h.store.GetInsights(r.Context(), orgID)
+	insights, err := h.store.GetInsights(r.Context(), orgID, dto.ParseConsoleInsightsParams(r))
 	if err != nil {
 		h.l(r).Error("failed to get console insights", "error", err, "org_id", orgID)
 		httputil.Error(w, http.StatusInternalServerError, "Insights unavailable — an unexpected error occurred. Try again or contact support.")
@@ -135,7 +137,13 @@ func (h *ConsoleHandler) GetInsights(w http.ResponseWriter, r *http.Request) {
 func (h *ConsoleHandler) GetIntegrations(w http.ResponseWriter, r *http.Request) {
 	orgID := middleware.GetOrgID(r.Context())
 
-	integrations, err := h.store.GetIntegrations(r.Context(), orgID)
+	// Enforce a 12-second overall timeout for the entire integrations response.
+	// Individual sub-queries have their own 2-second timeouts in the store layer,
+	// but this ensures a single stuck query cannot hold the handler open indefinitely.
+	ctx, cancel := context.WithTimeout(r.Context(), 12*time.Second)
+	defer cancel()
+
+	integrations, err := h.store.GetIntegrations(ctx, orgID, dto.ParseConsoleIntegrationsParams(r))
 	if err != nil {
 		h.l(r).Error("failed to get console integrations", "error", err, "org_id", orgID)
 		httputil.Error(w, http.StatusInternalServerError, "Integrations unavailable — an unexpected error occurred. Try again or contact support.")

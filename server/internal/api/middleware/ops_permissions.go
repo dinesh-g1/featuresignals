@@ -13,8 +13,9 @@ import (
 // permission to access the requested resource and action.
 //
 // Usage:
-//   router.Get("/environments", OpsPermission(domain.ResourceEnvironment, domain.ActionRead), handler)
-//   router.Post("/environments", OpsPermission(domain.ResourceEnvironment, domain.ActionCreate), handler)
+//
+//	router.Get("/environments", OpsPermission(domain.ResourceEnvironment, domain.ActionRead), handler)
+//	router.Post("/environments", OpsPermission(domain.ResourceEnvironment, domain.ActionCreate), handler)
 func OpsPermission(resource domain.Resource, action domain.Action) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -147,35 +148,35 @@ func determineResourceFromRoute(r *http.Request) domain.Resource {
 		return domain.ResourceEnvironment // Decommission deletes environment
 	case strings.Contains(path, "/environments"):
 		return domain.ResourceEnvironment
-	
+
 	// Financial routes
 	case strings.Contains(path, "/financial/costs") || strings.Contains(path, "/financial/summary"):
 		return domain.ResourceCost
-	
-	// Customer routes  
+
+	// Customer routes
 	case strings.HasPrefix(path, "/api/v1/ops/customers"):
 		return domain.ResourceCustomer
-	
+
 	// License routes
 	case strings.Contains(path, "/licenses"):
 		return domain.ResourceLicense
-	
+
 	// Audit routes
 	case strings.Contains(path, "/audit"):
 		return domain.ResourceAuditLog
-	
+
 	// Ops user management (not customer users)
 	case strings.HasPrefix(path, "/api/v1/ops/users"):
 		return domain.ResourceOpsUser
-	
+
 	// Sandbox routes
 	case strings.Contains(path, "/sandboxes"):
 		return domain.ResourceSandbox
-	
+
 	// Billing routes (not in current API but future)
 	case strings.Contains(path, "/billing"):
 		return domain.ResourceBilling
-	
+
 	default:
 		return ""
 	}

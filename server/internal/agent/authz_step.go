@@ -57,10 +57,10 @@ func (s *AuthZGovernanceStep) Execute(ctx context.Context, action domain.AgentAc
 			"required_scopes", requiredScopes,
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepAuthZ,
-			Reason:         "no_scopes",
-			Message:        fmt.Sprintf("Agent %q has no assigned scopes but the action requires: %v", action.AgentID, requiredScopes),
-			RequiresHuman:  true,
+			Step:                 domain.GovStepAuthZ,
+			Reason:               "no_scopes",
+			Message:              fmt.Sprintf("Agent %q has no assigned scopes but the action requires: %v", action.AgentID, requiredScopes),
+			RequiresHuman:        true,
 			OverrideInstructions: "Assign scopes to this agent via the Agent Registry before it can perform actions.",
 		}
 	}
@@ -87,10 +87,10 @@ func (s *AuthZGovernanceStep) Execute(ctx context.Context, action domain.AgentAc
 			"agent_scopes", agentScopes,
 		)
 		return action, &domain.GovernanceError{
-			Step:           domain.GovStepAuthZ,
-			Reason:         "insufficient_scopes",
-			Message:        fmt.Sprintf("Agent %q is missing required scopes: %v. Agent scopes: %v", action.AgentID, missing, agentScopes),
-			RequiresHuman:  true,
+			Step:                 domain.GovStepAuthZ,
+			Reason:               "insufficient_scopes",
+			Message:              fmt.Sprintf("Agent %q is missing required scopes: %v. Agent scopes: %v", action.AgentID, missing, agentScopes),
+			RequiresHuman:        true,
 			OverrideInstructions: "A human with admin permissions can override this restriction or grant additional scopes.",
 		}
 	}

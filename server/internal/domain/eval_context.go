@@ -33,7 +33,7 @@ const (
 	ReasonFallthrough        = "FALLTHROUGH"
 	ReasonNotFound           = "NOT_FOUND"
 	ReasonError              = "ERROR"
-	ReasonPrerequisiteFailed  = "PREREQUISITE_FAILED"
+	ReasonPrerequisiteFailed = "PREREQUISITE_FAILED"
 	ReasonMutuallyExcluded   = "MUTUALLY_EXCLUDED"
-	ReasonVariant             = "VARIANT"
+	ReasonVariant            = "VARIANT"
 )

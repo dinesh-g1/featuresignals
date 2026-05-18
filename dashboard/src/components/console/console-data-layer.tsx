@@ -19,6 +19,7 @@ import { useConsoleAI } from "@/hooks/use-console-ai";
 import { useProactiveDetection } from "@/hooks/use-proactive-detection";
 import { useConsoleWebSocket } from "@/hooks/use-console-websocket";
 import { useConsoleUrlSync } from "@/hooks/use-console-url-sync";
+import { useConsoleSetupProgress } from "@/hooks/use-console-setup-progress";
 
 /**
  * Internal component that holds all the hooks.
@@ -37,6 +38,9 @@ function ConsoleHooks() {
 
   // ── Real-time connection ───────────────────────────────────────
   useConsoleWebSocket();
+
+  // ── Setup progress (first-time UX coordination) ──────────────
+  useConsoleSetupProgress();
 
   // ── URL ↔ store sync ───────────────────────────────────────────
   useConsoleUrlSync();

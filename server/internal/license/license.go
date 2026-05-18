@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	ErrInvalidLicense  = errors.New("invalid license")
-	ErrExpiredLicense  = errors.New("license expired")
-	ErrExceededSeats   = errors.New("seat limit exceeded")
+	ErrInvalidLicense   = errors.New("invalid license")
+	ErrExpiredLicense   = errors.New("license expired")
+	ErrExceededSeats    = errors.New("seat limit exceeded")
 	ErrExceededProjects = errors.New("project limit exceeded")
 )
 

@@ -26,18 +26,18 @@ func ptrTime(daysAgo int) *time.Time {
 func makeFlag(overrides domain.ConsoleFlag) domain.ConsoleFlag {
 	now := time.Now()
 	f := domain.ConsoleFlag{
-		Key:             "test-flag",
-		Name:            "Test Flag",
-		Stage:           domain.StageMonitor,
-		Status:          "live",
-		Environment:     "production",
-		Type:            "boolean",
-		RolloutPercent:  100,
-		HealthScore:     85,
-		LastActionAt:    &now,
-		LastAction:      "shipped",
-		DependsOn:       []string{},
-		DependedOnBy:    []string{},
+		Key:            "test-flag",
+		Name:           "Test Flag",
+		Stage:          domain.StageMonitor,
+		Status:         "live",
+		Environment:    "production",
+		Type:           "boolean",
+		RolloutPercent: 100,
+		HealthScore:    85,
+		LastActionAt:   &now,
+		LastAction:     "shipped",
+		DependsOn:      []string{},
+		DependedOnBy:   []string{},
 	}
 
 	// Apply overrides.
@@ -79,14 +79,14 @@ func makeFlag(overrides domain.ConsoleFlag) domain.ConsoleFlag {
 func TestRuleCleanupDetection_Matches(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "dark-mode",
-		Name:            "Dark Mode",
-		Stage:           domain.StageMonitor,
-		Status:          "live",
-		Environment:     "production",
-		RolloutPercent:  100,
-		HealthScore:     90,
-		LastActionAt:    ptrTime(45),
+		Key:            "dark-mode",
+		Name:           "Dark Mode",
+		Stage:          domain.StageMonitor,
+		Status:         "live",
+		Environment:    "production",
+		RolloutPercent: 100,
+		HealthScore:    90,
+		LastActionAt:   ptrTime(45),
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -120,12 +120,12 @@ func TestRuleCleanupDetection_Matches(t *testing.T) {
 func TestRuleCleanupDetection_NotFullRollout(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "partial-flag",
-		Name:            "Partial Flag",
-		RolloutPercent:  75,
-		Stage:           domain.StageMonitor,
-		Status:          "live",
-		LastActionAt:    ptrTime(45),
+		Key:            "partial-flag",
+		Name:           "Partial Flag",
+		RolloutPercent: 75,
+		Stage:          domain.StageMonitor,
+		Status:         "live",
+		LastActionAt:   ptrTime(45),
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -139,12 +139,12 @@ func TestRuleCleanupDetection_NotFullRollout(t *testing.T) {
 func TestRuleCleanupDetection_RecentAction(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "recent-flag",
-		Name:            "Recent Flag",
-		RolloutPercent:  100,
-		Stage:           domain.StageMonitor,
-		Status:          "live",
-		LastActionAt:    ptrTime(10), // only 10 days ago
+		Key:            "recent-flag",
+		Name:           "Recent Flag",
+		RolloutPercent: 100,
+		Stage:          domain.StageMonitor,
+		Status:         "live",
+		LastActionAt:   ptrTime(10), // only 10 days ago
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -158,12 +158,12 @@ func TestRuleCleanupDetection_RecentAction(t *testing.T) {
 func TestRuleCleanupDetection_WrongStage(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "early-flag",
-		Name:            "Early Flag",
-		RolloutPercent:  100,
-		Stage:           domain.StagePlan,
-		Status:          "live",
-		LastActionAt:    ptrTime(45),
+		Key:            "early-flag",
+		Name:           "Early Flag",
+		RolloutPercent: 100,
+		Stage:          domain.StagePlan,
+		Status:         "live",
+		LastActionAt:   ptrTime(45),
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -177,12 +177,12 @@ func TestRuleCleanupDetection_WrongStage(t *testing.T) {
 func TestRuleCleanupDetection_AnalyzeStage(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "analyze-flag",
-		Name:            "Analyze Flag",
-		RolloutPercent:  100,
-		Stage:           domain.StageAnalyze,
-		Status:          "live",
-		LastActionAt:    ptrTime(60),
+		Key:            "analyze-flag",
+		Name:           "Analyze Flag",
+		RolloutPercent: 100,
+		Stage:          domain.StageAnalyze,
+		Status:         "live",
+		LastActionAt:   ptrTime(60),
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -202,13 +202,13 @@ func TestRuleCleanupDetection_AnalyzeStage(t *testing.T) {
 func TestRuleRollbackRisk_Matches(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "broken-flag",
-		Name:            "Broken Feature",
-		Stage:           domain.StageMonitor,
-		Environment:     "production",
-		HealthScore:     25,
-		RolloutPercent:  50,
-		Status:          "live",
+		Key:            "broken-flag",
+		Name:           "Broken Feature",
+		Stage:          domain.StageMonitor,
+		Environment:    "production",
+		HealthScore:    25,
+		RolloutPercent: 50,
+		Status:         "live",
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -239,11 +239,11 @@ func TestRuleRollbackRisk_Matches(t *testing.T) {
 func TestRuleRollbackRisk_HealthyFlag(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "healthy-flag",
-		Name:            "Healthy Feature",
-		Stage:           domain.StageMonitor,
-		Environment:     "production",
-		HealthScore:     85,
+		Key:         "healthy-flag",
+		Name:        "Healthy Feature",
+		Stage:       domain.StageMonitor,
+		Environment: "production",
+		HealthScore: 85,
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -257,11 +257,11 @@ func TestRuleRollbackRisk_HealthyFlag(t *testing.T) {
 func TestRuleRollbackRisk_NotProduction(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "staging-flag",
-		Name:            "Staging Feature",
-		Stage:           domain.StageMonitor,
-		Environment:     "staging",
-		HealthScore:     15,
+		Key:         "staging-flag",
+		Name:        "Staging Feature",
+		Stage:       domain.StageMonitor,
+		Environment: "staging",
+		HealthScore: 15,
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -275,11 +275,11 @@ func TestRuleRollbackRisk_NotProduction(t *testing.T) {
 func TestRuleRollbackRisk_WrongStage(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "plan-flag",
-		Name:            "Plan Feature",
-		Stage:           domain.StagePlan,
-		Environment:     "production",
-		HealthScore:     15,
+		Key:         "plan-flag",
+		Name:        "Plan Feature",
+		Stage:       domain.StagePlan,
+		Environment: "production",
+		HealthScore: 15,
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -295,12 +295,12 @@ func TestRuleRollbackRisk_WrongStage(t *testing.T) {
 func TestRuleAdvanceReady_Matches(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "stuck-flag",
-		Name:            "Stuck Feature",
-		Stage:           domain.StagePlan,
-		Status:          "active",
-		RolloutPercent:  0,
-		LastActionAt:    ptrTime(14),
+		Key:            "stuck-flag",
+		Name:           "Stuck Feature",
+		Stage:          domain.StagePlan,
+		Status:         "active",
+		RolloutPercent: 0,
+		LastActionAt:   ptrTime(14),
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -331,10 +331,10 @@ func TestRuleAdvanceReady_Matches(t *testing.T) {
 func TestRuleAdvanceReady_RecentAction(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "recent-flag",
-		Name:            "Recent Feature",
-		Stage:           domain.StagePlan,
-		LastActionAt:    ptrTime(2), // only 2 days ago
+		Key:          "recent-flag",
+		Name:         "Recent Feature",
+		Stage:        domain.StagePlan,
+		LastActionAt: ptrTime(2), // only 2 days ago
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -348,10 +348,10 @@ func TestRuleAdvanceReady_RecentAction(t *testing.T) {
 func TestRuleAdvanceReady_FinalStage(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "learned-flag",
-		Name:            "Learned Feature",
-		Stage:           domain.StageLearn,
-		LastActionAt:    ptrTime(60),
+		Key:          "learned-flag",
+		Name:         "Learned Feature",
+		Stage:        domain.StageLearn,
+		LastActionAt: ptrTime(60),
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -367,12 +367,12 @@ func TestRuleAdvanceReady_FinalStage(t *testing.T) {
 func TestRuleStaleEarlyStage_Matches(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "stale-plan",
-		Name:            "Forgotten Plan",
-		Stage:           domain.StagePlan,
-		Status:          "active",
-		RolloutPercent:  0,
-		LastActionAt:    ptrTime(90),
+		Key:            "stale-plan",
+		Name:           "Forgotten Plan",
+		Stage:          domain.StagePlan,
+		Status:         "active",
+		RolloutPercent: 0,
+		LastActionAt:   ptrTime(90),
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -403,10 +403,10 @@ func TestRuleStaleEarlyStage_Matches(t *testing.T) {
 func TestRuleStaleEarlyStage_NotStaleEnough(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "recent-spec",
-		Name:            "Recent Spec",
-		Stage:           domain.StageSpec,
-		LastActionAt:    ptrTime(30), // only 30 days
+		Key:          "recent-spec",
+		Name:         "Recent Spec",
+		Stage:        domain.StageSpec,
+		LastActionAt: ptrTime(30), // only 30 days
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -420,10 +420,10 @@ func TestRuleStaleEarlyStage_NotStaleEnough(t *testing.T) {
 func TestRuleStaleEarlyStage_WrongStage(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "late-stage",
-		Name:            "Late Stage",
-		Stage:           domain.StageImplement,
-		LastActionAt:    ptrTime(90),
+		Key:          "late-stage",
+		Name:         "Late Stage",
+		Stage:        domain.StageImplement,
+		LastActionAt: ptrTime(90),
 	})
 
 	suggestions, _ := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -443,13 +443,13 @@ func TestMultipleSuggestions(t *testing.T) {
 	// Wait — they're mutually exclusive on days thresholds. Let's test
 	// a flag that hits advance_ready only (plan + 14 days).
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "multi-flag",
-		Name:            "Multi Flag",
-		Stage:           domain.StagePlan,
-		Status:          "active",
-		RolloutPercent:  0,
-		HealthScore:     85,
-		LastActionAt:    ptrTime(14),
+		Key:            "multi-flag",
+		Name:           "Multi Flag",
+		Stage:          domain.StagePlan,
+		Status:         "active",
+		RolloutPercent: 0,
+		HealthScore:    85,
+		LastActionAt:   ptrTime(14),
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -473,20 +473,20 @@ func TestSuggestForOrg(t *testing.T) {
 
 	flags := []domain.ConsoleFlag{
 		makeFlag(domain.ConsoleFlag{
-			Key:             "cleanup-me",
-			Name:            "Cleanup Me",
-			RolloutPercent:  100,
-			Stage:           domain.StageMonitor,
-			Status:          "live",
-			LastActionAt:    ptrTime(60),
+			Key:            "cleanup-me",
+			Name:           "Cleanup Me",
+			RolloutPercent: 100,
+			Stage:          domain.StageMonitor,
+			Status:         "live",
+			LastActionAt:   ptrTime(60),
 		}),
 		makeFlag(domain.ConsoleFlag{
-			Key:             "advance-me",
-			Name:            "Advance Me",
-			Stage:           domain.StagePlan,
-			Status:          "active",
-			RolloutPercent:  0,
-			LastActionAt:    ptrTime(14),
+			Key:            "advance-me",
+			Name:           "Advance Me",
+			Stage:          domain.StagePlan,
+			Status:         "active",
+			RolloutPercent: 0,
+			LastActionAt:   ptrTime(14),
 		}),
 	}
 
@@ -564,14 +564,14 @@ func TestConfidenceValuesInRange(t *testing.T) {
 
 	// A flag that hits: cleanup (0.9), rollback_risk (0.85 - triggered by low health in prod monitor)
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "range-test",
-		Name:            "Range Test",
-		RolloutPercent:  100,
-		Stage:           domain.StageMonitor,
-		Status:          "live",
-		Environment:     "production",
-		HealthScore:     25,
-		LastActionAt:    ptrTime(45),
+		Key:            "range-test",
+		Name:           "Range Test",
+		RolloutPercent: 100,
+		Stage:          domain.StageMonitor,
+		Status:         "live",
+		Environment:    "production",
+		HealthScore:    25,
+		LastActionAt:   ptrTime(45),
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -594,14 +594,14 @@ func TestAutoFixableOnlyForAdvanceReady(t *testing.T) {
 	// This flag hits cleanup (auto_fixable=false), rollback (auto_fixable=false),
 	// and advance_ready (auto_fixable=true).
 	flag := makeFlag(domain.ConsoleFlag{
-		Key:             "autofix-test",
-		Name:            "AutoFix Test",
-		RolloutPercent:  100,
-		Stage:           domain.StageMonitor,
-		Status:          "live",
-		Environment:     "production",
-		HealthScore:     25,
-		LastActionAt:    ptrTime(45),
+		Key:            "autofix-test",
+		Name:           "AutoFix Test",
+		RolloutPercent: 100,
+		Stage:          domain.StageMonitor,
+		Status:         "live",
+		Environment:    "production",
+		HealthScore:    25,
+		LastActionAt:   ptrTime(45),
 	})
 
 	suggestions, err := s.SuggestForFlag(context.Background(), "org-1", flag)
@@ -628,10 +628,10 @@ func TestRuleBasedConsoleSuggester_TableDriven(t *testing.T) {
 	s := NewRuleBasedConsoleSuggester(sugTestLogger())
 
 	tests := []struct {
-		name          string
-		flag          domain.ConsoleFlag
-		wantType      string
-		wantCount     int
+		name      string
+		flag      domain.ConsoleFlag
+		wantType  string
+		wantCount int
 	}{
 		{
 			name: "cleanup: perfect match",

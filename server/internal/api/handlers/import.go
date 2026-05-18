@@ -21,9 +21,9 @@ type ImportLDRequest struct {
 
 // ImportLDResponse is returned on a successful import.
 type ImportLDResponse struct {
-	Status             string `json:"status"`
-	FlagsCount         int    `json:"flags_count"`
-	EnvironmentsCount  int    `json:"environments_count"`
+	Status            string `json:"status"`
+	FlagsCount        int    `json:"flags_count"`
+	EnvironmentsCount int    `json:"environments_count"`
 }
 
 // ─── Handler ────────────────────────────────────────────────────────────────

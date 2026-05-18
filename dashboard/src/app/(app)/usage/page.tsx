@@ -231,6 +231,10 @@ function CreditCard({
                 <div
                   className="h-full rounded-full bg-[var(--signal-fg-accent)] transition-all duration-500"
                   style={{ width: `${pct}%` }}
+                  role="progressbar"
+                  aria-valuenow={pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
                   aria-label={`${pct}% of monthly credits used`}
                 />
               </div>

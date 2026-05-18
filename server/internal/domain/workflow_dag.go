@@ -23,28 +23,28 @@ import (
 // WorkflowDAG represents a directed acyclic graph of workflow nodes.
 // It is the customer-facing workflow definition for the feature lifecycle.
 type WorkflowDAG struct {
-	ID          string           `json:"id"`
-	OrgID       string           `json:"org_id"`
-	Name        string           `json:"name"`
-	Description string           `json:"description,omitempty"`
+	ID          string            `json:"id"`
+	OrgID       string            `json:"org_id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
 	Nodes       []WorkflowDAGNode `json:"nodes"`
 	Edges       []WorkflowDAGEdge `json:"edges"`
-	Version     int              `json:"version"`
+	Version     int               `json:"version"`
 	Status      WorkflowDAGStatus `json:"status"`
-	CreatedAt   time.Time        `json:"created_at"`
-	UpdatedAt   time.Time        `json:"updated_at"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
 }
 
 // WorkflowDAGNode is a single node in the feature lifecycle DAG.
 // Each node represents an action or checkpoint in the lifecycle.
 type WorkflowDAGNode struct {
-	ID        string            `json:"id"`
-	DAGID     string            `json:"dag_id"`
-	Type      WorkflowNodeType  `json:"type"`
-	Label     string            `json:"label"`
-	Config    json.RawMessage   `json:"config,omitempty"`    // Type-specific configuration
-	PositionX float64           `json:"position_x"`          // For UI layout
-	PositionY float64           `json:"position_y"`          // For UI layout
+	ID        string           `json:"id"`
+	DAGID     string           `json:"dag_id"`
+	Type      WorkflowNodeType `json:"type"`
+	Label     string           `json:"label"`
+	Config    json.RawMessage  `json:"config,omitempty"` // Type-specific configuration
+	PositionX float64          `json:"position_x"`       // For UI layout
+	PositionY float64          `json:"position_y"`       // For UI layout
 }
 
 // WorkflowDAGEdge is a directed edge between two nodes in the DAG.
@@ -93,29 +93,29 @@ func (t WorkflowNodeType) Validate() error {
 
 // WorkflowDAGExecution represents a running instance of a DAG.
 type WorkflowDAGExecution struct {
-	ID           string                     `json:"id"`
-	DAGID        string                     `json:"dag_id"`
-	OrgID        string                     `json:"org_id"`
-	FlagID       string                     `json:"flag_id"` // The flag this execution is for
-	Status       ExecutionStatus            `json:"status"`
-	CurrentNodes []string                   `json:"current_nodes"` // Node IDs currently active
-	NodeStates   []WorkflowDAGNodeState      `json:"node_states"`
-	StartedAt    time.Time                  `json:"started_at"`
-	CompletedAt  *time.Time                 `json:"completed_at,omitempty"`
+	ID           string                 `json:"id"`
+	DAGID        string                 `json:"dag_id"`
+	OrgID        string                 `json:"org_id"`
+	FlagID       string                 `json:"flag_id"` // The flag this execution is for
+	Status       ExecutionStatus        `json:"status"`
+	CurrentNodes []string               `json:"current_nodes"` // Node IDs currently active
+	NodeStates   []WorkflowDAGNodeState `json:"node_states"`
+	StartedAt    time.Time              `json:"started_at"`
+	CompletedAt  *time.Time             `json:"completed_at,omitempty"`
 }
 
 // WorkflowDAGNodeState tracks the execution state of a single node
 // within a DAG execution.
 type WorkflowDAGNodeState struct {
-	ID          string               `json:"id"`
-	ExecutionID string               `json:"execution_id"`
-	NodeID      string               `json:"node_id"`
-	Status      NodeExecutionStatus  `json:"status"`
-	Input       json.RawMessage      `json:"input,omitempty"`
-	Output      json.RawMessage      `json:"output,omitempty"`
-	StartedAt   *time.Time           `json:"started_at,omitempty"`
-	CompletedAt *time.Time           `json:"completed_at,omitempty"`
-	Error       string               `json:"error,omitempty"`
+	ID          string              `json:"id"`
+	ExecutionID string              `json:"execution_id"`
+	NodeID      string              `json:"node_id"`
+	Status      NodeExecutionStatus `json:"status"`
+	Input       json.RawMessage     `json:"input,omitempty"`
+	Output      json.RawMessage     `json:"output,omitempty"`
+	StartedAt   *time.Time          `json:"started_at,omitempty"`
+	CompletedAt *time.Time          `json:"completed_at,omitempty"`
+	Error       string              `json:"error,omitempty"`
 }
 
 // ExecutionStatus tracks the overall state of a DAG execution.

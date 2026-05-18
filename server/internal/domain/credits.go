@@ -29,7 +29,7 @@ type CreditPack struct {
 	ID         string `json:"id"`          // e.g., "ai_janitor_starter"
 	BearerID   string `json:"bearer_id"`   // e.g., "ai_janitor"
 	Name       string `json:"name"`        // e.g., "Starter"
-	Credits    int    `json:"credits"`      // e.g., 50
+	Credits    int    `json:"credits"`     // e.g., 50
 	PricePaise int64  `json:"price_paise"` // e.g., 24900 (INR 249.00)
 	IsActive   bool   `json:"is_active"`
 }
@@ -60,8 +60,8 @@ type CreditConsumption struct {
 	ID             string         `json:"id"`
 	OrgID          string         `json:"org_id"`
 	BearerID       string         `json:"bearer_id"`
-	Operation      string         `json:"operation"`       // e.g., "scan_repo", "analyze_flag", "apply_fix"
-	Credits        int            `json:"credits"`         // credits consumed (positive)
+	Operation      string         `json:"operation"` // e.g., "scan_repo", "analyze_flag", "apply_fix"
+	Credits        int            `json:"credits"`   // credits consumed (positive)
 	Metadata       map[string]any `json:"metadata,omitempty"`
 	IdempotencyKey string         `json:"idempotency_key,omitempty"`
 	ConsumedAt     time.Time      `json:"consumed_at"`

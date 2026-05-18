@@ -246,7 +246,7 @@ function OnboardingContent() {
               if (currentProjectId) {
                 router.push(`/projects/${currentProjectId}/dashboard`);
               } else {
-                router.push("/projects");
+                router.push("/console");
               }
             }}
             className="text-sm font-medium text-[var(--signal-fg-tertiary)] transition-colors hover:text-[var(--signal-fg-secondary)]"

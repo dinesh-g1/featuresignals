@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
+import { makePaginatedResponse } from "@/__tests__/helpers/fixtures";
 
 vi.mock("@/lib/api", () => ({
   api: {
@@ -239,9 +240,13 @@ describe("FlagDetailPage", () => {
     store.setCurrentEnv("env-1");
 
     vi.mocked(api.getFlag).mockResolvedValue(mockFlag);
-    vi.mocked(api.listFlags).mockResolvedValue([mockFlag]);
-    vi.mocked(api.listEnvironments).mockResolvedValue(mockEnvs);
-    vi.mocked(api.listSegments).mockResolvedValue([]);
+    vi.mocked(api.listFlags).mockResolvedValue(
+      makePaginatedResponse([mockFlag]),
+    );
+    vi.mocked(api.listEnvironments).mockResolvedValue(
+      makePaginatedResponse(mockEnvs),
+    );
+    vi.mocked(api.listSegments).mockResolvedValue(makePaginatedResponse([]));
     vi.mocked(api.getFlagState).mockResolvedValue({
       id: "fs-1",
       enabled: true,
@@ -258,7 +263,9 @@ describe("FlagDetailPage", () => {
     });
     vi.mocked(api.updateFlag).mockResolvedValue(mockFlag);
     vi.mocked(api.deleteFlag).mockResolvedValue(undefined);
-    vi.mocked(api.listAudit).mockResolvedValue(mockAuditEntries);
+    vi.mocked(api.listAudit).mockResolvedValue(
+      makePaginatedResponse(mockAuditEntries),
+    );
     vi.mocked(api.listFlagVersions).mockResolvedValue({
       data: [
         {

@@ -3,30 +3,44 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useConsoleStore } from "@/stores/console-store";
+import { useAppStore } from "@/stores/app-store";
 import type { LifecycleStage, EnvironmentType } from "@/lib/console-types";
 
 const VALID_STAGES = new Set<string>([
-  "plan", "spec", "design", "flag", "implement", "test",
-  "configure", "approve", "ship", "monitor", "decide", "analyze", "learn",
+  "plan",
+  "spec",
+  "design",
+  "flag",
+  "implement",
+  "test",
+  "configure",
+  "approve",
+  "ship",
+  "monitor",
+  "decide",
+  "analyze",
+  "learn",
 ]);
 
 const VALID_ENVS = new Set<string>(["production", "staging", "development"]);
 
 /**
  * useConsoleUrlSync — bidirectional sync between URL query parameters
- * and the console store.
+ * and the console store + app store.
  *
  * Reads on mount / URL change:
- *   ?stage=flag        — filter lifecycle zone to a specific stage
- *   ?environment=dev   — set environment filter
- *   ?search=dark-mode  — set search query
- *   ?feature=my-flag   — select a specific feature
+ *   ?project=uuid      — set selected project in AppStore
+ *   ?env=uuid           — set selected environment ID in AppStore
+ *   ?environment=dev    — set environment type filter
+ *   ?stage=flag         — filter lifecycle zone to a specific stage
+ *   ?search=dark-mode   — set search query
+ *   ?feature=my-flag    — select a specific feature
  *
  * Writes when store state changes (so URL is shareable/bookmarkable):
- *   selectStage        → ?stage=...
- *   setEnvironment     → ?environment=...
- *   setSearchQuery     → ?search=...
- *   selectFeature      → ?feature=...
+ *   selectStage         → ?stage=...
+ *   setEnvironment      → ?environment=...
+ *   setSearchQuery      → ?search=...
+ *   selectFeature       → ?feature=...
  */
 export function useConsoleUrlSync() {
   const searchParams = useSearchParams();
@@ -43,6 +57,12 @@ export function useConsoleUrlSync() {
   const searchQuery = useConsoleStore((s) => s.searchQuery);
   const selectedFeature = useConsoleStore((s) => s.selectedFeature);
 
+  // App store for project/env ID
+  const currentProjectId = useAppStore((s) => s.current_project_id);
+  const currentEnvId = useAppStore((s) => s.current_env_id);
+  const setCurrentProject = useAppStore((s) => s.setCurrentProject);
+  const setCurrentEnv = useAppStore((s) => s.setCurrentEnv);
+
   // Guard to prevent writing URL when we just read from it
   const isReadingRef = useRef(false);
 
@@ -58,6 +78,8 @@ export function useConsoleUrlSync() {
     const env = searchParams.get("environment");
     const search = searchParams.get("search");
     const feature = searchParams.get("feature");
+    const project = searchParams.get("project");
+    const envId = searchParams.get("env");
 
     if (stage && VALID_STAGES.has(stage)) {
       selectStage(stage as LifecycleStage);
@@ -75,12 +97,32 @@ export function useConsoleUrlSync() {
       selectFeature(feature);
     }
 
+    // Sync project ID from URL to AppStore
+    if (project && project !== currentProjectId) {
+      setCurrentProject(project);
+    }
+
+    // Sync env ID from URL to AppStore
+    if (envId && envId !== currentEnvId) {
+      setCurrentEnv(envId);
+    }
+
     // Reset the guard after a tick so writes can proceed
     const timer = setTimeout(() => {
       isReadingRef.current = false;
     }, 0);
     return () => clearTimeout(timer);
-  }, [searchParams, selectStage, setEnvironment, setSearchQuery, selectFeature]);
+  }, [
+    searchParams,
+    selectStage,
+    setEnvironment,
+    setSearchQuery,
+    selectFeature,
+    currentProjectId,
+    currentEnvId,
+    setCurrentProject,
+    setCurrentEnv,
+  ]);
 
   // ── Store → URL (write) ─────────────────────────────────────────
 
@@ -117,6 +159,20 @@ export function useConsoleUrlSync() {
       params.delete("feature");
     }
 
+    // Project (sync from AppStore to URL)
+    if (currentProjectId) {
+      params.set("project", currentProjectId);
+    } else {
+      params.delete("project");
+    }
+
+    // Env ID (sync from AppStore to URL)
+    if (currentEnvId) {
+      params.set("env", currentEnvId);
+    } else {
+      params.delete("env");
+    }
+
     const queryString = params.toString();
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
@@ -130,6 +186,8 @@ export function useConsoleUrlSync() {
     selectedEnvironment,
     searchQuery,
     selectedFeature,
+    currentProjectId,
+    currentEnvId,
     pathname,
     router,
     searchParams,

@@ -70,11 +70,11 @@ export default function ConsoleError({ error, reset }: ConsoleErrorProps) {
           </button>
 
           <Link
-            href="/"
+            href="/console"
             className="inline-flex items-center gap-2 rounded-md border border-[var(--signal-border-default)] bg-[var(--signal-bg-primary)] px-4 py-2 text-sm font-medium text-[var(--signal-fg-secondary)] shadow-[var(--signal-shadow-xs)] transition-colors duration-[var(--signal-duration-instant)] hover:bg-[var(--signal-bg-secondary)] hover:text-[var(--signal-fg-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal-fg-accent)]"
           >
             <HomeIcon className="h-4 w-4" aria-hidden="true" />
-            Back to Dashboard
+            Back to Console
           </Link>
         </div>
 
@@ -164,6 +164,6 @@ function getFriendlyMessage(error: Error): {
   return {
     title: "Something Went Wrong",
     description:
-      "An unexpected error occurred while loading the Console. Don't worry — your data is safe. You can try again or return to the dashboard.",
+      "An unexpected error occurred while loading the Console. Don't worry — your data is safe. You can try again or return to the Console."
   };
 }

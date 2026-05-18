@@ -177,11 +177,11 @@ func TestClickHouseEvalEventStore_InsertEvalEvent_NotConnected(t *testing.T) {
 
 	store := newTestStore(t)
 	event := &domain.EvalEvent{
-		ID:     "test-1",
-		OrgID:  "org-1",
+		ID:      "test-1",
+		OrgID:   "org-1",
 		FlagKey: "test-flag",
-		Value:  "true",
-		Reason: "default",
+		Value:   "true",
+		Reason:  "default",
 	}
 
 	err := store.InsertEvalEvent(context.Background(), event)
@@ -206,8 +206,8 @@ func TestClickHouseEvalEventStore_InsertEvalEventBatch_NotConnected(t *testing.T
 
 	store := newTestStore(t)
 	batch := &domain.EvalEventBatch{
-		ID:     "batch-1",
-		OrgID:  "org-1",
+		ID:    "batch-1",
+		OrgID: "org-1",
 		Events: []domain.EvalEvent{
 			{ID: "ev-1", OrgID: "org-1", FlagKey: "flag-a", Value: "true", Reason: "default"},
 		},

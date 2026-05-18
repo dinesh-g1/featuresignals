@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/auth"
+	"github.com/featuresignals/server/internal/domain"
 	"github.com/featuresignals/server/internal/httputil"
 	"golang.org/x/crypto/bcrypt"
 )

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAppStore } from "@/stores/app-store";
 import { api } from "@/lib/api";
+import type { PaginatedResponse } from "@/lib/api";
 import { cn, timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,8 +39,6 @@ import type {
   Environment,
   AuditEntry,
   OrgMember,
-  Webhook,
-  ApprovalRequest,
 } from "@/lib/types";
 
 interface ProjectSnapshot {
@@ -69,23 +68,65 @@ function useProjectSnapshot() {
     if (!token || !projectId) return;
     try {
       setSnap((s) => ({ ...s, loading: true, error: "" }));
-      const [flags, segments, environments, audit, members] = await Promise.all(
-        [
-          api.listFlags(token, projectId).catch(() => [] as Flag[]),
-          api.listSegments(token, projectId).catch(() => [] as Segment[]),
-          api
-            .listEnvironments(token, projectId)
-            .catch(() => [] as Environment[]),
-          api.listAudit(token, 8, 0, projectId).catch(() => [] as AuditEntry[]),
-          api.listMembers(token).catch(() => [] as OrgMember[]),
-        ],
-      );
+      const [flagsRes, segmentsRes, environmentsRes, auditRes, membersRes] =
+        await Promise.all([
+          api.listFlags(token, projectId).catch(
+            () =>
+              ({
+                data: [],
+                total: 0,
+                limit: 0,
+                offset: 0,
+                has_more: false,
+              }) as PaginatedResponse<Flag>,
+          ),
+          api.listSegments(token, projectId).catch(
+            () =>
+              ({
+                data: [],
+                total: 0,
+                limit: 0,
+                offset: 0,
+                has_more: false,
+              }) as PaginatedResponse<Segment>,
+          ),
+          api.listEnvironments(token, projectId).catch(
+            () =>
+              ({
+                data: [],
+                total: 0,
+                limit: 0,
+                offset: 0,
+                has_more: false,
+              }) as PaginatedResponse<Environment>,
+          ),
+          api.listAudit(token, { limit: 8, offset: 0, projectId }).catch(
+            () =>
+              ({
+                data: [],
+                total: 0,
+                limit: 0,
+                offset: 0,
+                has_more: false,
+              }) as PaginatedResponse<AuditEntry>,
+          ),
+          api.listMembers(token).catch(
+            () =>
+              ({
+                data: [],
+                total: 0,
+                limit: 0,
+                offset: 0,
+                has_more: false,
+              }) as PaginatedResponse<OrgMember>,
+          ),
+        ]);
       setSnap({
-        flags,
-        segments,
-        environments,
-        audit,
-        members,
+        flags: flagsRes.data,
+        segments: segmentsRes.data,
+        environments: environmentsRes.data,
+        audit: auditRes.data,
+        members: membersRes.data,
         loading: false,
         error: "",
       });
@@ -339,11 +380,9 @@ function useAttentionData(projectId: string) {
     if (!token) return;
     // Fetch pending approvals
     api
-      .listApprovals(token, "pending")
+      .listApprovals(token, { status: "pending" })
       .then((d) => {
-        const approvals =
-          (d as { data?: ApprovalRequest[] })?.data ?? (d as ApprovalRequest[]);
-        setApprovalCount(Array.isArray(approvals) ? approvals.length : 0);
+        setApprovalCount(d.data.length);
       })
       .catch(() => {});
 
@@ -351,9 +390,8 @@ function useAttentionData(projectId: string) {
     api
       .listWebhooks(token)
       .then(async (webhooks) => {
-        const whs =
-          (webhooks as { data?: Webhook[] })?.data ?? (webhooks as Webhook[]);
-        if (!Array.isArray(whs) || whs.length === 0) {
+        const whs = webhooks.data;
+        if (whs.length === 0) {
           setWebhookFailCount(0);
           return;
         }
@@ -361,11 +399,9 @@ function useAttentionData(projectId: string) {
         for (const wh of whs.slice(0, 5)) {
           try {
             const deliveries = await api.listWebhookDeliveries(token, wh.id);
-            const dlvs =
-              (deliveries as { data?: unknown[] })?.data ??
-              (deliveries as unknown[]);
-            if (Array.isArray(dlvs) && dlvs.length > 0) {
-              const recent = dlvs.slice(0, 5) as Array<{ success?: boolean }>;
+            const dlvs = deliveries.data;
+            if (dlvs.length > 0) {
+              const recent = dlvs.slice(0, 5);
               if (recent.some((d) => d.success === false)) failures++;
             }
           } catch {

@@ -137,7 +137,7 @@ func (s *inMemoryBackupStore) GetStatus(_ context.Context) (*BackupStatus, error
 
 	now := time.Now().UTC()
 	status := &BackupStatus{
-		Schedule: "0 3 * * *",
+		Schedule:        "0 3 * * *",
 		NextScheduledAt: time.Date(now.Year(), now.Month(), now.Day(), 3, 0, 0, 0, time.UTC),
 	}
 

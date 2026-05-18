@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { consoleStore } from "@/stores/console-store";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import type { FeatureCardData } from "@/lib/console-types";
 
 // ─── Constants ──────────────────────────────────────────────────────
 
@@ -55,16 +58,51 @@ export function useProactiveDetection(): void {
   useEffect(() => {
     const interval = setInterval(() => {
       const state = consoleStore.getState();
-      const { features, errors, loading, proactiveAlert: currentAlert } = state;
+      const currentAlert = state.proactiveAlert;
+
+      // Read features from TanStack Query cache (replaces removed store fields)
+      const featuresData = queryClient.getQueryData(
+        queryKeys.console.features({
+          projectId: undefined,
+          stage: undefined,
+          environment: state.selectedEnvironment,
+          sort: state.sortBy,
+          limit: state.featuresLimit,
+        }),
+      );
+      const features: FeatureCardData[] =
+        (featuresData as { data?: FeatureCardData[] } | null)?.data ?? [];
+      const isLoading = !featuresData;
 
       // ── 1. API error storm ──────────────────────────────────
-      const zones = ["features", "integrations", "insights"] as const;
-      const errorZones = zones.filter((z) => errors[z] !== null);
+      // Errors are now per-query via TanStack Query. Check the query cache.
+      const featureQueryState = queryClient.getQueryState(
+        queryKeys.console.features({
+          projectId: undefined,
+          stage: undefined,
+          environment: state.selectedEnvironment,
+          sort: state.sortBy,
+          limit: state.featuresLimit,
+        }),
+      );
+      const insightsQueryState = queryClient.getQueryState(
+        queryKeys.console.insights(),
+      );
+      const integrationsQueryState = queryClient.getQueryState(
+        queryKeys.console.integrations(),
+      );
+      const errorQueries = [
+        featureQueryState,
+        insightsQueryState,
+        integrationsQueryState,
+      ].filter((qs) => qs?.status === "error");
 
-      if (errorZones.length >= API_ERROR_THRESHOLD) {
-        const zoneList = errorZones.join(", ");
-        const firstError = errors[errorZones[0]];
-        const id = alertId("error-storm", zoneList);
+      if (errorQueries.length >= API_ERROR_THRESHOLD) {
+        const firstError =
+          errorQueries[0]?.error instanceof Error
+            ? errorQueries[0].error.message
+            : "Unknown error";
+        const id = alertId("error-storm", "multi-zone");
 
         if (alertRef.current !== id) {
           alertRef.current = id;
@@ -72,7 +110,7 @@ export function useProactiveDetection(): void {
             type: "error",
             priority: "red",
             title: "We noticed repeated errors",
-            description: `Errors detected in ${errorZones.length} zones (${zoneList}). Here's what's happening: ${firstError}`,
+            description: `Errors detected in ${errorQueries.length} zones. Here's what's happening: ${firstError}`,
             action: {
               label: "Open help",
               handler: () => {
@@ -119,7 +157,8 @@ export function useProactiveDetection(): void {
 
       if (stuckFeature) {
         const thenDays =
-          new Date(stuckFeature.last_action_at).getTime() / (1000 * 60 * 60 * 24);
+          new Date(stuckFeature.last_action_at).getTime() /
+          (1000 * 60 * 60 * 24);
         const nowDays = Date.now() / (1000 * 60 * 60 * 24);
         const days = daysBetween(thenDays, nowDays);
         const id = alertId("stuck", stuckFeature.key);
@@ -171,7 +210,7 @@ export function useProactiveDetection(): void {
       }
 
       // ── 5. No features — don't bug new users ───────────────
-      if (features.length === 0 && !loading.features) {
+      if (features.length === 0 && !isLoading) {
         if (currentAlert && alertRef.current !== null) {
           alertRef.current = null;
           consoleStore.getState().setProactiveAlert(null);

@@ -15,12 +15,12 @@ import "time"
 // MaturityProgressionRules defines the thresholds an agent must meet
 // to advance from one maturity level to the next.
 type MaturityProgressionRules struct {
-	MinAccuracy           float64 // Minimum accuracy (0.0–1.0)
-	MinDecisions          int     // Minimum total decisions made
-	MaxIncidents          int     // Maximum incidents caused
-	MaxOverrideRate       float64 // Maximum human override rate (0.0–1.0)
-	MinDaysSinceIncident  int     // Minimum days since last incident
-	MinAvgConfidence      float64 // Minimum average confidence (0.0–1.0)
+	MinAccuracy          float64 // Minimum accuracy (0.0–1.0)
+	MinDecisions         int     // Minimum total decisions made
+	MaxIncidents         int     // Maximum incidents caused
+	MaxOverrideRate      float64 // Maximum human override rate (0.0–1.0)
+	MinDaysSinceIncident int     // Minimum days since last incident
+	MinAvgConfidence     float64 // Minimum average confidence (0.0–1.0)
 }
 
 // ProgressionRules maps each maturity level to the rules required to

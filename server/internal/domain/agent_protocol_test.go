@@ -266,11 +266,11 @@ func TestHumanOverridePayload_RoundTrip(t *testing.T) {
 func TestTeachPayload_RoundTrip(t *testing.T) {
 	original := TeachPayload{
 		Experience: Experience{
-			DecisionID:   "dec_001",
-			TaskID:       "task_1",
-			Outcome:      "Flag swept successfully, no incidents",
+			DecisionID:    "dec_001",
+			TaskID:        "task_1",
+			Outcome:       "Flag swept successfully, no incidents",
 			WasSuccessful: true,
-			LatencyMs:    250,
+			LatencyMs:     250,
 		},
 		FromAgent: "agt_sentinel_1",
 		ToAgent:   "agt_janitor_2",

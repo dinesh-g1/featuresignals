@@ -117,7 +117,7 @@ export function EnvColorBar() {
     api
       .listEnvironments(token, currentProjectId)
       .then((list) => {
-        const found = list.find((e) => e.id === currentEnvId) ?? null;
+        const found = list.data.find((e) => e.id === currentEnvId) ?? null;
         setEnv(found);
       })
       .catch(() => {
@@ -128,7 +128,7 @@ export function EnvColorBar() {
       api
         .listEnvironments(token, currentProjectId)
         .then((list) => {
-          const found = list.find((e) => e.id === currentEnvId) ?? null;
+          const found = list.data.find((e) => e.id === currentEnvId) ?? null;
           setEnv(found);
         })
         .catch(() => {});
