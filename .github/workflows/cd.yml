@@ -42,7 +42,7 @@ jobs:
       KUBECONFIG: /home/runner/.kube/config
       PATH: /usr/local/bin:/usr/local/sbin:/usr/bin:/bin
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Resolve version (short SHA → full SHA)
         id: version
